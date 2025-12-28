@@ -1,0 +1,43 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        "module": "amd",
+        "moduleResolution": "node",
+        "strict": true,
+        "declaration": true,
+        "target": "es5",
+        "lib": [
+            "es2017",
+            "dom"
+        ],
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "sourceMap": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "traceResolution": false,
+        "listFiles": false,
+        "stripInternal": true,
+        "skipDefaultLibCheck": true,
+        "skipLibCheck": false,
+        "pretty": false,
+        "noEmitOnError": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "outFile": "index.js",
+        "paths": {
+            "@resource/*": [ "../resource/*" ],
+        }
+    },
+    "files": [
+        "index.ts"
+    ],
+    "exclude": [
+    ]
+}

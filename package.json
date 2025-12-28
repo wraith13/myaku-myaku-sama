@@ -3,6 +3,7 @@
     "version": "0.0.0",
     "description": "Myaku-myaku Sama",
     "scripts": {
+        "build script": "tsc -p ./script/tsconfig.json"
     },
     "repository": {
         "type": "git",

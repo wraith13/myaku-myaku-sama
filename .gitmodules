@@ -1,0 +1,9 @@
+[submodule "build.js"]
+	path = build.js
+	url = https://github.com/wraith13/build.js
+[submodule "evil-commonjs"]
+	path = evil-commonjs
+	url = https://github.com/wraith13/evil-commonjs
+[submodule "evil-timer.js"]
+	path = evil-timer.js
+	url = https://github.com/wraith13/evil-timer.js
