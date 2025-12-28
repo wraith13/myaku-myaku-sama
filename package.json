@@ -1,0 +1,21 @@
+{
+    "name": "@wraith13/myaku-myaku-sama",
+    "version": "0.0.0",
+    "description": "Myaku-myaku Sama",
+    "scripts": {
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/wraith13/myaku-myaku-sama.git"
+    },
+    "author": "wraith13",
+    "license": "BSL-1.0",
+    "bugs": {
+        "url": "https://github.com/wraith13/myaku-myaku-sama/issues"
+    },
+    "homepage": "https://github.com/wraith13/myaku-myaku-sama/#readme",
+    "devDependencies": {
+        "@types/node": "^24.0.1",
+        "typescript": "^5.3.3"
+    }
+}
