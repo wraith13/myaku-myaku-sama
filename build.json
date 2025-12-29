@@ -1,0 +1,95 @@
+{
+    "$schema": "https://raw.githubusercontent.com/wraith13/build.js/master/generated/json-schema.json#",
+    "modes": {
+        "default": {
+            "parameters": {
+                "__APPLICATION_TITLE__": {
+                    "json": "./resource/config.json",
+                    "value": "applicationTitle"
+                },
+                "__BUILD_MESSAGE__": "This file is genereted by build.js. このファイルは build.js によって生成されました。",
+                "__BUILD_OPTIONS__": {
+                    "call": "command_options"
+                },
+                "__BUILD_TIMESTAMP__": {
+                    "call": "timestamp"
+                },
+                "__BUILD_TIMESTAMP_TICK__": {
+                    "call": "timestamp_tick"
+                },
+                "__REPOSITORY_URL__": {
+                    "json": "./resource/config.json",
+                    "value": "repositoryUrl"
+                },
+                "__CANONICAL_URL__": {
+                    "json": "./resource/config.json",
+                    "value": "canonicalUrl"
+                },
+                "__LICENSE__": {
+                    "path": "./LICENSE_1_0.txt"
+                },
+                "__THEME_COLOR__": "black"
+            }
+        },
+        "html": {
+            "template": {
+                "path": "./index.html.template"
+            },
+            "output": {
+                "path": "./index.html"
+            },
+            "parameters": {
+                "__DESCRIPTION__": {
+                    "json": "./resource/config.json",
+                    "value": "description"
+                },
+                "__NOSCRIPT_MESSAGE__": {
+                    "json": "./resource/config.json",
+                    "value": "noscriptMessage"
+                },
+                "__EVIL_COMMONJS__": {
+                    "path": "./evil-commonjs/index.js",
+                    "replace": {
+                        "match": "sourceMappingURL=index.js.map",
+                        "text": "sourceMappingURL=evil-commonjs/index.js.map"
+                    }
+                },
+                "__EVIL_TIMER__": {
+                    "path": "./evil-timer.js/index.js",
+                    "replace": {
+                        "match": "sourceMappingURL=index.js.map",
+                        "text": "sourceMappingURL=evil-timer.js/index.js.map"
+                    }
+                },
+                "__SCRIPT__": {
+                    "path": "./script/index.js",
+                    "replace": {
+                        "match": "sourceMappingURL=index.js.map",
+                        "text": "sourceMappingURL=script/index.js.map"
+                    }
+                },
+                "__EVIL_COMMONJS_CONFIG__": {
+                    "path": "./resource/evil-commonjs.config.json"
+                },
+                "__EVIL_TIMER_CONFIG__": {
+                    "path": "./resource/evil-timer.js.config.json"
+                }
+            }
+        },
+        "script": {
+            "processes": [
+                "npm run-script \"build script\""
+            ]
+        },
+        "all": {
+            "steps": [
+                {
+                    "references": "script"
+                },
+                {
+                    "references": "html"
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "log": {
+        "config": false,
+        "load": false,
+        "define": false,
+        "readyToCapture": false,
+        "results": false
+    },
+    "loadingTimeout": 500
+}

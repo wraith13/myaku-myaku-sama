@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--
+    __BUILD_MESSAGE__
+    build options: __BUILD_OPTIONS__
+    build at: __BUILD_TIMESTAMP__
+    repository: __REPOSITORY_URL__
+-->
+<!-- license:
+__LICENSE__-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>__APPLICATION_TITLE__</title>
+<link id="favicon" rel="shortcut icon" href="./image/favicon.png">
+<link rel="canonical" href="__CANONICAL_URL__">
+<link rel="apple-touch-icon" href="./image/favicon.png">
+<meta name="theme-color" content="__THEME_COLOR__">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" lang="ja" content="__DESCRIPTION__">
+<link id="manifest" rel="manifest" href="web.manifest.json" />
+<meta name="apple-mobile-web-app-title" content="__APPLICATION_TITLE__">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+__STYLE__
+DUMMYSTYLE
+{
+    color: inherit;
+}
+</style>
+</head>
+<body>
+<noscript id="noscript" role="presentation">
+    <div class="panel" role="presentation">
+        <div class="section" role="presentation">
+            <h2>NOSCRIPT</h2>
+            __NOSCRIPT_MESSAGE__
+        </div>
+    </div>
+</noscript>
+<div id="screen-body" role="presentation">
+</div>
+<script type="text/javascript">
+const build = {
+    at: "__BUILD_TIMESTAMP__",
+    tick: __BUILD_TIMESTAMP_TICK__
+};
+const evilCommonjsConfig = __EVIL_COMMONJS_CONFIG__; // "./resource/evil-commonjs.config.json"
+const evilTimerConfig = __EVIL_TIMER_CONFIG__; // "./resource/evil-timer.js.config.json"
+__EVIL_COMMONJS__
+__EVIL_TIMER__
+__SCRIPT__
+</script>
+</body>
+</html>
