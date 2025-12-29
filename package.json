@@ -3,7 +3,9 @@
     "version": "0.0.0",
     "description": "Myaku-myaku Sama",
     "scripts": {
-        "build script": "tsc -p ./script/tsconfig.json"
+        "build all": "node ./build.js ../build.json all",
+        "build script": "tsc -p ./script/tsconfig.json",
+        "build html": "node ./build.js ../build.json html"
     },
     "repository": {
         "type": "git",

@@ -24,10 +24,6 @@ __LICENSE__-->
 <meta name="mobile-web-app-capable" content="yes">
 <style>
 __STYLE__
-DUMMYSTYLE
-{
-    color: inherit;
-}
 </style>
 </head>
 <body>
@@ -39,8 +35,8 @@ DUMMYSTYLE
         </div>
     </div>
 </noscript>
-<div id="screen-body" role="presentation">
-</div>
+<canvas id="canvas" role="presentation">
+</canvas>
 <script type="text/javascript">
 const build = {
     at: "__BUILD_TIMESTAMP__",

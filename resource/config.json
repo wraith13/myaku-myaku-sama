@@ -2,6 +2,25 @@
     "applicationTitle": "Myaku-myaku Sama",
     "repositoryUrl": "https://github.com/wraith13/myaku-myaku-sama/",
     "canonicalUrl": "https://wraith13.github.io/myaku-myaku-sama/",
-    "description": "",
-    "noscriptMessage": ""
+    "description": "Myaku-myaku-sama's pattern animation ( this web app is for study )",
+    "noscriptMessage": "JavaScript is disabled. Please enable JavaScript.",
+    "coloring":
+    {
+        "regular": {
+            "base": "#FFFFFF",
+            "main": "red",
+            "accent": "blue"
+        },
+        "monochrome": {
+            "base": "#FFFFFF",
+            "main": "#000000",
+            "accent": "#777777"
+        },
+        "rene":{
+            "base": "#FFFFFF",
+            "main": "yallow",
+            "accent": "#000000"
+        }
+
+    }
 }

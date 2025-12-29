@@ -61,6 +61,9 @@
                         "text": "sourceMappingURL=evil-timer.js/index.js.map"
                     }
                 },
+                "__STYLE__": {
+                    "path": "./index.css"
+                },
                 "__SCRIPT__": {
                     "path": "./script/index.js",
                     "replace": {
