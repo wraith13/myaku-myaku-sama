@@ -1,26 +1,36 @@
 import config from "@resource/config.json";
 
+interface Point
+{
+    x: number;
+    y: number;
+}
 interface Inertia
 {
     x: number;
     y: number;
 }
+interface FloatAnimation
+{
+    angle: number;
+    radiusStep: number;
+    angularVelocity: number;
+    radialVelocity: number;
+}
 interface UnitAnimation
 {
-    position: Inertia;
     velocity: Inertia;
-    acceleration: Inertia;
+    moveAnimation: FloatAnimation;
 }
+type animationMode = "gaze" | "float";
 interface EyeAnimation
 {
-    irisOffset: Inertia;
+    //animationMode: animationMode;
     irisVelocity: Inertia;
-    irisAcceleration: Inertia;
+    moveAnimation: FloatAnimation;
 }
-interface Circle
+interface Circle extends Point
 {
-    x: number;
-    y: number;
     radius: number;
 }
 interface Unit
@@ -35,11 +45,12 @@ interface Unit
     };
 }
 type Layer = Unit[];
-const Layers =
+const Data =
 {
+    previousTimestamp: 0,
     accent: [] as Layer,
     main: [] as Layer,
-}
+};
 const sumAreas = (layer: Layer) =>
     layer.reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
 const updateLayer = (layer: Layer, timestamp: number) =>
@@ -47,8 +58,8 @@ const updateLayer = (layer: Layer, timestamp: number) =>
 };
 const updateData = (timestamp: number) =>
 {
-    updateLayer(Layers.accent, timestamp);
-    updateLayer(Layers.main, timestamp);
+    updateLayer(Data.accent, timestamp);
+    updateLayer(Data.main, timestamp);
 };
 window.addEventListener
 (
