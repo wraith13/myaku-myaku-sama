@@ -1,7 +1,55 @@
 import config from "@resource/config.json";
 
-console.log({ config });
-
+interface Inertia
+{
+    x: number;
+    y: number;
+}
+interface UnitAnimation
+{
+    position: Inertia;
+    velocity: Inertia;
+    acceleration: Inertia;
+}
+interface EyeAnimation
+{
+    irisOffset: Inertia;
+    irisVelocity: Inertia;
+    irisAcceleration: Inertia;
+}
+interface Circle
+{
+    x: number;
+    y: number;
+    radius: number;
+}
+interface Unit
+{
+    body: Circle;
+    animation: UnitAnimation;
+    eye?:
+    {
+        white: Circle;
+        iris: Circle;
+        animation: EyeAnimation;
+    };
+}
+type Layer = Unit[];
+const Layers =
+{
+    accent: [] as Layer,
+    main: [] as Layer,
+}
+const sumAreas = (layer: Layer) =>
+    layer.reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
+const updateLayer = (layer: Layer, timestamp: number) =>
+{
+};
+const updateData = (timestamp: number) =>
+{
+    updateLayer(Layers.accent, timestamp);
+    updateLayer(Layers.main, timestamp);
+};
 window.addEventListener
 (
     "load",
@@ -12,7 +60,15 @@ window.addEventListener
         const context = canvas.getContext("2d");
         if (context)
         {
-            const style = "regular" as const;
+            const updateWindowSize = () =>
+            {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            };
+            updateWindowSize();
+            window.addEventListener("resize", () => updateWindowSize());
+            window.addEventListener("orientationchange", () => updateWindowSize());
+            const style = "regular" as keyof typeof config["coloring"];
             const drawCircle = (x: number, y: number, radius: number, color: string) =>
             {
                 context.beginPath();
@@ -33,15 +89,13 @@ window.addEventListener
                 drawCircle(centerX, centerY, radius *0.5, config.coloring[style].base);
                 drawCircle(centerX, centerY, radius *0.25, config.coloring[style].accent);
             };
-            const updateWindowSize = () =>
+            const step = (timestamp: number) =>
             {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                updateData(timestamp);
                 draw();
+                window.requestAnimationFrame(step);
             };
-            updateWindowSize();
-            window.addEventListener("resize", () => updateWindowSize());
-            window.addEventListener("orientationchange", () => updateWindowSize());
+            window.requestAnimationFrame(step);
         }
         else
         {
