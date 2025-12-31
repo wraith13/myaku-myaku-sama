@@ -10,30 +10,31 @@ interface Inertia
     x: number;
     y: number;
 };
+interface Animation
+{
+    period: number;
+    phase: number;
+    scale: number;
+}
 interface FloatAnimation
 {
-    angle: number;
-    radiusStep: number;
-    angularVelocity: number;
-    radialVelocity: number;
-};
-interface SizeAnimation
-{
-    targetRadius: number;
-    sizeVelocity: number;
+    x: Animation[];
+    y: Animation[];
 };
 interface UnitAnimation
 {
     velocity: Inertia;
     moveAnimation: FloatAnimation;
-    sizeAnimation: SizeAnimation;
+    sizeAnimation: Animation[];
 };
 type animationMode = "gaze" | "float";
 interface EyeAnimation
 {
     //animationMode: animationMode;
     irisVelocity: Inertia;
-    moveAnimation: FloatAnimation;
+    moveAnimation: FloatAnimation[];
+    appearAnimation: Animation;
+    vanishAnimation: Animation;
 };
 interface Circle extends Point
 {
@@ -62,6 +63,38 @@ const Data =
 };
 const sumAreas = (layer: Layer) =>
     layer.units.reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
+const calculateAnimationSineIntegral = (animation: Animation, step: number): number =>
+{
+    // return stepで積分(Math.sin((animation.phase / animation.period) * Math.PI * 2));
+    if (animation.period <= 0 || 0 === step)
+    {
+        return 0;
+    }
+    else
+    {
+        const omega = (2 * Math.PI) / animation.period;
+        // ∫0^step sin(omega*(phase + τ)) dτ = (cos(omega*phase) - cos(omega*(phase + step))) / omega
+        const integral = (Math.cos(omega * animation.phase) - Math.cos(omega * (animation.phase + step))) / omega;
+        return integral * animation.scale;
+    }
+};
+const accumulateAnimationSineIntegral = (animations: Animation[], step: number): number =>
+    animations.reduce((sum, animation) => sum + calculateAnimationSineIntegral(animation, step), 0);
+const updateAnimation = (animation: Animation, step: number) =>
+{
+    animation.phase += step;
+    while(animation.period <= animation.phase)
+    {
+        animation.phase -= animation.period;
+    }
+};
+const updateAnimations = (animations: Animation[] , step: number) =>
+    animations.forEach((animation) => updateAnimation(animation, step));
+const updateFloatAnimation = (floatAnimation: FloatAnimation, step: number) =>
+{
+    updateAnimations(floatAnimation.x, step);
+    updateAnimations(floatAnimation.y, step);
+};
 const makeUnitAnimation = (): UnitAnimation =>
 {
     const result: UnitAnimation =
@@ -84,18 +117,25 @@ const makeUnit = (position: Point): Unit =>
     };
     return result;
 };
-const updateLayer = (layer: Layer, timestamp: number) =>
+const updateUnit = (unit: Unit, step: number) =>
+{
+    unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step);
+    unit.body.y += accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step);
+    updateFloatAnimation(unit.animation.moveAnimation, step);
+};
+const updateLayer = (layer: Layer, step: number) =>
 {
     if (sumAreas(layer) < 0.5)
     {
 
     }
-    
+    layer.units.forEach((unit) => updateUnit(unit, step));
 };
 const updateData = (timestamp: number) =>
 {
-    updateLayer(Data.accent, timestamp);
-    updateLayer(Data.main, timestamp);
+    const step = 0 < Data.previousTimestamp ? (timestamp - Data.previousTimestamp): 0;
+    updateLayer(Data.accent, step);
+    updateLayer(Data.main, step);
     Data.previousTimestamp = timestamp;
 };
 window.addEventListener
