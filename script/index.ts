@@ -27,7 +27,7 @@ interface UnitAnimation
     moveAnimation: FloatAnimation;
     sizeAnimation: Animation[];
 };
-type animationMode = "gaze" | "float";
+//type animationMode = "gaze" | "float";
 interface EyeAnimation
 {
     //animationMode: animationMode;
@@ -58,6 +58,8 @@ interface Layer
 const Data =
 {
     previousTimestamp: 0,
+    width: window.innerWidth,
+    height: window.innerHeight,
     accent: { units: [], } as Layer,
     main: { units: [], } as Layer,
 };
@@ -95,11 +97,27 @@ const updateFloatAnimation = (floatAnimation: FloatAnimation, step: number) =>
     updateAnimations(floatAnimation.x, step);
     updateAnimations(floatAnimation.y, step);
 };
+const makeAnimation = (): Animation =>
+({
+    period: 2000 + Math.random() * 3000,
+    phase: Math.random() * 2000,
+    scale: 0.05 + Math.random() * 0.1,
+});
 const makeUnitAnimation = (): UnitAnimation =>
 {
     const result: UnitAnimation =
     {
-
+        velocity:
+        {
+            x: 0,
+            y: 0,
+        },
+        moveAnimation:
+        {
+            x: [ makeAnimation(), ],
+            y: [ makeAnimation(), ],
+        },
+        sizeAnimation: [ makeAnimation(), ],
     };
     return result;
 };
@@ -127,13 +145,57 @@ const updateLayer = (layer: Layer, step: number) =>
 {
     if (sumAreas(layer) < 0.5)
     {
-
+        layer.units.push
+        (
+            makeUnit
+            (
+                {
+                    x: Math.random() * Data.width,
+                    y: Math.random() * Data.height,
+                }
+            )
+        );
     }
     layer.units.forEach((unit) => updateUnit(unit, step));
+};
+const updateCircleStretch = (circle: Circle) =>
+{
+    const xScale = window.innerWidth / Data.width;
+    const yScale = window.innerHeight / Data.height;
+    const radiusScale = Math.hypot(window.innerWidth, window.innerHeight) / Math.hypot(Data.width, Data.height);
+    circle.x *= xScale;
+    circle.y *= yScale;
+    circle.radius *= radiusScale;
+};
+const updateLayerStretch = (layer: Layer) =>
+{
+    layer.units.forEach
+    (
+        i =>
+        {
+            updateCircleStretch(i.body);
+            if (i.eye)
+            {
+                updateCircleStretch(i.eye.white);
+                updateCircleStretch(i.eye.iris);
+            }
+        }
+    );
+}
+const updateStretch = () =>
+{
+    updateLayerStretch(Data.accent);
+    updateLayerStretch(Data.main);
+    Data.width = window.innerWidth;
+    Data.height = window.innerHeight;
 };
 const updateData = (timestamp: number) =>
 {
     const step = 0 < Data.previousTimestamp ? (timestamp - Data.previousTimestamp): 0;
+    if (window.innerWidth !== Data.width || window.innerHeight !== Data.height)
+    {
+        updateStretch();
+    }
     updateLayer(Data.accent, step);
     updateLayer(Data.main, step);
     Data.previousTimestamp = timestamp;
