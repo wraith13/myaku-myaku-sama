@@ -35,8 +35,7 @@ __STYLE__
         </div>
     </div>
 </noscript>
-<canvas id="canvas" role="presentation">
-</canvas>
+<canvas id="canvas" role="presentation"></canvas>
 <div id="fps" style="display:none;"></div>
 <script type="text/javascript">
 const build = {

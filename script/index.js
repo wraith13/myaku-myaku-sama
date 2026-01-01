@@ -208,7 +208,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
     };
     var makeAnimation = function (scaleRate, phaseRate) {
         if (phaseRate === void 0) { phaseRate = Math.random(); }
-        var period = 500 + (pseudoGaussian(4) * 200000);
+        var period = 500 + (Math.pow(pseudoGaussian(1), 2) * 300000);
         var result = {
             period: period,
             phase: period * phaseRate,
@@ -217,7 +217,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         return result;
     };
     var makeUnitAnimation = function () {
-        var shortSide = Math.min(window.innerWidth, window.innerHeight);
+        var shortSide = Math.min(window.innerWidth, window.innerHeight) * 2.0;
         var xRatio = window.innerWidth / shortSide;
         var yRatio = window.innerHeight / shortSide;
         var result = {
@@ -226,8 +226,18 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                 y: 0,
             },
             moveAnimation: {
-                x: [makeAnimation(1.0 * xRatio), makeAnimation(0.5 * xRatio), makeAnimation(0.25 * xRatio), makeAnimation(0.125 * xRatio),],
-                y: [makeAnimation(1.0 * yRatio), makeAnimation(0.5 * yRatio), makeAnimation(0.25 * yRatio), makeAnimation(0.125 * yRatio),],
+                x: [
+                    makeAnimation(1.0 * xRatio),
+                    makeAnimation(0.5 * xRatio),
+                    makeAnimation(0.25 * xRatio),
+                    makeAnimation(0.125 * xRatio),
+                ],
+                y: [
+                    makeAnimation(1.0 * yRatio),
+                    makeAnimation(0.5 * yRatio),
+                    makeAnimation(0.25 * yRatio),
+                    makeAnimation(0.125 * yRatio),
+                ],
             },
             sizeAnimation: [makeAnimation(1.0),],
         };
@@ -247,16 +257,19 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         updateFloatAnimation(unit.animation.moveAnimation, step);
     };
     var updateLayer = function (layer, timestamp, step) {
-        var makeUnitCooldown = 100;
-        if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
-            var shortSide = Math.min(window.innerWidth, window.innerHeight);
-            var longSide = Math.max(window.innerWidth, window.innerHeight);
+        var shortSide = Math.min(window.innerWidth, window.innerHeight);
+        var longSide = Math.max(window.innerWidth, window.innerHeight);
+        if (0 < shortSide) {
             var longSideRatio = longSide / shortSide;
-            if (sumAreas(layer) < (1.5 * longSideRatio)) {
-                layer.units.push(makeUnit(
-                // { x: Math.random() -0.5, y: Math.random() -0.5, }
-                { x: 0, y: 0, }));
-                layer.lastMadeAt = timestamp;
+            var areaRatio = sumAreas(layer) / (longSideRatio * 1.5);
+            if (areaRatio < 1.0) {
+                var makeUnitCooldown = 5000 * areaRatio;
+                if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
+                    layer.units.push(makeUnit(
+                    // { x: Math.random() -0.5, y: Math.random() -0.5, }
+                    { x: 0, y: 0, }));
+                    layer.lastMadeAt = timestamp;
+                }
             }
         }
         layer.units.forEach(function (unit) { return updateUnit(unit, step); });
@@ -326,7 +339,9 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         };
         var draw_1 = function () {
             context.fillStyle = config_json_1.default.coloring[style].base;
+            //context.globalCompositeOperation = "destination-out";
             context.fillRect(0, 0, canvas.width, canvas.height);
+            //context.globalCompositeOperation = "source-over";
             Data.accent.units.forEach(function (unit) {
                 drawCircle_1(unit.body, config_json_1.default.coloring[style].accent);
                 drawEye_1(unit);
@@ -335,9 +350,9 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                 drawCircle_1(unit.body, config_json_1.default.coloring[style].main);
                 drawEye_1(unit);
             });
-            //drawCircle({ x: 0, y: 0, radius: 0.25, }, config.coloring[style].main);
-            drawCircle_1({ x: 0, y: 0, radius: 0.125, }, config_json_1.default.coloring[style].base);
-            drawCircle_1({ x: 0, y: 0, radius: 0.0625, }, config_json_1.default.coloring[style].accent);
+            //drawCircle({ x: 0, y: 0, radius: 0.1, }, config.coloring[style].main);
+            //drawCircle({ x: 0, y: 0, radius: 0.05, }, config.coloring[style].base);
+            //drawCircle({ x: 0, y: 0, radius: 0.025, }, config.coloring[style].accent);
         };
         var step_1 = function (timestamp) {
             updateData(timestamp);
