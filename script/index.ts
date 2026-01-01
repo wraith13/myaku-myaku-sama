@@ -5,6 +5,11 @@ interface Point
     x: number;
     y: number;
 };
+const addPoints = (a: Point, b: Point): Point =>
+({
+    x: a.x + b.x,
+    y: a.y + b.y,
+});
 interface Inertia
 {
     x: number;
@@ -40,6 +45,12 @@ interface Circle extends Point
 {
     radius: number;
 };
+const makeCircle = (point: Point, radius: number): Circle =>
+({
+    x: point.x,
+    y: point.y,
+    radius,
+});
 interface Unit
 {
     body: Circle;
@@ -58,8 +69,8 @@ interface Layer
 const Data =
 {
     previousTimestamp: 0,
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: 0,
+    height: 0,
     accent: { units: [], } as Layer,
     main: { units: [], } as Layer,
 };
@@ -97,12 +108,17 @@ const updateFloatAnimation = (floatAnimation: FloatAnimation, step: number) =>
     updateAnimations(floatAnimation.x, step);
     updateAnimations(floatAnimation.y, step);
 };
-const makeAnimation = (): Animation =>
-({
-    period: 2000 + Math.random() * 3000,
-    phase: Math.random() * 2000,
-    scale: 0.05 + Math.random() * 0.1,
-});
+const makeAnimation = (scaleRate: number): Animation =>
+{
+    const phase = 500 +(Math.random() * 100000);
+    const result: Animation =
+    {
+        period: phase *Math.random(),
+        phase,
+        scale: (0.05 + Math.random() * 0.1) *scaleRate,
+    };
+    return result;
+};
 const makeUnitAnimation = (): UnitAnimation =>
 {
     const result: UnitAnimation =
@@ -114,45 +130,38 @@ const makeUnitAnimation = (): UnitAnimation =>
         },
         moveAnimation:
         {
-            x: [ makeAnimation(), ],
-            y: [ makeAnimation(), ],
+            x: [ makeAnimation(1.0), makeAnimation(0.5), makeAnimation(0.25), makeAnimation(0.125), ],
+            y: [ makeAnimation(1.0), makeAnimation(0.5), makeAnimation(0.25), makeAnimation(0.125), ],
         },
-        sizeAnimation: [ makeAnimation(), ],
+        sizeAnimation: [ makeAnimation(1.0), ],
     };
     return result;
 };
-const makeUnit = (position: Point): Unit =>
+const makeUnit = (point: Point): Unit =>
 {
     const result =
     {
-        body:
-        {
-            x: position.x,
-            y: position.y,
-            radius: 0,
-        },
+        body: makeCircle(point, (Math.random() *0.19) +0.01),
         animation: makeUnitAnimation(),
     };
     return result;
 };
 const updateUnit = (unit: Unit, step: number) =>
 {
-    unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step);
-    unit.body.y += accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step);
+    unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step /2000);
+    unit.body.y += accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step /2000);
     updateFloatAnimation(unit.animation.moveAnimation, step);
 };
 const updateLayer = (layer: Layer, step: number) =>
 {
-    if (sumAreas(layer) < 0.5)
+    if (sumAreas(layer) < 2.0)
     {
         layer.units.push
         (
             makeUnit
             (
-                {
-                    x: Math.random() * Data.width,
-                    y: Math.random() * Data.height,
-                }
+                // { x: Math.random() -0.5, y: Math.random() -0.5, }
+                { x: 0, y: 0, }
             )
         );
     }
@@ -186,8 +195,8 @@ const updateStretch = () =>
 {
     updateLayerStretch(Data.accent);
     updateLayerStretch(Data.main);
-    Data.width = window.innerWidth;
-    Data.height = window.innerHeight;
+    canvas.width = Data.width = window.innerWidth;
+    canvas.height = Data.height = window.innerHeight;
 };
 const updateData = (timestamp: number) =>
 {
@@ -200,82 +209,65 @@ const updateData = (timestamp: number) =>
     updateLayer(Data.main, step);
     Data.previousTimestamp = timestamp;
 };
-window.addEventListener
-(
-    "load",
-    () =>
+console.log("Window loaded.");
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const context = canvas.getContext("2d");
+if (context)
+{
+    const style = "regular" as keyof typeof config["coloring"];
+    const drawCircle = (circle: Circle, color: string) =>
     {
-        console.log("Window loaded.");
-        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-        const context = canvas.getContext("2d");
-        if (context)
+        const shortSide = Math.min(canvas.width, canvas.height);
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        context.beginPath();
+        context.arc((circle.x *shortSide) +centerX, (circle.y *shortSide) +centerY, circle.radius *shortSide, 0, Math.PI * 2);
+        context.fillStyle = color;
+        context.fill();
+        context.closePath();
+    };
+    const drawEye = (unit: Unit) =>
+    {
+        if (unit.eye)
         {
-            const updateWindowSize = () =>
-            {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            };
-            updateWindowSize();
-            window.addEventListener("resize", () => updateWindowSize());
-            window.addEventListener("orientationchange", () => updateWindowSize());
-            const style = "regular" as keyof typeof config["coloring"];
-            const drawCircle = (circle: Circle, color: string) =>
-            {
-                context.beginPath();
-                context.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
-                context.fillStyle = color;
-                context.fill();
-                context.closePath();
-            };
-            const drawEye = (eye: Unit["eye"]) =>
-            {
-                if (eye)
-                {
-                    drawCircle(eye.white, config.coloring[style].base);
-                    drawCircle(eye.iris, config.coloring[style].accent);
-                }
-            };
-            const draw = () =>
-            {
-                context.fillStyle = config.coloring[style].base;
-                context.fillRect(0, 0, canvas.width, canvas.height);
-                // const shortSide = Math.min(canvas.width, canvas.height);
-                // const centerX = canvas.width / 2;
-                // const centerY = canvas.height / 2;
-                // const radius = shortSide / 4;
-                // drawCircle({ x: centerX, y: centerY, radius }, config.coloring[style].main);
-                // drawCircle({ x: centerX, y: centerY, radius: radius *0.5}, config.coloring[style].base);
-                // drawCircle({ x: centerX, y: centerY, radius: radius *0.25}, config.coloring[style].accent);
-                Data.accent.units.forEach
-                (
-                    (unit) =>
-                    {
-                        drawCircle(unit.body, config.coloring[style].accent);
-                        drawEye(unit.eye);
-                    }
-                );
-                Data.main.units.forEach
-                (
-                    (unit) =>
-                    {
-                        drawCircle(unit.body, config.coloring[style].main);
-                        drawEye(unit.eye);
-                    }
-                );
-            };
-            const step = (timestamp: number) =>
-            {
-                updateData(timestamp);
-                draw();
-                window.requestAnimationFrame(step);
-            };
-            window.requestAnimationFrame(step);
+            drawCircle(makeCircle(addPoints(unit.body, unit.eye.white), unit.eye.white.radius), config.coloring[style].base);
+            drawCircle(makeCircle(addPoints(unit.body, unit.eye.iris), unit.eye.iris.radius), config.coloring[style].accent);
         }
-        else
-        {
-            console.error("Failed to get 2D context.");
-            return;
-        }
-        console.log("Canvas initialized.");
-    }
-);
+    };
+    const draw = () =>
+    {
+        context.fillStyle = config.coloring[style].base;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        Data.accent.units.forEach
+        (
+            (unit) =>
+            {
+                drawCircle(unit.body, config.coloring[style].accent);
+                drawEye(unit);
+            }
+        );
+        Data.main.units.forEach
+        (
+            (unit) =>
+            {
+                drawCircle(unit.body, config.coloring[style].main);
+                drawEye(unit);
+            }
+        );
+        //drawCircle({ x: 0, y: 0, radius: 0.25, }, config.coloring[style].main);
+        drawCircle({ x: 0, y: 0, radius: 0.125, }, config.coloring[style].base);
+        drawCircle({ x: 0, y: 0, radius: 0.0625, }, config.coloring[style].accent);
+    };
+    const step = (timestamp: number) =>
+    {
+        updateData(timestamp);
+        draw();
+        window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
+    console.log("Canvas initialized.");
+}
+else
+{
+    console.error("Failed to get 2D context.");
+}

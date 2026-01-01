@@ -11,13 +11,13 @@ __LICENSE__-->
 <head>
 <meta charset="utf-8">
 <title>__APPLICATION_TITLE__</title>
-<link id="favicon" rel="shortcut icon" href="./image/favicon.png">
+<!-- link id="favicon" rel="shortcut icon" href="./image/favicon.png" -->
 <link rel="canonical" href="__CANONICAL_URL__">
-<link rel="apple-touch-icon" href="./image/favicon.png">
+<!-- link rel="apple-touch-icon" href="./image/favicon.png" -->
 <meta name="theme-color" content="__THEME_COLOR__">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" lang="ja" content="__DESCRIPTION__">
-<link id="manifest" rel="manifest" href="web.manifest.json" />
+<!-- link id="manifest" rel="manifest" href="web.manifest.json" /-->
 <meta name="apple-mobile-web-app-title" content="__APPLICATION_TITLE__">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
