@@ -8,19 +8,13 @@
     {
         "regular": {
             "base": "#FFFFFF",
-            "main": "red",
-            "accent": "blue"
+            "main": "#E50012",
+            "accent": "#0068B6"
         },
         "monochrome": {
             "base": "#FFFFFF",
             "main": "#000000",
-            "accent": "#777777"
-        },
-        "rene":{
-            "base": "#FFFFFF",
-            "main": "yallow",
-            "accent": "#000000"
+            "accent": "#72716F"
         }
-
     }
 }

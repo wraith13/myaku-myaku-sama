@@ -1,5 +1,15 @@
+import { Fps } from "./fps";
 import config from "@resource/config.json";
-
+const fpsDiv = document.getElementById("fps");
+const pseudoGaussian = (samples: number = 6): number =>
+{
+    let total = 0;
+    for (let i = 0; i < samples; i++)
+    {
+        total += Math.random();
+    }
+    return total / samples;
+};
 interface Point
 {
     x: number;
@@ -65,14 +75,15 @@ interface Unit
 interface Layer
 {
     units: Unit[];
+    lastMadeAt: number
 };
 const Data =
 {
     previousTimestamp: 0,
     width: 0,
     height: 0,
-    accent: { units: [], } as Layer,
-    main: { units: [], } as Layer,
+    accent: { units: [], lastMadeAt: 0, } as Layer,
+    main: { units: [], lastMadeAt: 0, } as Layer,
 };
 const sumAreas = (layer: Layer) =>
     layer.units.reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
@@ -108,19 +119,22 @@ const updateFloatAnimation = (floatAnimation: FloatAnimation, step: number) =>
     updateAnimations(floatAnimation.x, step);
     updateAnimations(floatAnimation.y, step);
 };
-const makeAnimation = (scaleRate: number): Animation =>
+const makeAnimation = (scaleRate: number, phaseRate: number = Math.random()): Animation =>
 {
-    const phase = 500 +(Math.random() * 100000);
+    const period = 500 +(pseudoGaussian(4) * 200000);
     const result: Animation =
     {
-        period: phase *Math.random(),
-        phase,
-        scale: (0.05 + Math.random() * 0.1) *scaleRate,
+        period,
+        phase: period *phaseRate,
+        scale: (0.05 + (pseudoGaussian(4) * 0.1)) *scaleRate,
     };
     return result;
 };
 const makeUnitAnimation = (): UnitAnimation =>
 {
+    const shortSide = Math.min(window.innerWidth, window.innerHeight);
+    const xRatio = window.innerWidth / shortSide;
+    const yRatio = window.innerHeight / shortSide;
     const result: UnitAnimation =
     {
         velocity:
@@ -130,8 +144,8 @@ const makeUnitAnimation = (): UnitAnimation =>
         },
         moveAnimation:
         {
-            x: [ makeAnimation(1.0), makeAnimation(0.5), makeAnimation(0.25), makeAnimation(0.125), ],
-            y: [ makeAnimation(1.0), makeAnimation(0.5), makeAnimation(0.25), makeAnimation(0.125), ],
+            x: [ makeAnimation(1.0 *xRatio), makeAnimation(0.5 *xRatio), makeAnimation(0.25 *xRatio), makeAnimation(0.125 *xRatio), ],
+            y: [ makeAnimation(1.0 *yRatio), makeAnimation(0.5 *yRatio), makeAnimation(0.25 *yRatio), makeAnimation(0.125 *yRatio), ],
         },
         sizeAnimation: [ makeAnimation(1.0), ],
     };
@@ -141,52 +155,73 @@ const makeUnit = (point: Point): Unit =>
 {
     const result =
     {
-        body: makeCircle(point, (Math.random() *0.19) +0.01),
+        body: makeCircle(point, (Math.pow(pseudoGaussian(4), 2) *0.19) +0.01),
         animation: makeUnitAnimation(),
     };
     return result;
 };
 const updateUnit = (unit: Unit, step: number) =>
 {
-    unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step /2000);
-    unit.body.y += accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step /2000);
+    const rate = 0.0005;
+    unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step) *rate;
+    unit.body.y += accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step) *rate;
     updateFloatAnimation(unit.animation.moveAnimation, step);
 };
-const updateLayer = (layer: Layer, step: number) =>
+const updateLayer = (layer: Layer, timestamp: number, step: number) =>
 {
-    if (sumAreas(layer) < 2.0)
+    const makeUnitCooldown = 100;
+    if (makeUnitCooldown <= timestamp -layer.lastMadeAt)
     {
-        layer.units.push
-        (
-            makeUnit
+        const shortSide = Math.min(window.innerWidth, window.innerHeight);
+        const longSide = Math.max(window.innerWidth, window.innerHeight);
+        const longSideRatio = longSide / shortSide;
+        if (sumAreas(layer) < (1.5 *longSideRatio))
+        {
+            layer.units.push
             (
-                // { x: Math.random() -0.5, y: Math.random() -0.5, }
-                { x: 0, y: 0, }
-            )
-        );
+                makeUnit
+                (
+                    // { x: Math.random() -0.5, y: Math.random() -0.5, }
+                    { x: 0, y: 0, }
+                )
+            );
+            layer.lastMadeAt = timestamp;
+        }
     }
     layer.units.forEach((unit) => updateUnit(unit, step));
 };
-const updateCircleStretch = (circle: Circle) =>
+const updateXAnimationStretch = (animation: Animation, xScale: number) =>
 {
-    const xScale = window.innerWidth / Data.width;
-    const yScale = window.innerHeight / Data.height;
-    const radiusScale = Math.hypot(window.innerWidth, window.innerHeight) / Math.hypot(Data.width, Data.height);
+    animation.scale *= xScale;
+};
+const updateYAnimationStretch = (animation: Animation, yScale: number) =>
+{
+    animation.scale *= yScale;
+};
+const updateCircleStretch = (circle: Circle, xScale: number, yScale: number) =>
+{
+    const oldShortSide = Math.min(Data.width, Data.height);
+    const newShortSide = Math.min(window.innerWidth, window.innerHeight);
+    const radiusScale = newShortSide / oldShortSide;
     circle.x *= xScale;
     circle.y *= yScale;
     circle.radius *= radiusScale;
 };
 const updateLayerStretch = (layer: Layer) =>
 {
+    const xScale = window.innerWidth / Data.width;
+    const yScale = window.innerHeight / Data.height;
     layer.units.forEach
     (
         i =>
         {
-            updateCircleStretch(i.body);
+            updateCircleStretch(i.body, xScale, yScale);
+            i.animation.moveAnimation.x.forEach(a => updateXAnimationStretch(a, xScale));
+            i.animation.moveAnimation.y.forEach(a => updateYAnimationStretch(a, yScale));
             if (i.eye)
             {
-                updateCircleStretch(i.eye.white);
-                updateCircleStretch(i.eye.iris);
+                updateCircleStretch(i.eye.white, xScale, yScale);
+                updateCircleStretch(i.eye.iris, xScale, yScale);
             }
         }
     );
@@ -200,21 +235,21 @@ const updateStretch = () =>
 };
 const updateData = (timestamp: number) =>
 {
-    const step = 0 < Data.previousTimestamp ? (timestamp - Data.previousTimestamp): 0;
+    const step = 0 < Data.previousTimestamp ? Math.min(timestamp - Data.previousTimestamp, 500): 0;
     if (window.innerWidth !== Data.width || window.innerHeight !== Data.height)
     {
         updateStretch();
     }
-    updateLayer(Data.accent, step);
-    updateLayer(Data.main, step);
+    updateLayer(Data.accent, timestamp, step);
+    updateLayer(Data.main, timestamp, step);
     Data.previousTimestamp = timestamp;
 };
 console.log("Window loaded.");
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const context = canvas.getContext("2d");
+let style = "regular" as keyof typeof config["coloring"];
 if (context)
 {
-    const style = "regular" as keyof typeof config["coloring"];
     const drawCircle = (circle: Circle, color: string) =>
     {
         const shortSide = Math.min(canvas.width, canvas.height);
@@ -262,6 +297,11 @@ if (context)
     {
         updateData(timestamp);
         draw();
+        if (fpsDiv && fpsDiv.style.display !== "none")
+        {
+            Fps.step(timestamp);
+            fpsDiv.innerText = Fps.getText();
+        }
         window.requestAnimationFrame(step);
     };
     window.requestAnimationFrame(step);
@@ -271,3 +311,74 @@ else
 {
     console.error("Failed to get 2D context.");
 }
+if (document.fullscreenEnabled || (<any>document).webkitFullscreenEnabled)
+{
+    document.addEventListener
+    (
+        "keydown",
+        (event) =>
+        {
+            if ("f" === event.key.toLowerCase())
+            {
+                const elem = document.documentElement;
+                if (document.fullscreenEnabled)
+                {
+                    if ( ! document.fullscreenElement)
+                    {
+                        elem.requestFullscreen();
+                    }
+                    else
+                    {
+                        document.exitFullscreen();
+                    }
+                }
+                else
+                {
+                    if ((<any>document).webkitFullscreenEnabled)
+                    {
+                        if ( ! (<any>document).webkitFullscreenElement)
+                        {
+                            (<any>elem).webkitRequestFullscreen();
+                        }
+                        else
+                        {
+                            (<any>document).webkitExitFullscreen();
+                        }
+                    }
+                }
+            }
+        }
+    );
+}
+if (fpsDiv)
+{
+    document.addEventListener
+    (
+        "keydown",
+        (event) =>
+        {
+            if ("s" === event.key.toLowerCase())
+            {
+                if ("none" === fpsDiv.style.display)
+                {
+                    fpsDiv.style.display = "block";
+                }
+                else
+                {
+                    fpsDiv.style.display = "none";
+                }
+            }
+        }
+    );
+}
+document.addEventListener
+(
+    "click",
+    () =>
+    {
+        const keys = Object.keys(config.coloring) as (keyof typeof config["coloring"])[];
+        const currentIndex = keys.indexOf(style);
+        const nextIndex = (currentIndex + 1) %keys.length;
+        style = keys[nextIndex];
+    }
+);

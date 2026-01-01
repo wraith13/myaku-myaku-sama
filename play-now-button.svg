@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 640 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g>
+        <path d="M64,128C28.677,128 0,99.323 0,64C0,28.677 28.677,0 64,0L576,0C611.323,0 640,28.677 640,64C640,99.323 611.323,128 576,128L64,128Z" style="fill:rgb(40,167,69);"/>
+        <g transform="matrix(0.0976563,0,0,0.0976563,100,64)">
+            <g transform="matrix(1,0,0,1,-512,-512)">
+                <g transform="matrix(1,0,0,1,-20.52,-0.152764)">
+                    <path d="M277.128,192.306L277.129,192C277.294,169.198 295.857,150.737 318.698,150.737C326.626,150.737 334.038,152.961 340.345,156.819L893.467,476.149L893.46,476.161C906.034,483.312 914.523,496.833 914.523,512.321C914.523,529.423 904.173,544.126 889.4,550.504L340.335,867.492C339.741,867.855 339.138,868.203 338.526,868.537L336.016,869.985L335.929,869.834C330.678,872.232 324.842,873.568 318.697,873.568C295.755,873.568 277.128,854.942 277.128,832L277.128,192.306Z" style="fill:white;"/>
+                </g>
+            </g>
+        </g>
+        <g transform="matrix(0.706603,0,0,0.706603,50.1553,19.456)">
+            <g transform="matrix(111.684,0,0,111.684,713.715,100)">
+            </g>
+            <text x="180px" y="100px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:111.684px;fill:white;">Play Now!</text>
+        </g>
+    </g>
+</svg>
