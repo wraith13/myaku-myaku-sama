@@ -23,6 +23,10 @@ canvas
     position: fixed;
     inset: 0px;
 }
+body:not(.mousemove)
+{
+    cursor: none;
+}
 #fps
 {
     position: fixed;

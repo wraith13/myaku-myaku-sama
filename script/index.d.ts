@@ -29,4 +29,12 @@ declare module "script/fps" {
         export {};
     }
 }
-declare module "script/index" { }
+declare module "script/index" {
+    export class ToggleClassForWhileTimer {
+        timer: ReturnType<typeof setTimeout> | undefined;
+        constructor();
+        start(element: HTMLElement, token: string, span: number, onEnd?: () => unknown): void;
+        isInTimer: () => boolean;
+    }
+    export const mousemove: () => void;
+}

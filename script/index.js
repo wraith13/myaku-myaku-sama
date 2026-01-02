@@ -137,6 +137,7 @@ define("resource/config", [], {
 define("script/index", ["require", "exports", "script/fps", "resource/config"], function (require, exports, fps_1, config_json_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    exports.mousemove = exports.ToggleClassForWhileTimer = void 0;
     config_json_1 = __importDefault(config_json_1);
     var fpsDiv = document.getElementById("fps");
     var pseudoGaussian = function (samples) {
@@ -307,7 +308,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                 layer.lastMadeAt = timestamp;
             }
         }
-        else if (1.0 < areaRatio) {
+        else if (1.0 < areaRatio || (0.5 < areaRatio && layer.lastRemovedAt + 3000 < timestamp)) {
             var removeUnitCooldown = 1000 / areaRatio;
             if (removeUnitCooldown <= timestamp - layer.lastRemovedAt) {
                 var target = layer.units
@@ -469,6 +470,39 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         var currentIndex = keys.indexOf(style);
         var nextIndex = (currentIndex + 1) % keys.length;
         style = keys[nextIndex];
+    });
+    var ToggleClassForWhileTimer = /** @class */ (function () {
+        function ToggleClassForWhileTimer() {
+            var _this = this;
+            this.isInTimer = function () { return undefined !== _this.timer; };
+            this.timer = undefined;
+        }
+        ToggleClassForWhileTimer.prototype.start = function (element, token, span, onEnd) {
+            var _this = this;
+            if (this.isInTimer()) {
+                clearTimeout(this.timer);
+            }
+            element.classList.toggle(token, true);
+            this.timer = setTimeout(function () {
+                // if (config.log["ToggleClassForWhileTimer.Timeout"])
+                // {
+                //     console.log("⌛️ ToggleClassForWhileTimer.Timeout", element, token, span);
+                // }
+                _this.timer = undefined;
+                element.classList.toggle(token, false);
+                onEnd === null || onEnd === void 0 ? void 0 : onEnd();
+            }, span);
+        };
+        return ToggleClassForWhileTimer;
+    }());
+    exports.ToggleClassForWhileTimer = ToggleClassForWhileTimer;
+    var mouseMoveTimer = new ToggleClassForWhileTimer();
+    var mousemove = function () {
+        return mouseMoveTimer.start(document.body, "mousemove", 3000);
+    };
+    exports.mousemove = mousemove;
+    document.addEventListener("mousemove", function (_event) {
+        (0, exports.mousemove)();
     });
 });
 //# sourceMappingURL=index.js.map

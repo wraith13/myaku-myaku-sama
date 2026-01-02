@@ -245,7 +245,7 @@ const updateLayer = (layer: Layer, timestamp: number, step: number) =>
         }
     }
     else
-    if (1.0 < areaRatio)
+    if (1.0 < areaRatio || (0.5 < areaRatio && layer.lastRemovedAt +3000 < timestamp))
     {
         const removeUnitCooldown = 1000 /areaRatio;
         if (removeUnitCooldown <= timestamp -layer.lastRemovedAt)
@@ -471,5 +471,47 @@ document.addEventListener
         const currentIndex = keys.indexOf(style);
         const nextIndex = (currentIndex + 1) %keys.length;
         style = keys[nextIndex];
+    }
+);
+export class ToggleClassForWhileTimer
+{
+    timer: ReturnType<typeof setTimeout> | undefined;
+    constructor()
+    {
+        this.timer = undefined;
+    }
+    start(element: HTMLElement, token: string, span: number, onEnd?: () => unknown)
+    {
+        if (this.isInTimer())
+        {
+            clearTimeout(this.timer);
+        }
+        element.classList.toggle(token, true);
+        this.timer = setTimeout
+        (
+            () =>
+            {
+                // if (config.log["ToggleClassForWhileTimer.Timeout"])
+                // {
+                //     console.log("⌛️ ToggleClassForWhileTimer.Timeout", element, token, span);
+                // }
+                this.timer = undefined;
+                element.classList.toggle(token, false);
+                onEnd?.();
+            },
+            span
+        );
+    }
+    isInTimer = () => undefined !== this.timer;
+}
+const mouseMoveTimer = new ToggleClassForWhileTimer();
+export const mousemove = () =>
+    mouseMoveTimer.start(document.body, "mousemove", 3000);
+document.addEventListener
+(
+    "mousemove",
+    (_event) =>
+    {
+        mousemove();
     }
 );
