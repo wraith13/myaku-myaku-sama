@@ -140,9 +140,11 @@ const makeAnimation = (scaleRate: number, phaseRate: number = Math.random()): An
 };
 const makeUnitAnimation = (): UnitAnimation =>
 {
-    const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
-    const xRatio = window.innerWidth / shortSide;
-    const yRatio = window.innerHeight / shortSide;
+    // const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
+    // const xRatio = window.innerWidth / shortSide;
+    // const yRatio = window.innerHeight / shortSide;
+    const xRatio = 1.0;
+    const yRatio = 1.0;
     const result: UnitAnimation =
     {
         moveAnimation:
@@ -191,7 +193,7 @@ const makeUnit = (point: Point): Unit =>
         scale: body.radius,
         animation: makeUnitAnimation(),
     };
-    updateUnit(result, Math.random() *10000);
+    //updateUnit(result, Math.random() *10000);
     result.animation.appearAnimation = { period: 3000, phase: 0, scale: result.scale, };
     return result;
 };
@@ -238,7 +240,7 @@ const updateLayer = (layer: Layer, timestamp: number, step: number) =>
         const makeUnitCooldown = 1000 *areaRatio;
         if (makeUnitCooldown <= timestamp -layer.lastMadeAt)
         {
-            layer.units.push(makeUnit({ x: 0, y: 0, }));
+            layer.units.push(makeUnit({ x: (pseudoGaussian(1) -0.5) *window.innerWidth/ shortSide, y: (pseudoGaussian(1) -0.5) *window.innerHeight /shortSide, }));
             layer.lastMadeAt = timestamp;
         }
     }

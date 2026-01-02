@@ -222,9 +222,11 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         return result;
     };
     var makeUnitAnimation = function () {
-        var shortSide = Math.min(window.innerWidth, window.innerHeight) * 3.0;
-        var xRatio = window.innerWidth / shortSide;
-        var yRatio = window.innerHeight / shortSide;
+        // const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
+        // const xRatio = window.innerWidth / shortSide;
+        // const yRatio = window.innerHeight / shortSide;
+        var xRatio = 1.0;
+        var yRatio = 1.0;
         var result = {
             moveAnimation: {
                 x: [
@@ -262,7 +264,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
             scale: body.radius,
             animation: makeUnitAnimation(),
         };
-        updateUnit(result, Math.random() * 10000);
+        //updateUnit(result, Math.random() *10000);
         result.animation.appearAnimation = { period: 3000, phase: 0, scale: result.scale, };
         return result;
     };
@@ -301,7 +303,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         if (areaRatio < 1.0) {
             var makeUnitCooldown = 1000 * areaRatio;
             if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
-                layer.units.push(makeUnit({ x: 0, y: 0, }));
+                layer.units.push(makeUnit({ x: (pseudoGaussian(1) - 0.5) * window.innerWidth / shortSide, y: (pseudoGaussian(1) - 0.5) * window.innerHeight / shortSide, }));
                 layer.lastMadeAt = timestamp;
             }
         }
