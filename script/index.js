@@ -158,7 +158,6 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
     ;
     ;
     ;
-    ;
     var makeCircle = function (point, radius) {
         return ({
             x: point.x,
@@ -172,8 +171,8 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         previousTimestamp: 0,
         width: 0,
         height: 0,
-        accent: { units: [], lastMadeAt: 0, },
-        main: { units: [], lastMadeAt: 0, },
+        accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
+        main: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
     };
     var sumAreas = function (layer) {
         return layer.units.reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
@@ -192,6 +191,12 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
     };
     var accumulateAnimationSineIntegral = function (animations, step) {
         return animations.reduce(function (sum, animation) { return sum + calculateAnimationSineIntegral(animation, step); }, 0);
+    };
+    var accumulateAnimationSize = function (animations, step) {
+        return animations.reduce(function (product, animation) {
+            var phase = animation.phase + step;
+            return product + Math.pow(Math.sin((phase / animation.period) * Math.PI), 2) * 0.5 * animation.scale;
+        }, 0.0);
     };
     var updateAnimation = function (animation, step) {
         animation.phase += step;
@@ -217,14 +222,10 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         return result;
     };
     var makeUnitAnimation = function () {
-        var shortSide = Math.min(window.innerWidth, window.innerHeight) * 2.0;
+        var shortSide = Math.min(window.innerWidth, window.innerHeight) * 3.0;
         var xRatio = window.innerWidth / shortSide;
         var yRatio = window.innerHeight / shortSide;
         var result = {
-            velocity: {
-                x: 0,
-                y: 0,
-            },
             moveAnimation: {
                 x: [
                     makeAnimation(1.0 * xRatio),
@@ -239,40 +240,93 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                     makeAnimation(0.125 * yRatio),
                 ],
             },
-            sizeAnimation: [makeAnimation(1.0),],
+            sizeAnimation: [
+                makeAnimation(1.0),
+                makeAnimation(1.0),
+                makeAnimation(1.0),
+                makeAnimation(1.0),
+                makeAnimation(1.0),
+            ],
         };
+        result.sizeAnimation.forEach(function (i) {
+            i.period += 250;
+            //i.period *= 0.5;
+            //i.phase *= 0.5;
+        });
         return result;
     };
     var makeUnit = function (point) {
+        var body = makeCircle(point, (Math.pow(pseudoGaussian(4), 2) * 0.19) + 0.01);
         var result = {
-            body: makeCircle(point, (Math.pow(pseudoGaussian(4), 2) * 0.19) + 0.01),
+            body: body,
+            scale: body.radius,
             animation: makeUnitAnimation(),
         };
+        updateUnit(result, Math.random() * 10000);
+        result.animation.appearAnimation = { period: 3000, phase: 0, scale: result.scale, };
         return result;
     };
     var updateUnit = function (unit, step) {
+        var _a;
         var rate = 0.0005;
         unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step) * rate;
         unit.body.y += accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step) * rate;
+        var transion = (_a = unit.animation.appearAnimation) !== null && _a !== void 0 ? _a : unit.animation.vanishAnimation;
+        if (transion) {
+            transion.phase += step;
+            if (unit.animation.vanishAnimation) {
+                unit.body.radius = transion.scale * (1.0 - (transion.phase / transion.period));
+                if (transion.period <= transion.phase) {
+                    unit.animation.vanishAnimation = undefined;
+                }
+            }
+            else {
+                unit.body.radius = transion.scale * (transion.phase / transion.period);
+                if (transion.period <= transion.phase) {
+                    unit.animation.appearAnimation = undefined;
+                }
+            }
+        }
+        var scale = transion ? unit.body.radius : unit.scale;
+        unit.body.radius = scale * (1 + (accumulateAnimationSize(unit.animation.sizeAnimation, step) * 2.0));
         updateFloatAnimation(unit.animation.moveAnimation, step);
+        updateAnimations(unit.animation.sizeAnimation, step);
     };
     var updateLayer = function (layer, timestamp, step) {
         var shortSide = Math.min(window.innerWidth, window.innerHeight);
         var longSide = Math.max(window.innerWidth, window.innerHeight);
-        if (0 < shortSide) {
-            var longSideRatio = longSide / shortSide;
-            var areaRatio = sumAreas(layer) / (longSideRatio * 1.5);
-            if (areaRatio < 1.0) {
-                var makeUnitCooldown = 5000 * areaRatio;
-                if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
-                    layer.units.push(makeUnit(
-                    // { x: Math.random() -0.5, y: Math.random() -0.5, }
-                    { x: 0, y: 0, }));
-                    layer.lastMadeAt = timestamp;
+        var volume = sumAreas(layer);
+        var longSideRatio = 0 < shortSide ? longSide / shortSide : 0;
+        var areaRatio = volume / (longSideRatio * 2.0);
+        if (areaRatio < 1.0) {
+            var makeUnitCooldown = 1000 * areaRatio;
+            if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
+                layer.units.push(makeUnit({ x: 0, y: 0, }));
+                layer.lastMadeAt = timestamp;
+            }
+        }
+        else if (1.0 < areaRatio) {
+            var removeUnitCooldown = 1000 / areaRatio;
+            if (removeUnitCooldown <= timestamp - layer.lastRemovedAt) {
+                var target = layer.units
+                    .filter(function (unit) { return undefined === unit.animation.vanishAnimation && undefined === unit.animation.vanishAnimation; })
+                //.sort(Comparer.make([a => -Math.hypot(a.body.x, a.body.y), a => -a.body.radius]))[0];
+                //.sort(Comparer.make(a => -a.body.radius))[0];
+                [0];
+                if (target) {
+                    target.animation.vanishAnimation = { period: 1500, phase: 0, scale: target.scale, };
+                    layer.lastRemovedAt = timestamp;
                 }
             }
         }
         layer.units.forEach(function (unit) { return updateUnit(unit, step); });
+        var gabages = layer.units.filter(function (unit) { return unit.body.radius <= 0; });
+        gabages.forEach(function (garbage) {
+            var index = layer.units.indexOf(garbage);
+            if (0 <= index) {
+                layer.units.splice(index, 1);
+            }
+        });
     };
     var updateXAnimationStretch = function (animation, xScale) {
         animation.scale *= xScale;
@@ -281,9 +335,9 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         animation.scale *= yScale;
     };
     var updateCircleStretch = function (circle, xScale, yScale) {
-        var oldShortSide = Math.min(Data.width, Data.height);
-        var newShortSide = Math.min(window.innerWidth, window.innerHeight);
-        var radiusScale = newShortSide / oldShortSide;
+        var radiusScale = Data.width <= Data.height ?
+            window.innerWidth / Data.width :
+            window.innerHeight / Data.height;
         circle.x *= xScale;
         circle.y *= yScale;
         circle.radius *= radiusScale;
@@ -322,14 +376,16 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
     var style = "regular";
     if (context) {
         var drawCircle_1 = function (circle, color) {
-            var shortSide = Math.min(canvas.width, canvas.height);
-            var centerX = canvas.width / 2;
-            var centerY = canvas.height / 2;
-            context.beginPath();
-            context.arc((circle.x * shortSide) + centerX, (circle.y * shortSide) + centerY, circle.radius * shortSide, 0, Math.PI * 2);
-            context.fillStyle = color;
-            context.fill();
-            context.closePath();
+            if (0 <= circle.radius) {
+                var shortSide = Math.min(canvas.width, canvas.height);
+                var centerX = canvas.width / 2;
+                var centerY = canvas.height / 2;
+                context.beginPath();
+                context.arc((circle.x * shortSide) + centerX, (circle.y * shortSide) + centerY, circle.radius * shortSide, 0, Math.PI * 2);
+                context.fillStyle = color;
+                context.fill();
+                context.closePath();
+            }
         };
         var drawEye_1 = function (unit) {
             if (unit.eye) {

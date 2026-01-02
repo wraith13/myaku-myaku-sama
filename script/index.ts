@@ -1,3 +1,4 @@
+//import { Comparer } from "./comparer";
 import { Fps } from "./fps";
 import config from "@resource/config.json";
 const fpsDiv = document.getElementById("fps");
@@ -20,11 +21,6 @@ const addPoints = (a: Point, b: Point): Point =>
     x: a.x + b.x,
     y: a.y + b.y,
 });
-interface Inertia
-{
-    x: number;
-    y: number;
-};
 interface Animation
 {
     period: number;
@@ -38,18 +34,18 @@ interface FloatAnimation
 };
 interface UnitAnimation
 {
-    velocity: Inertia;
     moveAnimation: FloatAnimation;
     sizeAnimation: Animation[];
+    appearAnimation?: Animation;
+    vanishAnimation?: Animation;
 };
 //type animationMode = "gaze" | "float";
 interface EyeAnimation
 {
     //animationMode: animationMode;
-    irisVelocity: Inertia;
     moveAnimation: FloatAnimation[];
-    appearAnimation: Animation;
-    vanishAnimation: Animation;
+    appearAnimation?: Animation;
+    vanishAnimation?: Animation;
 };
 interface Circle extends Point
 {
@@ -64,6 +60,7 @@ const makeCircle = (point: Point, radius: number): Circle =>
 interface Unit
 {
     body: Circle;
+    scale: number;
     animation: UnitAnimation;
     eye?:
     {
@@ -75,15 +72,16 @@ interface Unit
 interface Layer
 {
     units: Unit[];
-    lastMadeAt: number
+    lastMadeAt: number;
+    lastRemovedAt: number;
 };
 const Data =
 {
     previousTimestamp: 0,
     width: 0,
     height: 0,
-    accent: { units: [], lastMadeAt: 0, } as Layer,
-    main: { units: [], lastMadeAt: 0, } as Layer,
+    accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, } as Layer,
+    main: { units: [], lastMadeAt: 0, lastRemovedAt: 0, } as Layer,
 };
 const sumAreas = (layer: Layer) =>
     layer.units.reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
@@ -104,6 +102,16 @@ const calculateAnimationSineIntegral = (animation: Animation, step: number): num
 };
 const accumulateAnimationSineIntegral = (animations: Animation[], step: number): number =>
     animations.reduce((sum, animation) => sum + calculateAnimationSineIntegral(animation, step), 0);
+const accumulateAnimationSize = (animations: Animation[], step: number): number =>
+    animations.reduce
+    (
+        (product, animation) =>
+        {
+            const phase = animation.phase + step;
+            return product +Math.pow(Math.sin((phase / animation.period) * Math.PI), 2) *0.5 *animation.scale;
+        },
+        0.0
+    );
 const updateAnimation = (animation: Animation, step: number) =>
 {
     animation.phase += step;
@@ -132,16 +140,11 @@ const makeAnimation = (scaleRate: number, phaseRate: number = Math.random()): An
 };
 const makeUnitAnimation = (): UnitAnimation =>
 {
-    const shortSide = Math.min(window.innerWidth, window.innerHeight) *2.0;
+    const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
     const xRatio = window.innerWidth / shortSide;
     const yRatio = window.innerHeight / shortSide;
     const result: UnitAnimation =
     {
-        velocity:
-        {
-            x: 0,
-            y: 0,
-        },
         moveAnimation:
         {
             x:
@@ -159,17 +162,37 @@ const makeUnitAnimation = (): UnitAnimation =>
                 makeAnimation(0.125 *yRatio),
             ],
         },
-        sizeAnimation: [ makeAnimation(1.0), ],
+        sizeAnimation:
+        [
+            makeAnimation(1.0),
+            makeAnimation(1.0),
+            makeAnimation(1.0),
+            makeAnimation(1.0),
+            makeAnimation(1.0),
+        ],
     };
+    result.sizeAnimation.forEach
+    (
+        i =>
+        {
+            i.period += 250;
+            //i.period *= 0.5;
+            //i.phase *= 0.5;
+        }
+    );
     return result;
 };
 const makeUnit = (point: Point): Unit =>
 {
+    const body = makeCircle(point, (Math.pow(pseudoGaussian(4), 2) *0.19) +0.01);
     const result =
     {
-        body: makeCircle(point, (Math.pow(pseudoGaussian(4), 2) *0.19) +0.01),
+        body,
+        scale: body.radius,
         animation: makeUnitAnimation(),
     };
+    updateUnit(result, Math.random() *10000);
+    result.animation.appearAnimation = { period: 3000, phase: 0, scale: result.scale, };
     return result;
 };
 const updateUnit = (unit: Unit, step: number) =>
@@ -177,34 +200,79 @@ const updateUnit = (unit: Unit, step: number) =>
     const rate = 0.0005;
     unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step) *rate;
     unit.body.y += accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step) *rate;
+    const transion = unit.animation.appearAnimation ?? unit.animation.vanishAnimation;
+    if (transion)
+    {
+        transion.phase += step;
+        if (unit.animation.vanishAnimation)
+        {
+            unit.body.radius = transion.scale *(1.0 - (transion.phase /transion.period));
+            if (transion.period <= transion.phase)
+            {
+                unit.animation.vanishAnimation = undefined;
+            }
+        }
+        else
+        {
+            unit.body.radius = transion.scale *(transion.phase /transion.period);
+            if (transion.period <= transion.phase)
+            {
+                unit.animation.appearAnimation = undefined;
+            }
+        }
+    }
+    const scale = transion ? unit.body.radius: unit.scale;
+    unit.body.radius = scale *(1 +(accumulateAnimationSize(unit.animation.sizeAnimation, step) *2.0));
     updateFloatAnimation(unit.animation.moveAnimation, step);
+    updateAnimations(unit.animation.sizeAnimation, step);
 };
 const updateLayer = (layer: Layer, timestamp: number, step: number) =>
 {
     const shortSide = Math.min(window.innerWidth, window.innerHeight);
     const longSide = Math.max(window.innerWidth, window.innerHeight);
-    if (0 < shortSide)
+    const volume = sumAreas(layer);
+    const longSideRatio = 0 < shortSide ? longSide / shortSide: 0;
+    const areaRatio = volume /(longSideRatio *2.0);
+    if (areaRatio < 1.0)
     {
-        const longSideRatio = longSide / shortSide;
-        const areaRatio = sumAreas(layer) /(longSideRatio *1.5);
-        if (areaRatio < 1.0)
+        const makeUnitCooldown = 1000 *areaRatio;
+        if (makeUnitCooldown <= timestamp -layer.lastMadeAt)
         {
-            const makeUnitCooldown = 5000 *areaRatio;
-            if (makeUnitCooldown <= timestamp -layer.lastMadeAt)
+            layer.units.push(makeUnit({ x: 0, y: 0, }));
+            layer.lastMadeAt = timestamp;
+        }
+    }
+    else
+    if (1.0 < areaRatio)
+    {
+        const removeUnitCooldown = 1000 /areaRatio;
+        if (removeUnitCooldown <= timestamp -layer.lastRemovedAt)
+        {
+            const target = layer.units
+                .filter((unit) => undefined === unit.animation.vanishAnimation && undefined === unit.animation.vanishAnimation)
+                //.sort(Comparer.make([a => -Math.hypot(a.body.x, a.body.y), a => -a.body.radius]))[0];
+                //.sort(Comparer.make(a => -a.body.radius))[0];
+                [0];
+            if (target)
             {
-                layer.units.push
-                (
-                    makeUnit
-                    (
-                        // { x: Math.random() -0.5, y: Math.random() -0.5, }
-                        { x: 0, y: 0, }
-                    )
-                );
-                layer.lastMadeAt = timestamp;
+                target.animation.vanishAnimation = { period: 1500, phase: 0, scale: target.scale, };
+                layer.lastRemovedAt = timestamp;
             }
         }
     }
     layer.units.forEach((unit) => updateUnit(unit, step));
+    const gabages = layer.units.filter((unit) => unit.body.radius <= 0);
+    gabages.forEach
+    (
+        (garbage) =>
+        {
+            const index = layer.units.indexOf(garbage);
+            if (0 <= index)
+            {
+                layer.units.splice(index, 1);
+            }
+        }
+    );
 };
 const updateXAnimationStretch = (animation: Animation, xScale: number) =>
 {
@@ -216,9 +284,9 @@ const updateYAnimationStretch = (animation: Animation, yScale: number) =>
 };
 const updateCircleStretch = (circle: Circle, xScale: number, yScale: number) =>
 {
-    const oldShortSide = Math.min(Data.width, Data.height);
-    const newShortSide = Math.min(window.innerWidth, window.innerHeight);
-    const radiusScale = newShortSide / oldShortSide;
+    const radiusScale = Data.width <= Data.height ?
+        window.innerWidth / Data.width:
+        window.innerHeight / Data.height;
     circle.x *= xScale;
     circle.y *= yScale;
     circle.radius *= radiusScale;
@@ -268,14 +336,17 @@ if (context)
 {
     const drawCircle = (circle: Circle, color: string) =>
     {
-        const shortSide = Math.min(canvas.width, canvas.height);
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        context.beginPath();
-        context.arc((circle.x *shortSide) +centerX, (circle.y *shortSide) +centerY, circle.radius *shortSide, 0, Math.PI * 2);
-        context.fillStyle = color;
-        context.fill();
-        context.closePath();
+        if (0 <= circle.radius)
+        {
+            const shortSide = Math.min(canvas.width, canvas.height);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            context.beginPath();
+            context.arc((circle.x *shortSide) +centerX, (circle.y *shortSide) +centerY, circle.radius *shortSide, 0, Math.PI * 2);
+            context.fillStyle = color;
+            context.fill();
+            context.closePath();
+        }
     };
     const drawEye = (unit: Unit) =>
     {
