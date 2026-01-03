@@ -127,16 +127,12 @@ const updateFloatAnimation = (floatAnimation: FloatAnimation, step: number) =>
     updateAnimations(floatAnimation.x, step);
     updateAnimations(floatAnimation.y, step);
 };
-const makeAnimation = (scaleRate: number, phaseRate: number = Math.random()): Animation =>
+const makeAnimation = (specific: { period: { base: number, pseudoGaussian: number, range: number }, scale: { base: number, pseudoGaussian: number, range: number } }, scaleRate: number): Animation =>
 {
-    const period = 500 +(Math.pow(pseudoGaussian(1), 2) * 300000);
-    const result: Animation =
-    {
-        period,
-        phase: period *phaseRate,
-        scale: (0.05 + (pseudoGaussian(4) * 0.1)) *scaleRate,
-    };
-    return result;
+    const period = specific.period.base +(pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
+    const phase = period *Math.random();
+    const scale = (specific.scale.base +(pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) *scaleRate;
+    return { phase, period, scale, };
 };
 const makeUnitAnimation = (): UnitAnimation =>
 {
@@ -149,39 +145,12 @@ const makeUnitAnimation = (): UnitAnimation =>
     {
         moveAnimation:
         {
-            x:
-            [
-                makeAnimation(1.0 *xRatio),
-                makeAnimation(0.5 *xRatio),
-                makeAnimation(0.25 *xRatio),
-                makeAnimation(0.125 *xRatio),
-            ],
-            y:
-            [
-                makeAnimation(1.0 *yRatio),
-                makeAnimation(0.5 *yRatio),
-                makeAnimation(0.25 *yRatio),
-                makeAnimation(0.125 *yRatio),
-            ],
+            x: config.Layer.unit.moveAnimation.elements.map(i => makeAnimation(config.Layer.unit.moveAnimation, i *xRatio)),
+            y: config.Layer.unit.moveAnimation.elements.map(i => makeAnimation(config.Layer.unit.moveAnimation, i *yRatio)),
         },
         sizeAnimation:
-        [
-            makeAnimation(1.0),
-            makeAnimation(1.0),
-            makeAnimation(1.0),
-            makeAnimation(1.0),
-            makeAnimation(1.0),
-        ],
+            config.Layer.unit.sizeAnimation.elements.map(i => makeAnimation(config.Layer.unit.sizeAnimation, i)),
     };
-    result.sizeAnimation.forEach
-    (
-        i =>
-        {
-            i.period += 250;
-            //i.period *= 0.5;
-            //i.phase *= 0.5;
-        }
-    );
     return result;
 };
 const makeUnit = (point: Point): Unit =>
@@ -194,7 +163,12 @@ const makeUnit = (point: Point): Unit =>
         animation: makeUnitAnimation(),
     };
     //updateUnit(result, Math.random() *10000);
-    result.animation.appearAnimation = { period: 3000, phase: 0, scale: result.scale, };
+    result.animation.appearAnimation =
+    {
+        period: config.Layer.unit.appearAnimation.period,
+        phase: 0,
+        scale: result.scale,
+    };
     return result;
 };
 const updateUnit = (unit: Unit, step: number) =>
@@ -257,7 +231,12 @@ const updateLayer = (layer: Layer, timestamp: number, step: number) =>
                 [0];
             if (target)
             {
-                target.animation.vanishAnimation = { period: 1500, phase: 0, scale: target.scale, };
+                target.animation.vanishAnimation =
+                {
+                    period: config.Layer.unit.vanishAnimation.period,
+                    phase: 0,
+                    scale: target.scale,
+                };
                 layer.lastRemovedAt = timestamp;
             }
         }

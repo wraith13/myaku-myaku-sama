@@ -132,6 +132,53 @@ define("resource/config", [], {
             "main": "#000000",
             "accent": "#72716F"
         }
+    },
+    "Layer": {
+        "unit": {
+            "moveAnimation": {
+                "period": {
+                    "base": 500,
+                    "pseudoGaussian": 2,
+                    "range": 300000
+                },
+                "scale": {
+                    "base": 0.05,
+                    "pseudoGaussian": 4,
+                    "range": 0.1
+                },
+                "elements": [
+                    1.0,
+                    0.5,
+                    0.25,
+                    0.125
+                ]
+            },
+            "sizeAnimation": {
+                "period": {
+                    "base": 750,
+                    "pseudoGaussian": 2,
+                    "range": 300000
+                },
+                "scale": {
+                    "base": 0.05,
+                    "pseudoGaussian": 4,
+                    "range": 0.1
+                },
+                "elements": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "appearAnimation": {
+                "period": 3000
+            },
+            "vanishAnimation": {
+                "period": 1500
+            }
+        }
     }
 });
 define("script/index", ["require", "exports", "script/fps", "resource/config"], function (require, exports, fps_1, config_json_1) {
@@ -212,15 +259,11 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         updateAnimations(floatAnimation.x, step);
         updateAnimations(floatAnimation.y, step);
     };
-    var makeAnimation = function (scaleRate, phaseRate) {
-        if (phaseRate === void 0) { phaseRate = Math.random(); }
-        var period = 500 + (Math.pow(pseudoGaussian(1), 2) * 300000);
-        var result = {
-            period: period,
-            phase: period * phaseRate,
-            scale: (0.05 + (pseudoGaussian(4) * 0.1)) * scaleRate,
-        };
-        return result;
+    var makeAnimation = function (specific, scaleRate) {
+        var period = specific.period.base + (pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
+        var phase = period * Math.random();
+        var scale = (specific.scale.base + (pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) * scaleRate;
+        return { phase: phase, period: period, scale: scale, };
     };
     var makeUnitAnimation = function () {
         // const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
@@ -230,32 +273,11 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         var yRatio = 1.0;
         var result = {
             moveAnimation: {
-                x: [
-                    makeAnimation(1.0 * xRatio),
-                    makeAnimation(0.5 * xRatio),
-                    makeAnimation(0.25 * xRatio),
-                    makeAnimation(0.125 * xRatio),
-                ],
-                y: [
-                    makeAnimation(1.0 * yRatio),
-                    makeAnimation(0.5 * yRatio),
-                    makeAnimation(0.25 * yRatio),
-                    makeAnimation(0.125 * yRatio),
-                ],
+                x: config_json_1.default.Layer.unit.moveAnimation.elements.map(function (i) { return makeAnimation(config_json_1.default.Layer.unit.moveAnimation, i * xRatio); }),
+                y: config_json_1.default.Layer.unit.moveAnimation.elements.map(function (i) { return makeAnimation(config_json_1.default.Layer.unit.moveAnimation, i * yRatio); }),
             },
-            sizeAnimation: [
-                makeAnimation(1.0),
-                makeAnimation(1.0),
-                makeAnimation(1.0),
-                makeAnimation(1.0),
-                makeAnimation(1.0),
-            ],
+            sizeAnimation: config_json_1.default.Layer.unit.sizeAnimation.elements.map(function (i) { return makeAnimation(config_json_1.default.Layer.unit.sizeAnimation, i); }),
         };
-        result.sizeAnimation.forEach(function (i) {
-            i.period += 250;
-            //i.period *= 0.5;
-            //i.phase *= 0.5;
-        });
         return result;
     };
     var makeUnit = function (point) {
@@ -266,7 +288,12 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
             animation: makeUnitAnimation(),
         };
         //updateUnit(result, Math.random() *10000);
-        result.animation.appearAnimation = { period: 3000, phase: 0, scale: result.scale, };
+        result.animation.appearAnimation =
+            {
+                period: config_json_1.default.Layer.unit.appearAnimation.period,
+                phase: 0,
+                scale: result.scale,
+            };
         return result;
     };
     var updateUnit = function (unit, step) {
@@ -317,7 +344,12 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                 //.sort(Comparer.make(a => -a.body.radius))[0];
                 [0];
                 if (target) {
-                    target.animation.vanishAnimation = { period: 1500, phase: 0, scale: target.scale, };
+                    target.animation.vanishAnimation =
+                        {
+                            period: config_json_1.default.Layer.unit.vanishAnimation.period,
+                            phase: 0,
+                            scale: target.scale,
+                        };
                     layer.lastRemovedAt = timestamp;
                 }
             }

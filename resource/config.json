@@ -16,5 +16,62 @@
             "main": "#000000",
             "accent": "#72716F"
         }
+    },
+    "Layer":
+    {
+        "unit":
+        {
+            "moveAnimation":
+            {
+                "period":
+                {
+                    "base": 500,
+                    "pseudoGaussian": 2,
+                    "range": 300000
+                },
+                "scale":
+                {
+                    "base": 0.05,
+                    "pseudoGaussian": 4,
+                    "range": 0.1
+                },
+                "elements": [
+                    1.0,
+                    0.5,
+                    0.25,
+                    0.125
+                ]
+            },
+            "sizeAnimation":
+            {
+                "period":
+                {
+                    "base": 750,
+                    "pseudoGaussian": 2,
+                    "range": 300000
+                },
+                "scale":
+                {
+                    "base": 0.05,
+                    "pseudoGaussian": 4,
+                    "range": 0.1
+                },
+                "elements": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "appearAnimation":
+            {
+                "period": 3000
+            },
+            "vanishAnimation":
+            {
+                "period": 1500
+            }
+        }
     }
 }
