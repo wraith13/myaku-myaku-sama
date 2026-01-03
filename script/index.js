@@ -409,45 +409,389 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
     var style = "regular";
-    if (context) {
-        var drawCircle_1 = function (circle, color) {
-            if (0 <= circle.radius) {
-                var shortSide = Math.min(canvas.width, canvas.height);
-                var centerX = canvas.width / 2;
-                var centerY = canvas.height / 2;
+    var fusionThreshold = 1; // 融合閾値 (r1 + r2) * this
+    var useFusion = false; // トグル: trueで融合描画、falseで個別円
+    var getTangentPoints = function (c1, c2) {
+        var dx = c2.x - c1.x;
+        var dy = c2.y - c1.y;
+        var dist = Math.hypot(dx, dy);
+        var sumR = c1.radius + c2.radius;
+        if (dist > sumR + (Math.min(c1.radius, c2.radius) * fusionThreshold) || dist < Math.abs(c1.radius - c2.radius))
+            return null; // 遠すぎ/重なりすぎ
+        //const d = Math.sqrt(dist ** 2 - (c1.radius - c2.radius) ** 2);  // タンジェント長
+        var angle = Math.atan2(dy, dx);
+        // const theta = Math.acos(c1.radius - c2.radius / dist);
+        var theta1 = Math.atan2(c2.radius, c1.radius);
+        var theta2 = Math.atan2(c1.radius, c2.radius);
+        // 左タンジェント (tp1 on c1, tp3 on c2)
+        var tp1 = {
+            x: c1.x + c1.radius * Math.cos(angle + theta1),
+            y: c1.y + c1.radius * Math.sin(angle + theta1)
+        };
+        var tp3 = {
+            x: c2.x + c2.radius * Math.cos(angle + theta2 + Math.PI),
+            y: c2.y + c2.radius * Math.sin(angle + theta2 + Math.PI)
+        };
+        // 右タンジェント (tp2 on c1, tp4 on c2)
+        var tp2 = {
+            x: c1.x + c1.radius * Math.cos(angle - theta1),
+            y: c1.y + c1.radius * Math.sin(angle - theta1)
+        };
+        var tp4 = {
+            x: c2.x + c2.radius * Math.cos(angle - theta2 + Math.PI),
+            y: c2.y + c2.radius * Math.sin(angle - theta2 + Math.PI)
+        };
+        return { tp1: tp1, tp2: tp2, tp3: tp3, tp4: tp4 };
+    };
+    // const buildFusionPath = (layer: Layer): Path2D =>
+    // {
+    //     const path = new Path2D();
+    //     const units = layer.units.filter(u => 0 < u.body.radius);  // 有効units
+    //     // 融合グラフ構築 (連結成分)
+    //     const graph: number[][] = Array.from({ length: units.length }, () => []);
+    //     for (let i = 0; i < units.length; i++) {
+    //         for (let j = i + 1; j < units.length; j++) {
+    //             const dist = Math.hypot(units[i].body.x - units[j].body.x, units[i].body.y - units[j].body.y);
+    //             if (dist < (units[i].body.radius + units[j].body.radius) * fusionThreshold) {
+    //                 graph[i].push(j);
+    //                 graph[j].push(i);
+    //             }
+    //         }
+    //     }
+    //     // 連結成分探索 (DFSでグループ化)
+    //     const visited = new Array(units.length).fill(false);
+    //     for (let i = 0; i < units.length; i++) {
+    //         if (visited[i]) continue;
+    //         const group: Unit[] = [];
+    //         const stack = [i];
+    //         while (stack.length) {
+    //             const idx = stack.pop()!;
+    //             if (!visited[idx]) {
+    //                 visited[idx] = true;
+    //                 group.push(units[idx]);
+    //                 stack.push(...graph[idx]);
+    //             }
+    //         }
+    //         if (group.length === 1) {
+    //             // 孤立円: 単純arc
+    //             const u = group[0];
+    //             path.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
+    //         } else {
+    //             // 融合グループ: ペアごとベジェ+arc
+    //             for (let j = 0; j < group.length; j++) {
+    //                 const u = group[j];
+    //                 path.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
+    //                 for (let k = j + 1; k < group.length; k++) {
+    //                     const tangents = getTangentPoints(group[j].body, group[k].body);
+    //                     if (tangents) {
+    //                         // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
+    //                         const cp1x = (tangents.tp1.x + tangents.tp3.x) / 2 + (tangents.tp3.y - tangents.tp1.y) * 0.2;  // オフセットでblob風曲げ (調整)
+    //                         const cp1y = (tangents.tp1.y + tangents.tp3.y) / 2 - (tangents.tp3.x - tangents.tp1.x) * 0.2;
+    //                         path.moveTo(tangents.tp1.x, tangents.tp1.y);
+    //                         path.quadraticCurveTo(cp1x, cp1y, tangents.tp3.x, tangents.tp3.y);  // またはbezierCurveToでcubic
+    //                         // 下側ベジェ: tp2 -> cp -> tp4
+    //                         const cp2x = (tangents.tp2.x + tangents.tp4.x) / 2 - (tangents.tp4.y - tangents.tp2.y) * 0.2;
+    //                         const cp2y = (tangents.tp2.y + tangents.tp4.y) / 2 + (tangents.tp4.x - tangents.tp2.x) * 0.2;
+    //                         path.moveTo(tangents.tp2.x, tangents.tp2.y);
+    //                         path.quadraticCurveTo(cp2x, cp2y, tangents.tp4.x, tangents.tp4.y);
+    //                     }
+    //                 }
+    //                 // グループの各円の露出arcを追加 (融合部分以外)
+    //                 // 簡略: 全円arcを追加し、compositeで重ね (or clip)だが、重なりでOKならスキップ
+    //             }
+    //             // 完全閉じ: グループ全体をconvex hullで囲む拡張可能だが、まずはベジェ+arcでテスト
+    //         }
+    //     }
+    //     return path;
+    // };
+    var drawFusionPath = function (layer, color) {
+        var units = layer.units.filter(function (u) { return 0 < u.body.radius; }); // 有効units
+        // 融合グラフ構築 (連結成分)
+        var graph = Array.from({ length: units.length }, function () { return []; });
+        for (var i = 0; i < units.length; i++) {
+            for (var j = i + 1; j < units.length; j++) {
+                var dist = Math.hypot(units[i].body.x - units[j].body.x, units[i].body.y - units[j].body.y);
+                if (dist < (units[i].body.radius + units[j].body.radius) + (Math.min(units[i].body.radius, units[j].body.radius) * fusionThreshold)) {
+                    graph[i].push(j);
+                    graph[j].push(i);
+                }
+            }
+        }
+        // 連結成分探索 (DFSでグループ化)
+        var visited = new Array(units.length).fill(false);
+        for (var i = 0; i < units.length; i++) {
+            if (visited[i])
+                continue;
+            var group = [];
+            var stack = [i];
+            while (stack.length) {
+                var idx = stack.pop();
+                if (!visited[idx]) {
+                    visited[idx] = true;
+                    group.push(units[idx]);
+                    stack.push.apply(stack, graph[idx]);
+                }
+            }
+            if (group.length === 1) {
+                // 孤立円: 単純arc
+                var u = group[0];
                 context.beginPath();
-                context.arc((circle.x * shortSide) + centerX, (circle.y * shortSide) + centerY, circle.radius * shortSide, 0, Math.PI * 2);
+                context.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
                 context.fillStyle = color;
                 context.fill();
                 context.closePath();
             }
-        };
-        var drawEye_1 = function (unit) {
-            if (unit.eye) {
-                drawCircle_1(makeCircle(addPoints(unit.body, unit.eye.white), unit.eye.white.radius), config_json_1.default.coloring[style].base);
-                drawCircle_1(makeCircle(addPoints(unit.body, unit.eye.iris), unit.eye.iris.radius), config_json_1.default.coloring[style].accent);
+            else {
+                // 融合グループ: ペアごとベジェ+arc
+                for (var j = 0; j < group.length; j++) {
+                    var u = group[j];
+                    context.beginPath();
+                    context.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
+                    context.fillStyle = color;
+                    context.fill();
+                    context.closePath();
+                    for (var k = j + 1; k < group.length; k++) {
+                        var tangents = getTangentPoints(group[j].body, group[k].body);
+                        if (tangents) {
+                            context.beginPath();
+                            // // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
+                            // const cp1x = (tangents.tp1.x + tangents.tp4.x) / 2 + (tangents.tp4.y - tangents.tp1.y) * 0.2;  // オフセットでblob風曲げ (調整)
+                            // const cp1y = (tangents.tp1.y + tangents.tp4.y) / 2 - (tangents.tp4.x - tangents.tp1.x) * 0.2;
+                            // context.moveTo(tangents.tp1.x, tangents.tp1.y);
+                            // context.quadraticCurveTo(cp1x, cp1y, tangents.tp4.x, tangents.tp4.y);  // またはbezierCurveToでcubic
+                            // // 下側ベジェ: tp2 -> cp -> tp4
+                            // const cp2x = (tangents.tp2.x + tangents.tp3.x) / 2 - (tangents.tp3.y - tangents.tp2.y) * 0.2;
+                            // const cp2y = (tangents.tp2.y + tangents.tp3.y) / 2 + (tangents.tp3.x - tangents.tp2.x) * 0.2;
+                            // context.lineTo(tangents.tp3.x, tangents.tp3.y);
+                            // context.quadraticCurveTo(cp2x, cp2y, tangents.tp2.x, tangents.tp2.y);
+                            // context.lineTo(tangents.tp1.x, tangents.tp1.y);
+                            // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
+                            var cp1x = (tangents.tp1.x + tangents.tp2.x + tangents.tp3.x + tangents.tp4.x) / 4;
+                            var cp1y = (tangents.tp1.y + tangents.tp2.y + tangents.tp3.y + tangents.tp4.y) / 4;
+                            context.moveTo(tangents.tp1.x, tangents.tp1.y);
+                            context.quadraticCurveTo(cp1x, cp1y, tangents.tp4.x, tangents.tp4.y); // またはbezierCurveToでcubic
+                            // 下側ベジェ: tp2 -> cp -> tp4
+                            var cp2x = (tangents.tp1.x + tangents.tp2.x + tangents.tp3.x + tangents.tp4.x) / 4;
+                            var cp2y = (tangents.tp1.y + tangents.tp2.y + tangents.tp3.y + tangents.tp4.y) / 4;
+                            context.lineTo(tangents.tp3.x, tangents.tp3.y);
+                            context.quadraticCurveTo(cp2x, cp2y, tangents.tp2.x, tangents.tp2.y);
+                            context.lineTo(tangents.tp1.x, tangents.tp1.y);
+                            context.fillStyle = color;
+                            // context.fillStyle = "#00000088";
+                            context.fill();
+                            context.closePath();
+                            // context.beginPath();
+                            // context.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
+                            // context.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
+                            // context.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
+                            // context.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
+                            // context.fillStyle = "#00000088";
+                            // context.fill();
+                            // context.closePath();
+                        }
+                    }
+                    // グループの各円の露出arcを追加 (融合部分以外)
+                    // 簡略: 全円arcを追加し、compositeで重ね (or clip)だが、重なりでOKならスキップ
+                }
+                // 完全閉じ: グループ全体をconvex hullで囲む拡張可能だが、まずはベジェ+arcでテスト
             }
-        };
-        var draw_1 = function () {
-            context.fillStyle = config_json_1.default.coloring[style].base;
-            //context.globalCompositeOperation = "destination-out";
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            //context.globalCompositeOperation = "source-over";
-            Data.accent.units.forEach(function (unit) {
-                drawCircle_1(unit.body, config_json_1.default.coloring[style].accent);
-                drawEye_1(unit);
+        }
+        //return path;
+    };
+    var useMetaball = false; // トグル: trueでメタボール描画、falseで個別円描画（デバッグ用）
+    var drawCircle = function (circle, color) {
+        if (0 <= circle.radius) {
+            var shortSide = Math.min(canvas.width, canvas.height);
+            var centerX = canvas.width / 2;
+            var centerY = canvas.height / 2;
+            context.beginPath();
+            context.arc((circle.x * shortSide) + centerX, (circle.y * shortSide) + centerY, circle.radius * shortSide, 0, Math.PI * 2);
+            context.fillStyle = color;
+            context.fill();
+            context.closePath();
+        }
+    };
+    var drawEye = function (unit) {
+        if (unit.eye) {
+            drawCircle(makeCircle(addPoints(unit.body, unit.eye.white), unit.eye.white.radius), config_json_1.default.coloring[style].base);
+            drawCircle(makeCircle(addPoints(unit.body, unit.eye.iris), unit.eye.iris.radius), config_json_1.default.coloring[style].accent);
+        }
+    };
+    var getPotential = function (layer, x, y) {
+        var shortSide = Math.min(canvas.width, canvas.height);
+        var centerX = canvas.width / 2;
+        var centerY = canvas.height / 2;
+        var sum = 0;
+        var maxRadius = 0;
+        var maxRadiusDistSq = Infinity;
+        layer.units.forEach(function (unit) {
+            if (0 < unit.body.radius) {
+                var dx = x - ((unit.body.x * shortSide) + centerX); // 描画座標に変換（drawCircleのロジックに合わせ）
+                var dy = y - ((unit.body.y * shortSide) + centerY);
+                var distSq = dx * dx + dy * dy;
+                var radius = unit.body.radius * shortSide;
+                if (distSq < Math.pow(radius, 2) && distSq < maxRadiusDistSq) {
+                    maxRadius = Math.max(maxRadius, radius);
+                    maxRadiusDistSq = distSq;
+                }
+                sum += (Math.pow(radius, 2)) / Math.max(distSq, 1); // ポテンシャル式（調整可能: **2 でシャープ、**1 でソフト）
+            }
+        });
+        drawLineCount = Math.max(drawLineCount, sum);
+        sum = Math.min(sum, maxRadius); // 最大ポテンシャル制限（重なり過ぎ防止）
+        return sum;
+    };
+    // // Marching Squaresの線分テーブル（配列index=0-15で、セル状態に対応）
+    // const marchingTable: number[][] = [  // [x1,y1, x2,y2] の線分（0-1で正規化）
+    //     [],                                                                 // 0: 0000 - なし
+    //     [0, 0.5, 0.5, 0],                                                 // 1: 0001
+    //     [0.5, 0, 1, 0.5],                                                 // 2: 0010
+    //     [0, 0.5, 1, 0.5],                                                 // 3: 0011
+    //     [0.5, 1, 1, 0.5],                                                 // 4: 0100
+    //     [0, 0.5, 0.5, 0, 0.5, 1, 1, 0.5],                               // 5: 0101
+    //     [0.5, 0, 0.5, 1],                                                 // 6: 0110
+    //     [0, 0.5, 0.5, 1],                                                 // 7: 0111
+    //     [0, 0.5, 0.5, 1],                                                 // 8: 1000
+    //     [0.5, 0, 0.5, 1],                                                 // 9: 1001
+    //     [0, 0.5, 0.5, 0, 0.5, 1, 1, 0.5],                               // 10: 1010
+    //     [0.5, 0, 1, 0.5],                                                 // 11: 1011
+    //     [0, 0.5, 1, 0.5],                                                 // 12: 1100
+    //     [0.5, 1, 1, 0.5],                                                 // 13: 1101
+    //     [0.5, 0, 0.5, 1],                                                 // 14: 1110
+    //     []                                                                  // 15: 1111 - なし（全部内部）
+    // ];
+    var drawLineCount = 0;
+    var gridSize = 10; // グリッド解像度（小さいほど滑らかだが重い。20-50で調整）
+    var threshold = 4.0; // ポテンシャル閾値（低いと融合しやすくなる。0.5-2.0で調整）
+    // const drawMetaballLayer = (layer: Layer, color: string) =>
+    // {
+    //     context.beginPath();  // Pathを蓄積
+    //     for (let gy = 0; gy < canvas.height; gy += gridSize) {
+    //         for (let gx = 0; gx < canvas.width; gx += gridSize) {
+    //             // 4隅のポテンシャル（> threshold で1）
+    //             const a = getPotential(layer, gx, gy) > threshold ? 1 : 0;
+    //             const b = getPotential(layer, gx + gridSize, gy) > threshold ? 1 : 0;
+    //             const c = getPotential(layer, gx + gridSize, gy + gridSize) > threshold ? 1 : 0;
+    //             const d = getPotential(layer, gx, gy + gridSize) > threshold ? 1 : 0;
+    //             const index = a + (b << 1) + (c << 2) + (d << 3);  // 0-15
+    //             const lines = marchingTable[index];
+    //             if (lines) {
+    //                 for (let i = 0; i < lines.length; i += 4) {
+    //                     const x1 = gx + lines[i] * gridSize;
+    //                     const y1 = gy + lines[i + 1] * gridSize;
+    //                     const x2 = gx + lines[i + 2] * gridSize;
+    //                     const y2 = gy + lines[i + 3] * gridSize;
+    //                     context.moveTo(x1, y1);
+    //                     context.lineTo(x2, y2);  // 直線。曲線練習: quadraticCurveToで補間
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     context.strokeStyle = color;  // 輪郭線（テスト用。fillで塗りつぶしに変更）
+    //     context.fillStyle = color;
+    //     context.stroke();
+    //     // 塗りつぶし版: context.fillStyle = color; context.fill(); だが、複数形状対応のためPath2Dを使う拡張を推奨
+    // };
+    var drawMetaballLayer = function (layer, color) {
+        context.beginPath(); // Pathを蓄積
+        for (var gy = 0; gy <= canvas.height; gy += gridSize) {
+            for (var gx = 0; gx <= canvas.width; gx += gridSize) {
+                var potential = getPotential(layer, gx, gy);
+                if (threshold <= potential && potential < threshold * 1.75) // 閾値以上のみ描画
+                 {
+                    context.beginPath();
+                    context.arc(gx + (gridSize / 2), gy + (gridSize / 2), potential * 2, 0, Math.PI * 2);
+                    context.fillStyle = color;
+                    context.fill();
+                    context.closePath();
+                }
+            }
+        }
+        context.strokeStyle = color; // 輪郭線（テスト用。fillで塗りつぶしに変更）
+        context.fillStyle = color;
+        context.stroke();
+        // 塗りつぶし版: context.fillStyle = color; context.fill(); だが、複数形状対応のためPath2Dを使う拡張を推奨
+    };
+    var drawLayer = function (layer, color) {
+        if (useFusion) {
+            var shortSide_1 = Math.min(canvas.width, canvas.height);
+            var centerX_1 = canvas.width / 2;
+            var centerY_1 = canvas.height / 2;
+            // unitsの座標をCanvas単位に変換 (一時的)
+            layer.units.forEach(function (u) {
+                u.body.x = (u.body.x * shortSide_1) + centerX_1;
+                u.body.y = (u.body.y * shortSide_1) + centerY_1;
+                u.body.radius *= shortSide_1;
+                // eyeも同様
             });
-            Data.main.units.forEach(function (unit) {
-                drawCircle_1(unit.body, config_json_1.default.coloring[style].main);
-                drawEye_1(unit);
+            // const path = buildFusionPath(layer);
+            // context.fillStyle = color;
+            // context.fill(path, 'nonzero');  // 塗りつぶし
+            drawFusionPath(layer, color);
+            // eye描画 (融合後重ね)
+            layer.units.forEach(drawEye);
+            // 元座標に戻す (必要なら)
+            layer.units.forEach(function (u) {
+                u.body.x = (u.body.x - centerX_1) / shortSide_1;
+                u.body.y = (u.body.y - centerY_1) / shortSide_1;
+                u.body.radius /= shortSide_1;
             });
-            //drawCircle({ x: 0, y: 0, radius: 0.1, }, config.coloring[style].main);
-            //drawCircle({ x: 0, y: 0, radius: 0.05, }, config.coloring[style].base);
-            //drawCircle({ x: 0, y: 0, radius: 0.025, }, config.coloring[style].accent);
-        };
+            // layer.units.forEach
+            // (
+            //     (unit) =>
+            //     {
+            //         // drawCircle
+            //         // (
+            //         //     {
+            //         //         x: unit.body.x,
+            //         //         y: unit.body.y,
+            //         //         radius: unit.body.radius *0.9,
+            //         //     },
+            //         //     color
+            //         // );
+            //         drawCircle(unit.body, "#88888888");
+            //         drawEye(unit);
+            //     }
+            // );
+        }
+        else {
+            if (useMetaball) {
+                drawLineCount = 0;
+                drawMetaballLayer(layer, color);
+                console.log("Metaball lines drawn: ".concat(drawLineCount));
+                layer.units.forEach(function (unit) {
+                    drawCircle({
+                        x: unit.body.x,
+                        y: unit.body.y,
+                        radius: unit.body.radius * 0.9,
+                    }, color);
+                    //drawCircle(unit.body, "#88888888");
+                    drawEye(unit);
+                });
+            }
+            else {
+                layer.units.forEach(function (unit) {
+                    drawCircle(unit.body, color);
+                    drawEye(unit);
+                });
+            }
+        }
+    };
+    var draw = function () {
+        context.fillStyle = config_json_1.default.coloring[style].base;
+        //context.globalCompositeOperation = "destination-out";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        //context.globalCompositeOperation = "source-over";
+        drawLayer(Data.accent, config_json_1.default.coloring[style].accent);
+        drawLayer(Data.main, config_json_1.default.coloring[style].main);
+        //drawCircle({ x: 0, y: 0, radius: 0.1, }, config.coloring[style].main);
+        //drawCircle({ x: 0, y: 0, radius: 0.05, }, config.coloring[style].base);
+        //drawCircle({ x: 0, y: 0, radius: 0.025, }, config.coloring[style].accent);
+    };
+    if (context) {
         var step_1 = function (timestamp) {
             updateData(timestamp);
-            draw_1();
+            draw();
             if (fpsDiv && fpsDiv.style.display !== "none") {
                 fps_1.Fps.step(timestamp);
                 fpsDiv.innerText = fps_1.Fps.getText();
@@ -498,10 +842,20 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         });
     }
     document.addEventListener("click", function () {
-        var keys = Object.keys(config_json_1.default.coloring);
-        var currentIndex = keys.indexOf(style);
-        var nextIndex = (currentIndex + 1) % keys.length;
-        style = keys[nextIndex];
+        // const keys = Object.keys(config.coloring) as (keyof typeof config["coloring"])[];
+        // const currentIndex = keys.indexOf(style);
+        // const nextIndex = (currentIndex + 1) %keys.length;
+        // style = keys[nextIndex];
+        if (!useFusion && !useMetaball) {
+            useFusion = true;
+        }
+        else if (useFusion) {
+            useFusion = false;
+            useMetaball = true;
+        }
+        else {
+            useMetaball = false;
+        }
     });
     var ToggleClassForWhileTimer = /** @class */ (function () {
         function ToggleClassForWhileTimer() {
