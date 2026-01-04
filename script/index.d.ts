@@ -1,3 +1,85 @@
+declare module "script/model" {
+    export namespace Model {
+        const pseudoGaussian: (samples?: number) => number;
+        interface Point {
+            x: number;
+            y: number;
+        }
+        interface Animation {
+            period: number;
+            phase: number;
+            scale: number;
+        }
+        interface FloatAnimation {
+            x: Animation[];
+            y: Animation[];
+        }
+        interface UnitAnimation {
+            moveAnimation: FloatAnimation;
+            sizeAnimation: Animation[];
+            appearAnimation?: Animation;
+            vanishAnimation?: Animation;
+        }
+        interface EyeAnimation {
+            moveAnimation: FloatAnimation[];
+            appearAnimation?: Animation;
+            vanishAnimation?: Animation;
+        }
+        interface Circle extends Point {
+            radius: number;
+        }
+        const makeCircle: (point: Point, radius: number) => Circle;
+        interface Unit {
+            body: Circle;
+            scale: number;
+            animation: UnitAnimation;
+            eye?: {
+                white: Circle;
+                iris: Circle;
+                animation: EyeAnimation;
+            };
+        }
+        interface Layer {
+            units: Unit[];
+            lastMadeAt: number;
+            lastRemovedAt: number;
+        }
+        const Data: {
+            previousTimestamp: number;
+            width: number;
+            height: number;
+            accent: Layer;
+            main: Layer;
+        };
+        const isOutOfCanvas: (circle: Circle) => boolean;
+        const sumValidAreas: (layer: Layer) => number;
+        const sumAllAreas: (layer: Layer) => number;
+        const calculateAnimationSineIntegral: (animation: Animation, step: number) => number;
+        const accumulateAnimationSineIntegral: (animations: Animation[], step: number) => number;
+        const accumulateAnimationSize: (animations: Animation[], step: number) => number;
+        const updateAnimation: (animation: Animation, step: number) => void;
+        const updateAnimations: (animations: Animation[], step: number) => void;
+        const updateFloatAnimation: (floatAnimation: FloatAnimation, step: number) => void;
+        const makeAnimation: (specific: {
+            period: {
+                base: number;
+                pseudoGaussian: number;
+                range: number;
+            };
+            scale: {
+                base: number;
+                pseudoGaussian: number;
+                range: number;
+            };
+        }, scaleRate: number) => Animation;
+        const makeUnitAnimation: () => UnitAnimation;
+        const makeUnit: (point: Point) => Unit;
+        const updateUnit: (unit: Unit, step: number) => void;
+        const updateLayer: (layer: Layer, timestamp: number, step: number) => void;
+        const updateStretch: () => void;
+        const updateData: (timestamp: number) => void;
+    }
+}
 declare module "script/fps" {
     export namespace Fps {
         export class OnlineStandardDeviation {

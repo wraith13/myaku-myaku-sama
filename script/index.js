@@ -1,6 +1,305 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+define("resource/config", [], {
+    "applicationTitle": "Myaku-Myaku Sama",
+    "repositoryUrl": "https://github.com/wraith13/myaku-myaku-sama/",
+    "canonicalUrl": "https://wraith13.github.io/myaku-myaku-sama/",
+    "description": "Myaku-Myaku Sama's pattern animation ( this web app is for study )",
+    "noscriptMessage": "JavaScript is disabled. Please enable JavaScript.",
+    "rendering": {
+        "marginRate": 0.9
+    },
+    "coloring": {
+        "regular": {
+            "base": "#FFFFFF",
+            "main": "#E50012",
+            "accent": "#0068B6"
+        },
+        "monochrome": {
+            "base": "#FFFFFF",
+            "main": "#000000",
+            "accent": "#72716F"
+        },
+        "splatoon": {
+            "base": "#000000",
+            "main": "#FD5900",
+            "accent": "#0020FE"
+        },
+        "splatoon2": {
+            "base": "#000000",
+            "main": "#1AD71A",
+            "accent": "#F32C7F"
+        },
+        "splatoon3": {
+            "base": "#000000",
+            "main": "#5F3BFE",
+            "accent": "#EBFF37"
+        }
+    },
+    "eye": {
+        "appearRate": 0.12,
+        "vanishRate": 0.1,
+        "whiteRate": 0.4,
+        "irisRate": 0.2
+    },
+    "Layer": {
+        "unit": {
+            "moveAnimation": {
+                "period": {
+                    "base": 500,
+                    "pseudoGaussian": 2,
+                    "range": 300000
+                },
+                "scale": {
+                    "base": 0.05,
+                    "pseudoGaussian": 4,
+                    "range": 0.1
+                },
+                "elements": [
+                    1.0,
+                    0.5,
+                    0.25,
+                    0.125
+                ]
+            },
+            "sizeAnimation": {
+                "period": {
+                    "base": 750,
+                    "pseudoGaussian": 2,
+                    "range": 300000
+                },
+                "scale": {
+                    "base": 0.05,
+                    "pseudoGaussian": 4,
+                    "range": 0.1
+                },
+                "elements": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "appearAnimation": {
+                "period": 3000
+            },
+            "vanishAnimation": {
+                "period": 1500
+            }
+        }
+    }
+});
+define("script/model", ["require", "exports", "resource/config"], function (require, exports, config_json_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Model = void 0;
+    config_json_1 = __importDefault(config_json_1);
+    var Model;
+    (function (Model) {
+        var canvas = document.getElementById("canvas");
+        Model.pseudoGaussian = function (samples) {
+            if (samples === void 0) { samples = 6; }
+            var total = 0;
+            for (var i = 0; i < samples; i++) {
+                total += Math.random();
+            }
+            return total / samples;
+        };
+        ;
+        ;
+        ;
+        ;
+        ;
+        Model.makeCircle = function (point, radius) {
+            return ({
+                x: point.x,
+                y: point.y,
+                radius: radius,
+            });
+        };
+        ;
+        ;
+        Model.Data = {
+            previousTimestamp: 0,
+            width: 0,
+            height: 0,
+            accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
+            main: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
+        };
+        Model.isOutOfCanvas = function (circle) {
+            var marginRate = config_json_1.default.rendering.marginRate;
+            var shortSide = Math.min(canvas.width, canvas.height);
+            var centerX = canvas.width / 2;
+            var centerY = canvas.height / 2;
+            var x = (circle.x * marginRate * shortSide) + centerX;
+            var y = (circle.y * marginRate * shortSide) + centerY;
+            return (x + circle.radius * shortSide < 0 ||
+                y + circle.radius * shortSide < 0 ||
+                canvas.width < x - circle.radius * shortSide ||
+                canvas.height < y - circle.radius * shortSide);
+        };
+        Model.sumValidAreas = function (layer) {
+            return layer.units
+                .filter(function (unit) { return !Model.isOutOfCanvas(unit.body); })
+                .reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
+        };
+        Model.sumAllAreas = function (layer) {
+            return layer.units
+                .reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
+        };
+        Model.calculateAnimationSineIntegral = function (animation, step) {
+            // return stepで積分(Math.sin((animation.phase / animation.period) * Math.PI * 2));
+            if (animation.period <= 0 || 0 === step) {
+                return 0;
+            }
+            else {
+                var omega = (2 * Math.PI) / animation.period;
+                // ∫0^step sin(omega*(phase + τ)) dτ = (cos(omega*phase) - cos(omega*(phase + step))) / omega
+                var integral = (Math.cos(omega * animation.phase) - Math.cos(omega * (animation.phase + step))) / omega;
+                return integral * animation.scale;
+            }
+        };
+        Model.accumulateAnimationSineIntegral = function (animations, step) {
+            return animations.reduce(function (sum, animation) { return sum + Model.calculateAnimationSineIntegral(animation, step); }, 0);
+        };
+        Model.accumulateAnimationSize = function (animations, step) {
+            return animations.reduce(function (product, animation) {
+                var phase = animation.phase + step;
+                return product + Math.pow(Math.sin((phase / animation.period) * Math.PI), 2) * 0.5 * animation.scale;
+            }, 0.0);
+        };
+        Model.updateAnimation = function (animation, step) {
+            animation.phase += step;
+            while (animation.period <= animation.phase) {
+                animation.phase -= animation.period;
+            }
+        };
+        Model.updateAnimations = function (animations, step) {
+            return animations.forEach(function (animation) { return Model.updateAnimation(animation, step); });
+        };
+        Model.updateFloatAnimation = function (floatAnimation, step) {
+            Model.updateAnimations(floatAnimation.x, step);
+            Model.updateAnimations(floatAnimation.y, step);
+        };
+        Model.makeAnimation = function (specific, scaleRate) {
+            var period = specific.period.base + (Model.pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
+            var phase = period * Math.random();
+            var scale = (specific.scale.base + (Model.pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) * scaleRate;
+            return { phase: phase, period: period, scale: scale, };
+        };
+        Model.makeUnitAnimation = function () {
+            // const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
+            // const xRatio = window.innerWidth / shortSide;
+            // const yRatio = window.innerHeight / shortSide;
+            var xRatio = 1.0;
+            var yRatio = 1.0;
+            var result = {
+                moveAnimation: {
+                    x: config_json_1.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_1.default.Layer.unit.moveAnimation, i * xRatio); }),
+                    y: config_json_1.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_1.default.Layer.unit.moveAnimation, i * yRatio); }),
+                },
+                sizeAnimation: config_json_1.default.Layer.unit.sizeAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_1.default.Layer.unit.sizeAnimation, i); }),
+            };
+            return result;
+        };
+        Model.makeUnit = function (point) {
+            var body = Model.makeCircle(point, (Math.pow(Model.pseudoGaussian(4), 2) * 0.19) + 0.01);
+            var result = {
+                body: body,
+                scale: body.radius,
+                animation: Model.makeUnitAnimation(),
+            };
+            //updateUnit(result, Math.random() *10000);
+            result.animation.appearAnimation =
+                {
+                    period: config_json_1.default.Layer.unit.appearAnimation.period,
+                    phase: 0,
+                    scale: result.scale,
+                };
+            return result;
+        };
+        Model.updateUnit = function (unit, step) {
+            var _a;
+            var rate = 0.0005;
+            unit.body.x += Model.accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step) * rate;
+            unit.body.y += Model.accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step) * rate;
+            var transion = (_a = unit.animation.appearAnimation) !== null && _a !== void 0 ? _a : unit.animation.vanishAnimation;
+            if (transion) {
+                transion.phase += step;
+                if (unit.animation.vanishAnimation) {
+                    unit.body.radius = transion.scale * (1.0 - (transion.phase / transion.period));
+                    if (transion.period <= transion.phase) {
+                        unit.animation.vanishAnimation = undefined;
+                    }
+                }
+                else {
+                    unit.body.radius = transion.scale * (transion.phase / transion.period);
+                    if (transion.period <= transion.phase) {
+                        unit.animation.appearAnimation = undefined;
+                    }
+                }
+            }
+            var scale = transion ? unit.body.radius : unit.scale;
+            unit.body.radius = scale * (1 + (Model.accumulateAnimationSize(unit.animation.sizeAnimation, step) * 2.0));
+            Model.updateFloatAnimation(unit.animation.moveAnimation, step);
+            Model.updateAnimations(unit.animation.sizeAnimation, step);
+        };
+        Model.updateLayer = function (layer, timestamp, step) {
+            var shortSide = Math.min(window.innerWidth, window.innerHeight);
+            var longSide = Math.max(window.innerWidth, window.innerHeight);
+            var validVolume = Model.sumValidAreas(layer);
+            var allVolume = Model.sumAllAreas(layer);
+            var longSideRatio = 0 < shortSide ? longSide / shortSide : 0;
+            var validAreaRatio = validVolume / (longSideRatio * 2.0);
+            var allAreaRatio = allVolume / Math.min(longSideRatio * 2.0, validVolume);
+            if (validAreaRatio < 0.5) {
+                var makeUnitCooldown = 1000 * validAreaRatio;
+                if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
+                    layer.units.push(Model.makeUnit({ x: (Model.pseudoGaussian(1) - 0.5) * window.innerWidth / shortSide, y: (Model.pseudoGaussian(1) - 0.5) * window.innerHeight / shortSide, }));
+                    layer.lastMadeAt = timestamp;
+                }
+            }
+            else if (1.0 < allAreaRatio || (0.5 < allAreaRatio && layer.lastRemovedAt + 3000 < timestamp)) {
+                var removeUnitCooldown = 1000 / allAreaRatio;
+                if (removeUnitCooldown <= timestamp - layer.lastRemovedAt) {
+                    var target = layer.units.filter(function (unit) { return undefined === unit.animation.vanishAnimation; })[0];
+                    if (target) {
+                        target.animation.vanishAnimation =
+                            {
+                                period: config_json_1.default.Layer.unit.vanishAnimation.period,
+                                phase: 0,
+                                scale: target.scale,
+                            };
+                        layer.lastRemovedAt = timestamp;
+                    }
+                }
+            }
+            layer.units.forEach(function (unit) { return Model.updateUnit(unit, step); });
+            var gabages = layer.units.filter(function (unit) { return unit.body.radius <= 0; });
+            gabages.forEach(function (garbage) {
+                var index = layer.units.indexOf(garbage);
+                if (0 <= index) {
+                    layer.units.splice(index, 1);
+                }
+            });
+        };
+        Model.updateStretch = function () {
+            canvas.width = Model.Data.width = window.innerWidth;
+            canvas.height = Model.Data.height = window.innerHeight;
+        };
+        Model.updateData = function (timestamp) {
+            var step = 0 < Model.Data.previousTimestamp ? Math.min(timestamp - Model.Data.previousTimestamp, 500) : 0;
+            if (window.innerWidth !== Model.Data.width || window.innerHeight !== Model.Data.height) {
+                Model.updateStretch();
+            }
+            Model.updateLayer(Model.Data.accent, timestamp, step);
+            Model.updateLayer(Model.Data.main, timestamp, step);
+            Model.Data.previousTimestamp = timestamp;
+        };
+    })(Model || (exports.Model = Model = {}));
+});
 define("script/fps", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -115,286 +414,12 @@ define("script/fps", ["require", "exports"], function (require, exports) {
         Fps.isUnderFuseFps = function () { return Fps.isValid && Fps.currentMaxFps.fps < Fps.fuseFps; };
     })(Fps || (exports.Fps = Fps = {}));
 });
-define("resource/config", [], {
-    "applicationTitle": "Myaku-Myaku Sama",
-    "repositoryUrl": "https://github.com/wraith13/myaku-myaku-sama/",
-    "canonicalUrl": "https://wraith13.github.io/myaku-myaku-sama/",
-    "description": "Myaku-Myaku Sama's pattern animation ( this web app is for study )",
-    "noscriptMessage": "JavaScript is disabled. Please enable JavaScript.",
-    "rendering": {
-        "marginRate": 0.9
-    },
-    "coloring": {
-        "regular": {
-            "base": "#FFFFFF",
-            "main": "#E50012",
-            "accent": "#0068B6"
-        },
-        "monochrome": {
-            "base": "#FFFFFF",
-            "main": "#000000",
-            "accent": "#72716F"
-        }
-    },
-    "eye": {
-        "appearRate": 0.12,
-        "vanishRate": 0.1,
-        "whiteRate": 0.4,
-        "irisRate": 0.2
-    },
-    "Layer": {
-        "unit": {
-            "moveAnimation": {
-                "period": {
-                    "base": 500,
-                    "pseudoGaussian": 2,
-                    "range": 300000
-                },
-                "scale": {
-                    "base": 0.05,
-                    "pseudoGaussian": 4,
-                    "range": 0.1
-                },
-                "elements": [
-                    1.0,
-                    0.5,
-                    0.25,
-                    0.125
-                ]
-            },
-            "sizeAnimation": {
-                "period": {
-                    "base": 750,
-                    "pseudoGaussian": 2,
-                    "range": 300000
-                },
-                "scale": {
-                    "base": 0.05,
-                    "pseudoGaussian": 4,
-                    "range": 0.1
-                },
-                "elements": [
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            },
-            "appearAnimation": {
-                "period": 3000
-            },
-            "vanishAnimation": {
-                "period": 1500
-            }
-        }
-    }
-});
-define("script/index", ["require", "exports", "script/fps", "resource/config"], function (require, exports, fps_1, config_json_1) {
+define("script/index", ["require", "exports", "script/model", "script/fps", "resource/config"], function (require, exports, model_1, fps_1, config_json_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.mousemove = exports.ToggleClassForWhileTimer = void 0;
-    config_json_1 = __importDefault(config_json_1);
+    config_json_2 = __importDefault(config_json_2);
     var fpsDiv = document.getElementById("fps");
-    var pseudoGaussian = function (samples) {
-        if (samples === void 0) { samples = 6; }
-        var total = 0;
-        for (var i = 0; i < samples; i++) {
-            total += Math.random();
-        }
-        return total / samples;
-    };
-    ;
-    ;
-    ;
-    ;
-    ;
-    var makeCircle = function (point, radius) {
-        return ({
-            x: point.x,
-            y: point.y,
-            radius: radius,
-        });
-    };
-    ;
-    ;
-    var Data = {
-        previousTimestamp: 0,
-        width: 0,
-        height: 0,
-        accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
-        main: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
-    };
-    var isOutOfCanvas = function (circle) {
-        var marginRate = config_json_1.default.rendering.marginRate;
-        var shortSide = Math.min(canvas.width, canvas.height);
-        var centerX = canvas.width / 2;
-        var centerY = canvas.height / 2;
-        var x = (circle.x * marginRate * shortSide) + centerX;
-        var y = (circle.y * marginRate * shortSide) + centerY;
-        return (x + circle.radius * shortSide < 0 ||
-            y + circle.radius * shortSide < 0 ||
-            canvas.width < x - circle.radius * shortSide ||
-            canvas.height < y - circle.radius * shortSide);
-    };
-    var sumValidAreas = function (layer) {
-        return layer.units
-            .filter(function (unit) { return !isOutOfCanvas(unit.body); })
-            .reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
-    };
-    var sumAllAreas = function (layer) {
-        return layer.units
-            .reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
-    };
-    var calculateAnimationSineIntegral = function (animation, step) {
-        // return stepで積分(Math.sin((animation.phase / animation.period) * Math.PI * 2));
-        if (animation.period <= 0 || 0 === step) {
-            return 0;
-        }
-        else {
-            var omega = (2 * Math.PI) / animation.period;
-            // ∫0^step sin(omega*(phase + τ)) dτ = (cos(omega*phase) - cos(omega*(phase + step))) / omega
-            var integral = (Math.cos(omega * animation.phase) - Math.cos(omega * (animation.phase + step))) / omega;
-            return integral * animation.scale;
-        }
-    };
-    var accumulateAnimationSineIntegral = function (animations, step) {
-        return animations.reduce(function (sum, animation) { return sum + calculateAnimationSineIntegral(animation, step); }, 0);
-    };
-    var accumulateAnimationSize = function (animations, step) {
-        return animations.reduce(function (product, animation) {
-            var phase = animation.phase + step;
-            return product + Math.pow(Math.sin((phase / animation.period) * Math.PI), 2) * 0.5 * animation.scale;
-        }, 0.0);
-    };
-    var updateAnimation = function (animation, step) {
-        animation.phase += step;
-        while (animation.period <= animation.phase) {
-            animation.phase -= animation.period;
-        }
-    };
-    var updateAnimations = function (animations, step) {
-        return animations.forEach(function (animation) { return updateAnimation(animation, step); });
-    };
-    var updateFloatAnimation = function (floatAnimation, step) {
-        updateAnimations(floatAnimation.x, step);
-        updateAnimations(floatAnimation.y, step);
-    };
-    var makeAnimation = function (specific, scaleRate) {
-        var period = specific.period.base + (pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
-        var phase = period * Math.random();
-        var scale = (specific.scale.base + (pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) * scaleRate;
-        return { phase: phase, period: period, scale: scale, };
-    };
-    var makeUnitAnimation = function () {
-        // const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
-        // const xRatio = window.innerWidth / shortSide;
-        // const yRatio = window.innerHeight / shortSide;
-        var xRatio = 1.0;
-        var yRatio = 1.0;
-        var result = {
-            moveAnimation: {
-                x: config_json_1.default.Layer.unit.moveAnimation.elements.map(function (i) { return makeAnimation(config_json_1.default.Layer.unit.moveAnimation, i * xRatio); }),
-                y: config_json_1.default.Layer.unit.moveAnimation.elements.map(function (i) { return makeAnimation(config_json_1.default.Layer.unit.moveAnimation, i * yRatio); }),
-            },
-            sizeAnimation: config_json_1.default.Layer.unit.sizeAnimation.elements.map(function (i) { return makeAnimation(config_json_1.default.Layer.unit.sizeAnimation, i); }),
-        };
-        return result;
-    };
-    var makeUnit = function (point) {
-        var body = makeCircle(point, (Math.pow(pseudoGaussian(4), 2) * 0.19) + 0.01);
-        var result = {
-            body: body,
-            scale: body.radius,
-            animation: makeUnitAnimation(),
-        };
-        //updateUnit(result, Math.random() *10000);
-        result.animation.appearAnimation =
-            {
-                period: config_json_1.default.Layer.unit.appearAnimation.period,
-                phase: 0,
-                scale: result.scale,
-            };
-        return result;
-    };
-    var updateUnit = function (unit, step) {
-        var _a;
-        var rate = 0.0005;
-        unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step) * rate;
-        unit.body.y += accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step) * rate;
-        var transion = (_a = unit.animation.appearAnimation) !== null && _a !== void 0 ? _a : unit.animation.vanishAnimation;
-        if (transion) {
-            transion.phase += step;
-            if (unit.animation.vanishAnimation) {
-                unit.body.radius = transion.scale * (1.0 - (transion.phase / transion.period));
-                if (transion.period <= transion.phase) {
-                    unit.animation.vanishAnimation = undefined;
-                }
-            }
-            else {
-                unit.body.radius = transion.scale * (transion.phase / transion.period);
-                if (transion.period <= transion.phase) {
-                    unit.animation.appearAnimation = undefined;
-                }
-            }
-        }
-        var scale = transion ? unit.body.radius : unit.scale;
-        unit.body.radius = scale * (1 + (accumulateAnimationSize(unit.animation.sizeAnimation, step) * 2.0));
-        updateFloatAnimation(unit.animation.moveAnimation, step);
-        updateAnimations(unit.animation.sizeAnimation, step);
-    };
-    var updateLayer = function (layer, timestamp, step) {
-        var shortSide = Math.min(window.innerWidth, window.innerHeight);
-        var longSide = Math.max(window.innerWidth, window.innerHeight);
-        var validVolume = sumValidAreas(layer);
-        var allVolume = sumAllAreas(layer);
-        var longSideRatio = 0 < shortSide ? longSide / shortSide : 0;
-        var validAreaRatio = validVolume / (longSideRatio * 2.0);
-        var allAreaRatio = allVolume / Math.min(longSideRatio * 2.0, validVolume);
-        if (validAreaRatio < 0.5) {
-            var makeUnitCooldown = 1000 * validAreaRatio;
-            if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
-                layer.units.push(makeUnit({ x: (pseudoGaussian(1) - 0.5) * window.innerWidth / shortSide, y: (pseudoGaussian(1) - 0.5) * window.innerHeight / shortSide, }));
-                layer.lastMadeAt = timestamp;
-            }
-        }
-        else if (1.0 < allAreaRatio || (0.5 < allAreaRatio && layer.lastRemovedAt + 3000 < timestamp)) {
-            var removeUnitCooldown = 1000 / allAreaRatio;
-            if (removeUnitCooldown <= timestamp - layer.lastRemovedAt) {
-                var target = layer.units.filter(function (unit) { return undefined === unit.animation.vanishAnimation; })[0];
-                if (target) {
-                    target.animation.vanishAnimation =
-                        {
-                            period: config_json_1.default.Layer.unit.vanishAnimation.period,
-                            phase: 0,
-                            scale: target.scale,
-                        };
-                    layer.lastRemovedAt = timestamp;
-                }
-            }
-        }
-        layer.units.forEach(function (unit) { return updateUnit(unit, step); });
-        var gabages = layer.units.filter(function (unit) { return unit.body.radius <= 0; });
-        gabages.forEach(function (garbage) {
-            var index = layer.units.indexOf(garbage);
-            if (0 <= index) {
-                layer.units.splice(index, 1);
-            }
-        });
-    };
-    var updateStretch = function () {
-        canvas.width = Data.width = window.innerWidth;
-        canvas.height = Data.height = window.innerHeight;
-    };
-    var updateData = function (timestamp) {
-        var step = 0 < Data.previousTimestamp ? Math.min(timestamp - Data.previousTimestamp, 500) : 0;
-        if (window.innerWidth !== Data.width || window.innerHeight !== Data.height) {
-            updateStretch();
-        }
-        updateLayer(Data.accent, timestamp, step);
-        updateLayer(Data.main, timestamp, step);
-        Data.previousTimestamp = timestamp;
-    };
     console.log("Window loaded.");
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
@@ -409,9 +434,6 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         if (data.fusionLimit < data.distance) {
             return "none";
         }
-        if (data.sumRadius + data.fusionDelta * 2 <= data.distance) {
-            return "wired";
-        }
         if (data.sumRadius < data.distance) {
             return "proximity";
         }
@@ -421,7 +443,6 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         return "inclusion";
     };
     var fusionLimitRate = 3;
-    var fusionDeltaRate = 0.1;
     var minCurveAngleRate = 1.0;
     var drawFusionPath = function (circles, color) {
         for (var i = 0; i < circles.length; i++) {
@@ -432,12 +453,11 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                 var minRadius = Math.min(a.radius, b.radius);
                 var maxRadius = Math.min(a.radius, b.radius);
                 var fusionLimit = sumRadius + Math.min(minRadius * fusionLimitRate, maxRadius);
-                var fusionDelta = minRadius * fusionDeltaRate;
                 var dx = b.x - a.x;
                 var dy = b.y - a.y;
                 var angle = Math.atan2(dy, dx);
                 var distance = Math.hypot(dx, dy);
-                var fusionStatus = getFusionStatus({ sumRadius: sumRadius, minRadius: minRadius, fusionLimit: fusionLimit, fusionDelta: fusionDelta, distance: distance, });
+                var fusionStatus = getFusionStatus({ sumRadius: sumRadius, minRadius: minRadius, fusionLimit: fusionLimit, distance: distance, });
                 if (hasFusionPath(fusionStatus)) {
                     var contactAngle = isContacted(fusionStatus) ? Math.acos(distance / sumRadius) : null;
                     var curveAngleRate = minCurveAngleRate *
@@ -526,7 +546,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         var centerY = canvas.height / 2;
         drawFusionPath(layer.units.map(function (u) { return u.body; })
             // .concat([ { x: 0, y: 0, radius: 0.1, } ])
-            .filter(function (c) { return !isOutOfCanvas(c); })
+            .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
             .map(function (c) {
             return ({
                 x: (c.x * shortSide) + centerX,
@@ -537,64 +557,64 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         layer.units.forEach(function (unit) {
             drawCircle(unit.body, color);
         });
-        if (layer === Data.main) {
+        if (layer === model_1.Model.Data.main) {
             drawFusionPath(layer.units.map(function (u) { return u.body; })
-                .filter(function (c) { return config_json_1.default.eye.appearRate <= c.radius; })
-                .filter(function (c) { return !isOutOfCanvas(c); })
+                .filter(function (c) { return config_json_2.default.eye.appearRate <= c.radius; })
+                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
                 .map(function (c) {
                 return ({
                     x: (c.x * shortSide) + centerX,
                     y: (c.y * shortSide) + centerY,
-                    radius: c.radius * shortSide * config_json_1.default.eye.whiteRate,
+                    radius: c.radius * shortSide * config_json_2.default.eye.whiteRate,
                 });
-            }), config_json_1.default.coloring[style].base);
+            }), config_json_2.default.coloring[style].base);
             drawFusionPath(layer.units.map(function (u) { var _a; return (_a = u.eye) === null || _a === void 0 ? void 0 : _a.white; })
                 .filter(function (c) { return undefined !== c; })
-                .filter(function (c) { return !isOutOfCanvas(c); })
+                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
                 .map(function (c) {
                 return ({
                     x: (c.x * shortSide) + centerX,
                     y: (c.y * shortSide) + centerY,
                     radius: c.radius * shortSide,
                 });
-            }), config_json_1.default.coloring[style].base);
+            }), config_json_2.default.coloring[style].base);
             layer.units.forEach(function (unit) {
-                if (config_json_1.default.eye.appearRate <= unit.body.radius && !isOutOfCanvas(unit.body)) {
-                    drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_1.default.eye.whiteRate, }, config_json_1.default.coloring[style].base);
+                if (config_json_2.default.eye.appearRate <= unit.body.radius && !model_1.Model.isOutOfCanvas(unit.body)) {
+                    drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.whiteRate, }, config_json_2.default.coloring[style].base);
                 }
             });
             drawFusionPath(layer.units.map(function (u) { return u.body; })
-                .filter(function (c) { return config_json_1.default.eye.appearRate <= c.radius; })
-                .filter(function (c) { return !isOutOfCanvas(c); })
+                .filter(function (c) { return config_json_2.default.eye.appearRate <= c.radius; })
+                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
                 .map(function (c) {
                 return ({
                     x: (c.x * shortSide) + centerX,
                     y: (c.y * shortSide) + centerY,
-                    radius: c.radius * shortSide * config_json_1.default.eye.irisRate,
+                    radius: c.radius * shortSide * config_json_2.default.eye.irisRate,
                 });
-            }), config_json_1.default.coloring[style].accent);
+            }), config_json_2.default.coloring[style].accent);
             drawFusionPath(layer.units.map(function (u) { var _a; return (_a = u.eye) === null || _a === void 0 ? void 0 : _a.iris; })
                 .filter(function (c) { return undefined !== c; })
-                .filter(function (c) { return !isOutOfCanvas(c); })
+                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
                 .map(function (c) {
                 return ({
                     x: (c.x * shortSide) + centerX,
                     y: (c.y * shortSide) + centerY,
                     radius: c.radius * shortSide,
                 });
-            }), config_json_1.default.coloring[style].accent);
+            }), config_json_2.default.coloring[style].accent);
             layer.units.forEach(function (unit) {
-                if (config_json_1.default.eye.appearRate <= unit.body.radius && !isOutOfCanvas(unit.body)) {
-                    drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_1.default.eye.irisRate, }, config_json_1.default.coloring[style].accent);
+                if (config_json_2.default.eye.appearRate <= unit.body.radius && !model_1.Model.isOutOfCanvas(unit.body)) {
+                    drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.irisRate, }, config_json_2.default.coloring[style].accent);
                 }
             });
         }
     };
     var draw = function () {
-        context.fillStyle = config_json_1.default.coloring[style].base;
+        context.fillStyle = config_json_2.default.coloring[style].base;
         context.fillRect(0, 0, canvas.width, canvas.height);
-        drawLayer(Data.accent, config_json_1.default.coloring[style].accent);
-        drawLayer(Data.main, config_json_1.default.coloring[style].main);
+        drawLayer(model_1.Model.Data.accent, config_json_2.default.coloring[style].accent);
+        drawLayer(model_1.Model.Data.main, config_json_2.default.coloring[style].main);
         // const body = 0.1;
         // drawCircle({ x: 0, y: 0, radius: body, }, config.coloring[style].main);
         // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.coloring[style].base);
@@ -602,7 +622,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
     };
     if (context) {
         var step_1 = function (timestamp) {
-            updateData(timestamp);
+            model_1.Model.updateData(timestamp);
             draw();
             if (fpsDiv && fpsDiv.style.display !== "none") {
                 fps_1.Fps.step(timestamp);
@@ -655,10 +675,11 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         });
     }
     document.addEventListener("click", function () {
-        var keys = Object.keys(config_json_1.default.coloring);
+        var keys = Object.keys(config_json_2.default.coloring);
         var currentIndex = keys.indexOf(style);
         var nextIndex = (currentIndex + 1) % keys.length;
         style = keys[nextIndex];
+        console.log("\uD83C\uDFA8 Style changed: ".concat(style));
     });
     var ToggleClassForWhileTimer = /** @class */ (function () {
         function ToggleClassForWhileTimer() {

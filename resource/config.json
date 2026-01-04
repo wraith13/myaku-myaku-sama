@@ -19,6 +19,21 @@
             "base": "#FFFFFF",
             "main": "#000000",
             "accent": "#72716F"
+        },
+        "splatoon": {
+            "base": "#000000",
+            "main": "#FD5900",
+            "accent": "#0020FE"
+        },
+        "splatoon2": {
+            "base": "#000000",
+            "main": "#1AD71A",
+            "accent": "#F32C7F"
+        },
+        "splatoon3": {
+            "base": "#000000",
+            "main": "#5F3BFE",
+            "accent": "#EBFF37"
         }
     },
     "eye":
