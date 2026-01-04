@@ -36,7 +36,7 @@ __STYLE__
     </div>
 </noscript>
 <canvas id="canvas" role="presentation"></canvas>
-<div id="fps" style="display:none;"></div>
+<div id="fps"></div>
 <script type="text/javascript">
 const build = {
     at: "__BUILD_TIMESTAMP__",

@@ -309,84 +309,122 @@ console.log("Window loaded.");
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const context = canvas.getContext("2d") as CanvasRenderingContext2D;
 let style = "regular" as keyof typeof config["coloring"];
-
+type FusionStatus = "none" | "wired" | "proximity" | "contact" | "inclusion";
+interface CirclesConnection
+{
+    sumRadius: number;
+    minRadius: number;
+    fusionLimit: number;
+    fusionDelta: number;
+    //angle: number;
+    distance: number;
+}
+const getFusionStatus = (data: CirclesConnection): FusionStatus =>
+{
+    if (data.fusionLimit < data.distance)
+    {
+        return "none";
+    }
+    if (data.sumRadius +data.fusionDelta *2 <= data.distance)
+    {
+        return "wired";
+    }
+    if (data.sumRadius < data.distance)
+    {
+        return "proximity";
+    }
+    if (data.sumRadius -data.minRadius *2 < data.distance)
+    {
+        return "contact";
+    }
+    return "inclusion";
+};
 const fusionThreshold = 1.0;  // 融合閾値 (r1 + r2) * this
 let useFusion = false;  // トグル: trueで融合描画、falseで個別円
-const getTangentPoints = (c1: Circle, c2: Circle): { tp1: Point; tp2: Point; tp3: Point; tp4: Point; cp1: Point; cp2: Point; } | null =>
+const getTangentPoints = (a: Circle, b: Circle): { tp1: Point; tp2: Point; tp3: Point; tp4: Point; cp1: Point; cp2: Point; } | null =>
 {
-    const dx = c2.x - c1.x;
-    const dy = c2.y - c1.y;
-    const dist = Math.hypot(dx, dy);
-    const sumR = c1.radius + c2.radius;
-    const minR = Math.min(c1.radius, c2.radius);
-    //const maxR = Math.max(c1.radius, c2.radius);
-    if (dist > sumR +(minR *fusionThreshold) || dist < Math.abs(c1.radius - c2.radius)) return null;  // 遠すぎ/重なりすぎ
-
-    //const d = Math.sqrt(dist ** 2 - (c1.radius - c2.radius) ** 2);  // タンジェント長
+    const fusionLimitRate = fusionThreshold;
+    const fusionDeltaRate = 0.1;
+    const sumRadius = a.radius +b.radius;
+    const minRadius = Math.min(a.radius, b.radius);
+    const fusionLimit = sumRadius +minRadius *fusionLimitRate;
+    const fusionDelta = minRadius *fusionDeltaRate;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
     const angle = Math.atan2(dy, dx);
-    // const theta = Math.acos((c1.radius - c2.radius) / dist);
-    const theta1 = Math.acos(dist / (c2.radius +sumR));
-    const theta2 = Math.acos(dist / (c1.radius +sumR));
-    const isC1Embedded = dist < c2.radius;
-    const isC2Embedded = dist < c1.radius;
+    const distance = Math.hypot(dx, dy);
+    const fusionStatus = getFusionStatus({ sumRadius, minRadius, fusionLimit, fusionDelta, distance, });
+    if (fusionStatus === "none" || fusionStatus === "inclusion")
+    {
+        return null;  // 融合不可/包含
+    }
+    else
+    {
+        //const d = Math.sqrt(dist ** 2 - (c1.radius - c2.radius) ** 2);  // タンジェント長
+        // const theta = Math.acos((c1.radius - c2.radius) / dist);
+        const theta1 = Math.acos(distance / (b.radius +sumRadius));
+        const theta2 = Math.acos(distance / (a.radius +sumRadius));
+        const isC1Embedded = distance < b.radius;
+        const isC2Embedded = distance < a.radius;
 
-    // 左タンジェント (tp1 on c1, tp3 on c2)
-    const tp1: Point =
-    {
-        x: c1.x + c1.radius * Math.cos(angle + (isC1Embedded ? (Math.PI -theta1): theta1)),
-        y: c1.y + c1.radius * Math.sin(angle + (isC1Embedded ? (Math.PI -theta1): theta1))
-    };
-    const tp3: Point =
-    {
-        x: c2.x + c2.radius * Math.cos(angle + (isC2Embedded ? -theta2: (Math.PI +theta2))),
-        y: c2.y + c2.radius * Math.sin(angle + (isC2Embedded ? -theta2: (Math.PI +theta2)))
-    };
+        // 左タンジェント (tp1 on c1, tp3 on c2)
+        const tp1: Point =
+        {
+            x: a.x + a.radius * Math.cos(angle + (isC1Embedded ? (Math.PI -theta1): theta1)),
+            y: a.y + a.radius * Math.sin(angle + (isC1Embedded ? (Math.PI -theta1): theta1))
+        };
+        const tp3: Point =
+        {
+            x: b.x + b.radius * Math.cos(angle + (isC2Embedded ? -theta2: (Math.PI +theta2))),
+            y: b.y + b.radius * Math.sin(angle + (isC2Embedded ? -theta2: (Math.PI +theta2)))
+        };
 
-    // 右タンジェント (tp2 on c1, tp4 on c2)
-    const tp2: Point =
-    {
-        x: c1.x + c1.radius * Math.cos(angle + (isC1Embedded ? (Math.PI +theta1): -theta1)),
-        y: c1.y + c1.radius * Math.sin(angle + (isC1Embedded ? (Math.PI +theta1): -theta1))
-    };
-    const tp4: Point =
-    {
-        x: c2.x + c2.radius * Math.cos(angle + (isC2Embedded ? theta2: (Math.PI -theta2))),
-        y: c2.y + c2.radius * Math.sin(angle + (isC2Embedded ? theta2: (Math.PI -theta2)))
-    };
+        // 右タンジェント (tp2 on c1, tp4 on c2)
+        const tp2: Point =
+        {
+            x: a.x + a.radius * Math.cos(angle + (isC1Embedded ? (Math.PI +theta1): -theta1)),
+            y: a.y + a.radius * Math.sin(angle + (isC1Embedded ? (Math.PI +theta1): -theta1))
+        };
+        const tp4: Point =
+        {
+            x: b.x + b.radius * Math.cos(angle + (isC2Embedded ? theta2: (Math.PI -theta2))),
+            y: b.y + b.radius * Math.sin(angle + (isC2Embedded ? theta2: (Math.PI -theta2)))
+        };
 
 
-    // const cp1: Point =
-    // {
-    //     x: (tp1.x + tp4.x) / 2 + (tp4.y - tp1.y) * 0.2,
-    //     y: (tp1.y + tp4.y) / 2 - (tp4.x - tp1.x) * 0.2,
-    // };
-    // const cp2: Point =
-    // {
-    //     x: (tp2.x + tp3.x) / 2 - (tp3.y - tp2.y) * 0.2,
-    //     y: (tp2.y + tp3.y) / 2 + (tp3.x - tp2.x) * 0.2,
-    // };
-    const cp0: Point =
-    {
-        x: (tp1.x +tp2.x + tp3.x + tp4.x) /4,
-        y: (tp1.y +tp2.y + tp3.y + tp4.y) /4,
-    };
-    const contactDist = sumR +minR;
-    const cpRate = contactDist <= dist ? 0:
-        Math.min(1, (contactDist -dist) / (minR *2));
-    const cp1: Point = contactDist <= dist ?
-    cp0:
-    {
-        x: cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate,
-        y: cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate,
-    };
-    const cp2: Point = contactDist <= dist ?
-    cp0:
-    {
-        x: cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate,
-        y: cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate,
-    };
+        // const cp1: Point =
+        // {
+        //     x: (tp1.x + tp4.x) / 2 + (tp4.y - tp1.y) * 0.2,
+        //     y: (tp1.y + tp4.y) / 2 - (tp4.x - tp1.x) * 0.2,
+        // };
+        // const cp2: Point =
+        // {
+        //     x: (tp2.x + tp3.x) / 2 - (tp3.y - tp2.y) * 0.2,
+        //     y: (tp2.y + tp3.y) / 2 + (tp3.x - tp2.x) * 0.2,
+        // };
+        const cp0: Point =
+        {
+            x: (tp1.x +tp2.x + tp3.x + tp4.x) /4,
+            y: (tp1.y +tp2.y + tp3.y + tp4.y) /4,
+        };
+        const contactDist = sumRadius +minRadius;
+        const cpRate = contactDist <= distance ? 0:
+            Math.min(1, (contactDist -distance) / (minRadius *2));
+        const cp1: Point = contactDist <= distance ?
+        cp0:
+        {
+            x: cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate,
+            y: cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate,
+        };
+        const cp2: Point = contactDist <= distance ?
+        cp0:
+        {
+            x: cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate,
+            y: cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate,
+        };
 
-    return { tp1, tp2, tp3, tp4, cp1, cp2, };
+        return { tp1, tp2, tp3, tp4, cp1, cp2, };
+    }
 };
 // const buildFusionPath = (layer: Layer): Path2D =>
 // {
@@ -490,7 +528,7 @@ const drawFusionPath = (layer: Layer, color: string) =>
             context.beginPath();
             context.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
             context.fillStyle = color;
-            // context.fillStyle = "#00000088";
+            // connection.fillStyle = "#00000088";
             context.fill();
             context.closePath();
         } else {
@@ -500,7 +538,7 @@ const drawFusionPath = (layer: Layer, color: string) =>
                 context.beginPath();
                 context.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
                 context.fillStyle = color;
-                // context.fillStyle = "#00000088";
+                // connection.fillStyle = "#00000088";
                 context.fill();
                 context.closePath();
                 for (let k = j + 1; k < group.length; k++) {
@@ -518,19 +556,19 @@ const drawFusionPath = (layer: Layer, color: string) =>
                         context.lineTo(tangents.tp1.x, tangents.tp1.y);
 
                 context.fillStyle = color;
-                // context.fillStyle = "#00000088";
+                // connection.fillStyle = "#00000088";
                 context.fill();
                 context.closePath();
 
 
-            // context.beginPath();
-            // context.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
-            // context.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
-            // context.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
-            // context.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
-            // context.fillStyle = "#00000088";
-            // context.fill();
-            // context.closePath();
+            // connection.beginPath();
+            // connection.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
+            // connection.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
+            // connection.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
+            // connection.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
+            // connection.fillStyle = "#00000088";
+            // connection.fill();
+            // connection.closePath();
 
 
                     }
@@ -582,8 +620,8 @@ const drawLayer = (layer: Layer, color: string) =>
         });
 
         // const path = buildFusionPath(layer);
-        // context.fillStyle = color;
-        // context.fill(path, 'nonzero');  // 塗りつぶし
+        // connection.fillStyle = color;
+        // connection.fill(path, 'nonzero');  // 塗りつぶし
 
         drawFusionPath(layer, color);
 
@@ -627,9 +665,9 @@ const drawLayer = (layer: Layer, color: string) =>
 const draw = () =>
 {
     context.fillStyle = config.coloring[style].base;
-    //context.globalCompositeOperation = "destination-out";
+    //connection.globalCompositeOperation = "destination-out";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    //context.globalCompositeOperation = "source-over";
+    //connection.globalCompositeOperation = "source-over";
     drawLayer(Data.accent, config.coloring[style].accent);
     drawLayer(Data.main, config.coloring[style].main);
     //drawCircle({ x: 0, y: 0, radius: 0.1, }, config.coloring[style].main);
@@ -654,7 +692,7 @@ if (context)
 }
 else
 {
-    console.error("Failed to get 2D context.");
+    console.error("Failed to get 2D connection.");
 }
 if (document.fullscreenEnabled || (<any>document).webkitFullscreenEnabled)
 {
@@ -697,6 +735,7 @@ if (document.fullscreenEnabled || (<any>document).webkitFullscreenEnabled)
 }
 if (fpsDiv)
 {
+    //fpsDiv.style.display = "none";
     document.addEventListener
     (
         "keydown",

@@ -405,72 +405,94 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
     var style = "regular";
+    var getFusionStatus = function (data) {
+        if (data.fusionLimit < data.distance) {
+            return "none";
+        }
+        if (data.sumRadius + data.fusionDelta * 2 <= data.distance) {
+            return "wired";
+        }
+        if (data.sumRadius < data.distance) {
+            return "proximity";
+        }
+        if (data.sumRadius - data.minRadius * 2 < data.distance) {
+            return "contact";
+        }
+        return "inclusion";
+    };
     var fusionThreshold = 1.0; // 融合閾値 (r1 + r2) * this
     var useFusion = false; // トグル: trueで融合描画、falseで個別円
-    var getTangentPoints = function (c1, c2) {
-        var dx = c2.x - c1.x;
-        var dy = c2.y - c1.y;
-        var dist = Math.hypot(dx, dy);
-        var sumR = c1.radius + c2.radius;
-        var minR = Math.min(c1.radius, c2.radius);
-        //const maxR = Math.max(c1.radius, c2.radius);
-        if (dist > sumR + (minR * fusionThreshold) || dist < Math.abs(c1.radius - c2.radius))
-            return null; // 遠すぎ/重なりすぎ
-        //const d = Math.sqrt(dist ** 2 - (c1.radius - c2.radius) ** 2);  // タンジェント長
+    var getTangentPoints = function (a, b) {
+        var fusionLimitRate = fusionThreshold;
+        var fusionDeltaRate = 0.1;
+        var sumRadius = a.radius + b.radius;
+        var minRadius = Math.min(a.radius, b.radius);
+        var fusionLimit = sumRadius + minRadius * fusionLimitRate;
+        var fusionDelta = minRadius * fusionDeltaRate;
+        var dx = b.x - a.x;
+        var dy = b.y - a.y;
         var angle = Math.atan2(dy, dx);
-        // const theta = Math.acos((c1.radius - c2.radius) / dist);
-        var theta1 = Math.acos(dist / (c2.radius + sumR));
-        var theta2 = Math.acos(dist / (c1.radius + sumR));
-        var isC1Embedded = dist < c2.radius;
-        var isC2Embedded = dist < c1.radius;
-        // 左タンジェント (tp1 on c1, tp3 on c2)
-        var tp1 = {
-            x: c1.x + c1.radius * Math.cos(angle + (isC1Embedded ? (Math.PI - theta1) : theta1)),
-            y: c1.y + c1.radius * Math.sin(angle + (isC1Embedded ? (Math.PI - theta1) : theta1))
-        };
-        var tp3 = {
-            x: c2.x + c2.radius * Math.cos(angle + (isC2Embedded ? -theta2 : (Math.PI + theta2))),
-            y: c2.y + c2.radius * Math.sin(angle + (isC2Embedded ? -theta2 : (Math.PI + theta2)))
-        };
-        // 右タンジェント (tp2 on c1, tp4 on c2)
-        var tp2 = {
-            x: c1.x + c1.radius * Math.cos(angle + (isC1Embedded ? (Math.PI + theta1) : -theta1)),
-            y: c1.y + c1.radius * Math.sin(angle + (isC1Embedded ? (Math.PI + theta1) : -theta1))
-        };
-        var tp4 = {
-            x: c2.x + c2.radius * Math.cos(angle + (isC2Embedded ? theta2 : (Math.PI - theta2))),
-            y: c2.y + c2.radius * Math.sin(angle + (isC2Embedded ? theta2 : (Math.PI - theta2)))
-        };
-        // const cp1: Point =
-        // {
-        //     x: (tp1.x + tp4.x) / 2 + (tp4.y - tp1.y) * 0.2,
-        //     y: (tp1.y + tp4.y) / 2 - (tp4.x - tp1.x) * 0.2,
-        // };
-        // const cp2: Point =
-        // {
-        //     x: (tp2.x + tp3.x) / 2 - (tp3.y - tp2.y) * 0.2,
-        //     y: (tp2.y + tp3.y) / 2 + (tp3.x - tp2.x) * 0.2,
-        // };
-        var cp0 = {
-            x: (tp1.x + tp2.x + tp3.x + tp4.x) / 4,
-            y: (tp1.y + tp2.y + tp3.y + tp4.y) / 4,
-        };
-        var contactDist = sumR + minR;
-        var cpRate = contactDist <= dist ? 0 :
-            Math.min(1, (contactDist - dist) / (minR * 2));
-        var cp1 = contactDist <= dist ?
-            cp0 :
-            {
-                x: cp0.x * (1 - cpRate) + ((tp1.x + tp4.x) / 2) * cpRate,
-                y: cp0.y * (1 - cpRate) + ((tp1.y + tp4.y) / 2) * cpRate,
+        var distance = Math.hypot(dx, dy);
+        var fusionStatus = getFusionStatus({ sumRadius: sumRadius, minRadius: minRadius, fusionLimit: fusionLimit, fusionDelta: fusionDelta, distance: distance, });
+        if (fusionStatus === "none" || fusionStatus === "inclusion") {
+            return null; // 融合不可/包含
+        }
+        else {
+            //const d = Math.sqrt(dist ** 2 - (c1.radius - c2.radius) ** 2);  // タンジェント長
+            // const theta = Math.acos((c1.radius - c2.radius) / dist);
+            var theta1 = Math.acos(distance / (b.radius + sumRadius));
+            var theta2 = Math.acos(distance / (a.radius + sumRadius));
+            var isC1Embedded = distance < b.radius;
+            var isC2Embedded = distance < a.radius;
+            // 左タンジェント (tp1 on c1, tp3 on c2)
+            var tp1 = {
+                x: a.x + a.radius * Math.cos(angle + (isC1Embedded ? (Math.PI - theta1) : theta1)),
+                y: a.y + a.radius * Math.sin(angle + (isC1Embedded ? (Math.PI - theta1) : theta1))
             };
-        var cp2 = contactDist <= dist ?
-            cp0 :
-            {
-                x: cp0.x * (1 - cpRate) + ((tp2.x + tp3.x) / 2) * cpRate,
-                y: cp0.y * (1 - cpRate) + ((tp2.y + tp3.y) / 2) * cpRate,
+            var tp3 = {
+                x: b.x + b.radius * Math.cos(angle + (isC2Embedded ? -theta2 : (Math.PI + theta2))),
+                y: b.y + b.radius * Math.sin(angle + (isC2Embedded ? -theta2 : (Math.PI + theta2)))
             };
-        return { tp1: tp1, tp2: tp2, tp3: tp3, tp4: tp4, cp1: cp1, cp2: cp2, };
+            // 右タンジェント (tp2 on c1, tp4 on c2)
+            var tp2 = {
+                x: a.x + a.radius * Math.cos(angle + (isC1Embedded ? (Math.PI + theta1) : -theta1)),
+                y: a.y + a.radius * Math.sin(angle + (isC1Embedded ? (Math.PI + theta1) : -theta1))
+            };
+            var tp4 = {
+                x: b.x + b.radius * Math.cos(angle + (isC2Embedded ? theta2 : (Math.PI - theta2))),
+                y: b.y + b.radius * Math.sin(angle + (isC2Embedded ? theta2 : (Math.PI - theta2)))
+            };
+            // const cp1: Point =
+            // {
+            //     x: (tp1.x + tp4.x) / 2 + (tp4.y - tp1.y) * 0.2,
+            //     y: (tp1.y + tp4.y) / 2 - (tp4.x - tp1.x) * 0.2,
+            // };
+            // const cp2: Point =
+            // {
+            //     x: (tp2.x + tp3.x) / 2 - (tp3.y - tp2.y) * 0.2,
+            //     y: (tp2.y + tp3.y) / 2 + (tp3.x - tp2.x) * 0.2,
+            // };
+            var cp0 = {
+                x: (tp1.x + tp2.x + tp3.x + tp4.x) / 4,
+                y: (tp1.y + tp2.y + tp3.y + tp4.y) / 4,
+            };
+            var contactDist = sumRadius + minRadius;
+            var cpRate = contactDist <= distance ? 0 :
+                Math.min(1, (contactDist - distance) / (minRadius * 2));
+            var cp1 = contactDist <= distance ?
+                cp0 :
+                {
+                    x: cp0.x * (1 - cpRate) + ((tp1.x + tp4.x) / 2) * cpRate,
+                    y: cp0.y * (1 - cpRate) + ((tp1.y + tp4.y) / 2) * cpRate,
+                };
+            var cp2 = contactDist <= distance ?
+                cp0 :
+                {
+                    x: cp0.x * (1 - cpRate) + ((tp2.x + tp3.x) / 2) * cpRate,
+                    y: cp0.y * (1 - cpRate) + ((tp2.y + tp3.y) / 2) * cpRate,
+                };
+            return { tp1: tp1, tp2: tp2, tp3: tp3, tp4: tp4, cp1: cp1, cp2: cp2, };
+        }
     };
     // const buildFusionPath = (layer: Layer): Path2D =>
     // {
@@ -567,7 +589,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                 context.beginPath();
                 context.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
                 context.fillStyle = color;
-                // context.fillStyle = "#00000088";
+                // connection.fillStyle = "#00000088";
                 context.fill();
                 context.closePath();
             }
@@ -578,7 +600,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                     context.beginPath();
                     context.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
                     context.fillStyle = color;
-                    // context.fillStyle = "#00000088";
+                    // connection.fillStyle = "#00000088";
                     context.fill();
                     context.closePath();
                     for (var k = j + 1; k < group.length; k++) {
@@ -593,17 +615,17 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                             context.quadraticCurveTo(tangents.cp2.x, tangents.cp2.y, tangents.tp2.x, tangents.tp2.y);
                             context.lineTo(tangents.tp1.x, tangents.tp1.y);
                             context.fillStyle = color;
-                            // context.fillStyle = "#00000088";
+                            // connection.fillStyle = "#00000088";
                             context.fill();
                             context.closePath();
-                            // context.beginPath();
-                            // context.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
-                            // context.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
-                            // context.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
-                            // context.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
-                            // context.fillStyle = "#00000088";
-                            // context.fill();
-                            // context.closePath();
+                            // connection.beginPath();
+                            // connection.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
+                            // connection.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
+                            // connection.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
+                            // connection.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
+                            // connection.fillStyle = "#00000088";
+                            // connection.fill();
+                            // connection.closePath();
                         }
                     }
                     // グループの各円の露出arcを追加 (融合部分以外)
@@ -645,8 +667,8 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
                 // eyeも同様
             });
             // const path = buildFusionPath(layer);
-            // context.fillStyle = color;
-            // context.fill(path, 'nonzero');  // 塗りつぶし
+            // connection.fillStyle = color;
+            // connection.fill(path, 'nonzero');  // 塗りつぶし
             drawFusionPath(layer, color);
             // eye描画 (融合後重ね)
             layer.units.forEach(drawEye);
@@ -683,9 +705,9 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
     };
     var draw = function () {
         context.fillStyle = config_json_1.default.coloring[style].base;
-        //context.globalCompositeOperation = "destination-out";
+        //connection.globalCompositeOperation = "destination-out";
         context.fillRect(0, 0, canvas.width, canvas.height);
-        //context.globalCompositeOperation = "source-over";
+        //connection.globalCompositeOperation = "source-over";
         drawLayer(Data.accent, config_json_1.default.coloring[style].accent);
         drawLayer(Data.main, config_json_1.default.coloring[style].main);
         //drawCircle({ x: 0, y: 0, radius: 0.1, }, config.coloring[style].main);
@@ -706,7 +728,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         console.log("Canvas initialized.");
     }
     else {
-        console.error("Failed to get 2D context.");
+        console.error("Failed to get 2D connection.");
     }
     if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
         document.addEventListener("keydown", function (event) {
@@ -734,6 +756,7 @@ define("script/index", ["require", "exports", "script/fps", "resource/config"], 
         });
     }
     if (fpsDiv) {
+        //fpsDiv.style.display = "none";
         document.addEventListener("keydown", function (event) {
             if ("s" === event.key.toLowerCase()) {
                 if ("none" === fpsDiv.style.display) {
