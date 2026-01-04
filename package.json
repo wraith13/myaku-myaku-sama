@@ -1,7 +1,7 @@
 {
     "name": "@wraith13/myaku-myaku-sama",
     "version": "0.0.0",
-    "description": "Myaku-myaku Sama",
+    "description": "Myaku-Myaku Sama",
     "scripts": {
         "build all": "node ./build.js ../build.json all",
         "build script": "tsc -p ./script/tsconfig.json",

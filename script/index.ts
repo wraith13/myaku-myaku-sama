@@ -16,11 +16,11 @@ interface Point
     x: number;
     y: number;
 };
-const addPoints = (a: Point, b: Point): Point =>
-({
-    x: a.x + b.x,
-    y: a.y + b.y,
-});
+// const addPoints = (a: Point, b: Point): Point =>
+// ({
+//     x: a.x + b.x,
+//     y: a.y + b.y,
+// });
 interface Animation
 {
     period: number;
@@ -83,8 +83,26 @@ const Data =
     accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, } as Layer,
     main: { units: [], lastMadeAt: 0, lastRemovedAt: 0, } as Layer,
 };
-const sumAreas = (layer: Layer) =>
-    layer.units.reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
+const isOutOfCanvas = (circle: Circle) =>
+{
+    const marginRate = config.rendering.marginRate;
+    const shortSide = Math.min(canvas.width, canvas.height);
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const x = (circle.x *marginRate *shortSide) +centerX;
+    const y = (circle.y *marginRate *shortSide) +centerY;
+    return (x +circle.radius *shortSide < 0 ||
+            y +circle.radius *shortSide < 0 ||
+            canvas.width < x -circle.radius *shortSide ||
+            canvas.height < y -circle.radius *shortSide);
+};
+const sumValidAreas = (layer: Layer) =>
+    layer.units
+        .filter(unit => ! isOutOfCanvas(unit.body))
+        .reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
+const sumAllAreas = (layer: Layer) =>
+    layer.units
+        .reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
 const calculateAnimationSineIntegral = (animation: Animation, step: number): number =>
 {
     // return stepで積分(Math.sin((animation.phase / animation.period) * Math.PI * 2));
@@ -206,12 +224,14 @@ const updateLayer = (layer: Layer, timestamp: number, step: number) =>
 {
     const shortSide = Math.min(window.innerWidth, window.innerHeight);
     const longSide = Math.max(window.innerWidth, window.innerHeight);
-    const volume = sumAreas(layer);
+    const validVolume = sumValidAreas(layer);
+    const allVolume = sumAllAreas(layer);
     const longSideRatio = 0 < shortSide ? longSide / shortSide: 0;
-    const areaRatio = volume /(longSideRatio *2.0);
-    if (areaRatio < 1.0)
+    const validAreaRatio = validVolume /(longSideRatio *2.0);
+    const allAreaRatio = allVolume /Math.min(longSideRatio *2.0, validVolume);
+    if (validAreaRatio < 0.5)
     {
-        const makeUnitCooldown = 1000 *areaRatio;
+        const makeUnitCooldown = 1000 *validAreaRatio;
         if (makeUnitCooldown <= timestamp -layer.lastMadeAt)
         {
             layer.units.push(makeUnit({ x: (pseudoGaussian(1) -0.5) *window.innerWidth/ shortSide, y: (pseudoGaussian(1) -0.5) *window.innerHeight /shortSide, }));
@@ -219,9 +239,9 @@ const updateLayer = (layer: Layer, timestamp: number, step: number) =>
         }
     }
     else
-    if (1.0 < areaRatio || (0.5 < areaRatio && layer.lastRemovedAt +3000 < timestamp))
+    if (1.0 < allAreaRatio || (0.5 < allAreaRatio && layer.lastRemovedAt +3000 < timestamp))
     {
-        const removeUnitCooldown = 1000 /areaRatio;
+        const removeUnitCooldown = 1000 /allAreaRatio;
         if (removeUnitCooldown <= timestamp -layer.lastRemovedAt)
         {
             const target = layer.units.filter((unit) => undefined === unit.animation.vanishAnimation)[0];
@@ -251,46 +271,8 @@ const updateLayer = (layer: Layer, timestamp: number, step: number) =>
         }
     );
 };
-const updateXAnimationStretch = (animation: Animation, xScale: number) =>
-{
-    animation.scale *= xScale;
-};
-const updateYAnimationStretch = (animation: Animation, yScale: number) =>
-{
-    animation.scale *= yScale;
-};
-const updateCircleStretch = (circle: Circle, xScale: number, yScale: number) =>
-{
-    const radiusScale = Data.width <= Data.height ?
-        window.innerWidth / Data.width:
-        window.innerHeight / Data.height;
-    circle.x *= xScale;
-    circle.y *= yScale;
-    circle.radius *= radiusScale;
-};
-const updateLayerStretch = (layer: Layer) =>
-{
-    const xScale = window.innerWidth / Data.width;
-    const yScale = window.innerHeight / Data.height;
-    layer.units.forEach
-    (
-        i =>
-        {
-            updateCircleStretch(i.body, xScale, yScale);
-            i.animation.moveAnimation.x.forEach(a => updateXAnimationStretch(a, xScale));
-            i.animation.moveAnimation.y.forEach(a => updateYAnimationStretch(a, yScale));
-            if (i.eye)
-            {
-                updateCircleStretch(i.eye.white, xScale, yScale);
-                updateCircleStretch(i.eye.iris, xScale, yScale);
-            }
-        }
-    );
-}
 const updateStretch = () =>
 {
-    updateLayerStretch(Data.accent);
-    updateLayerStretch(Data.main);
     canvas.width = Data.width = window.innerWidth;
     canvas.height = Data.height = window.innerHeight;
 };
@@ -310,6 +292,10 @@ const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const context = canvas.getContext("2d") as CanvasRenderingContext2D;
 let style = "regular" as keyof typeof config["coloring"];
 type FusionStatus = "none" | "wired" | "proximity" | "contact" | "inclusion";
+const hasFusionPath = (fusionStatus: FusionStatus) =>
+    [ "none", "inclusion" ].indexOf(fusionStatus) < 0;
+const isContacted = (fusionStatus: FusionStatus) =>
+    0 <= [ "contact", "inclusion" ].indexOf(fusionStatus);
 interface CirclesConnection
 {
     sumRadius: number;
@@ -339,221 +325,94 @@ const getFusionStatus = (data: CirclesConnection): FusionStatus =>
     }
     return "inclusion";
 };
-const fusionThreshold = 1.0;  // 融合閾値 (r1 + r2) * this
-let useFusion = false;  // トグル: trueで融合描画、falseで個別円
-const getTangentPoints = (a: Circle, b: Circle): { tp1: Point; tp2: Point; tp3: Point; tp4: Point; cp1: Point; cp2: Point; } | null =>
+const fusionLimitRate = 3;
+const fusionDeltaRate = 0.1;
+const minCurveAngleRate = 1.0;
+const drawFusionPath = (circles: Circle[], color: string) =>
 {
-    const fusionLimitRate = fusionThreshold;
-    const fusionDeltaRate = 0.1;
-    const sumRadius = a.radius +b.radius;
-    const minRadius = Math.min(a.radius, b.radius);
-    const fusionLimit = sumRadius +minRadius *fusionLimitRate;
-    const fusionDelta = minRadius *fusionDeltaRate;
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const angle = Math.atan2(dy, dx);
-    const distance = Math.hypot(dx, dy);
-    const fusionStatus = getFusionStatus({ sumRadius, minRadius, fusionLimit, fusionDelta, distance, });
-    if (fusionStatus === "none" || fusionStatus === "inclusion")
+    for (let i = 0; i < circles.length; i++)
     {
-        return null;  // 融合不可/包含
-    }
-    else
-    {
-        //const d = Math.sqrt(dist ** 2 - (c1.radius - c2.radius) ** 2);  // タンジェント長
-        // const theta = Math.acos((c1.radius - c2.radius) / dist);
-        const theta1 = Math.acos(distance / (b.radius +sumRadius));
-        const theta2 = Math.acos(distance / (a.radius +sumRadius));
-        const isC1Embedded = distance < b.radius;
-        const isC2Embedded = distance < a.radius;
-
-        // 左タンジェント (tp1 on c1, tp3 on c2)
-        const tp1: Point =
+        for (let j = i + 1; j < circles.length; j++)
         {
-            x: a.x + a.radius * Math.cos(angle + (isC1Embedded ? (Math.PI -theta1): theta1)),
-            y: a.y + a.radius * Math.sin(angle + (isC1Embedded ? (Math.PI -theta1): theta1))
-        };
-        const tp3: Point =
-        {
-            x: b.x + b.radius * Math.cos(angle + (isC2Embedded ? -theta2: (Math.PI +theta2))),
-            y: b.y + b.radius * Math.sin(angle + (isC2Embedded ? -theta2: (Math.PI +theta2)))
-        };
+            const a = circles[i];
+            const b = circles[j];
+            const sumRadius = a.radius +b.radius;
+            const minRadius = Math.min(a.radius, b.radius);
+            const maxRadius = Math.min(a.radius, b.radius);
+            const fusionLimit = sumRadius +Math.min(minRadius *fusionLimitRate, maxRadius);
+            const fusionDelta = minRadius *fusionDeltaRate;
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const angle = Math.atan2(dy, dx);
+            const distance = Math.hypot(dx, dy);
+            const fusionStatus = getFusionStatus({ sumRadius, minRadius, fusionLimit, fusionDelta, distance, });
+            if (hasFusionPath(fusionStatus))
+            {
+                const contactAngle: number | null = isContacted(fusionStatus) ? Math.acos(distance / sumRadius): null;
+                const curveAngleRate = minCurveAngleRate *
+                (
+                    isContacted(fusionStatus) ? 1:
+                    Math.pow(((fusionLimit -sumRadius) -(distance -sumRadius)) /(fusionLimit -sumRadius), 0.3)
+                );
+                const minCurveAngle1 = curveAngleRate * minRadius /a.radius;
+                const minCurveAngle2 = curveAngleRate * minRadius /b.radius;
+                const theta1 = Math.min((contactAngle ?? 0) +minCurveAngle1, Math.PI -minCurveAngle1);
+                const theta2 = Math.min((contactAngle ?? 0) +minCurveAngle2, Math.PI -minCurveAngle2);
 
-        // 右タンジェント (tp2 on c1, tp4 on c2)
-        const tp2: Point =
-        {
-            x: a.x + a.radius * Math.cos(angle + (isC1Embedded ? (Math.PI +theta1): -theta1)),
-            y: a.y + a.radius * Math.sin(angle + (isC1Embedded ? (Math.PI +theta1): -theta1))
-        };
-        const tp4: Point =
-        {
-            x: b.x + b.radius * Math.cos(angle + (isC2Embedded ? theta2: (Math.PI -theta2))),
-            y: b.y + b.radius * Math.sin(angle + (isC2Embedded ? theta2: (Math.PI -theta2)))
-        };
+                // 左タンジェント (tp1 on c1, tp3 on c2)
+                const tp1: Point =
+                {
+                    x: a.x + a.radius * Math.cos(angle + theta1),
+                    y: a.y + a.radius * Math.sin(angle + theta1)
+                };
+                const tp3: Point =
+                {
+                    x: b.x + b.radius * Math.cos(angle + (Math.PI +theta2)),
+                    y: b.y + b.radius * Math.sin(angle + (Math.PI +theta2))
+                };
 
+                // 右タンジェント (tp2 on c1, tp4 on c2)
+                const tp2: Point =
+                {
+                    x: a.x + a.radius * Math.cos(angle -theta1),
+                    y: a.y + a.radius * Math.sin(angle -theta1)
+                };
+                const tp4: Point =
+                {
+                    x: b.x + b.radius * Math.cos(angle +(Math.PI -theta2)),
+                    y: b.y + b.radius * Math.sin(angle +(Math.PI -theta2))
+                };
+                const cp0: Point =
+                {
+                    x: (tp1.x +tp2.x + tp3.x + tp4.x) /4,
+                    y: (tp1.y +tp2.y + tp3.y + tp4.y) /4,
+                };
+                const contactDist = sumRadius +minRadius;
+                const cpRate = contactDist <= distance ? 0:
+                    Math.min(1, (contactDist -distance) / (minRadius *2));
+                const cp1: Point = contactDist <= distance ?
+                cp0:
+                {
+                    x: cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate,
+                    y: cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate,
+                };
+                const cp2: Point = contactDist <= distance ?
+                cp0:
+                {
+                    x: cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate,
+                    y: cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate,
+                };
 
-        // const cp1: Point =
-        // {
-        //     x: (tp1.x + tp4.x) / 2 + (tp4.y - tp1.y) * 0.2,
-        //     y: (tp1.y + tp4.y) / 2 - (tp4.x - tp1.x) * 0.2,
-        // };
-        // const cp2: Point =
-        // {
-        //     x: (tp2.x + tp3.x) / 2 - (tp3.y - tp2.y) * 0.2,
-        //     y: (tp2.y + tp3.y) / 2 + (tp3.x - tp2.x) * 0.2,
-        // };
-        const cp0: Point =
-        {
-            x: (tp1.x +tp2.x + tp3.x + tp4.x) /4,
-            y: (tp1.y +tp2.y + tp3.y + tp4.y) /4,
-        };
-        const contactDist = sumRadius +minRadius;
-        const cpRate = contactDist <= distance ? 0:
-            Math.min(1, (contactDist -distance) / (minRadius *2));
-        const cp1: Point = contactDist <= distance ?
-        cp0:
-        {
-            x: cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate,
-            y: cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate,
-        };
-        const cp2: Point = contactDist <= distance ?
-        cp0:
-        {
-            x: cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate,
-            y: cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate,
-        };
-
-        return { tp1, tp2, tp3, tp4, cp1, cp2, };
-    }
-};
-// const buildFusionPath = (layer: Layer): Path2D =>
-// {
-//     const path = new Path2D();
-//     const units = layer.units.filter(u => 0 < u.body.radius);  // 有効units
-
-//     // 融合グラフ構築 (連結成分)
-//     const graph: number[][] = Array.from({ length: units.length }, () => []);
-//     for (let i = 0; i < units.length; i++) {
-//         for (let j = i + 1; j < units.length; j++) {
-//             const dist = Math.hypot(units[i].body.x - units[j].body.x, units[i].body.y - units[j].body.y);
-//             if (dist < (units[i].body.radius + units[j].body.radius) * fusionThreshold) {
-//                 graph[i].push(j);
-//                 graph[j].push(i);
-//             }
-//         }
-//     }
-
-//     // 連結成分探索 (DFSでグループ化)
-//     const visited = new Array(units.length).fill(false);
-//     for (let i = 0; i < units.length; i++) {
-//         if (visited[i]) continue;
-//         const group: Unit[] = [];
-//         const stack = [i];
-//         while (stack.length) {
-//             const idx = stack.pop()!;
-//             if (!visited[idx]) {
-//                 visited[idx] = true;
-//                 group.push(units[idx]);
-//                 stack.push(...graph[idx]);
-//             }
-//         }
-
-//         if (group.length === 1) {
-//             // 孤立円: 単純arc
-//             const u = group[0];
-//             path.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
-//         } else {
-//             // 融合グループ: ペアごとベジェ+arc
-//             for (let j = 0; j < group.length; j++) {
-//                 const u = group[j];
-//                 path.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
-//                 for (let k = j + 1; k < group.length; k++) {
-//                     const tangents = getTangentPoints(group[j].body, group[k].body);
-//                     if (tangents) {
-//                         // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
-//                         const cp1x = (tangents.tp1.x + tangents.tp3.x) / 2 + (tangents.tp3.y - tangents.tp1.y) * 0.2;  // オフセットでblob風曲げ (調整)
-//                         const cp1y = (tangents.tp1.y + tangents.tp3.y) / 2 - (tangents.tp3.x - tangents.tp1.x) * 0.2;
-//                         path.moveTo(tangents.tp1.x, tangents.tp1.y);
-//                         path.quadraticCurveTo(cp1x, cp1y, tangents.tp3.x, tangents.tp3.y);  // またはbezierCurveToでcubic
-
-//                         // 下側ベジェ: tp2 -> cp -> tp4
-//                         const cp2x = (tangents.tp2.x + tangents.tp4.x) / 2 - (tangents.tp4.y - tangents.tp2.y) * 0.2;
-//                         const cp2y = (tangents.tp2.y + tangents.tp4.y) / 2 + (tangents.tp4.x - tangents.tp2.x) * 0.2;
-//                         path.moveTo(tangents.tp2.x, tangents.tp2.y);
-//                         path.quadraticCurveTo(cp2x, cp2y, tangents.tp4.x, tangents.tp4.y);
-//                     }
-//                 }
-//                 // グループの各円の露出arcを追加 (融合部分以外)
-//                 // 簡略: 全円arcを追加し、compositeで重ね (or clip)だが、重なりでOKならスキップ
-//             }
-//             // 完全閉じ: グループ全体をconvex hullで囲む拡張可能だが、まずはベジェ+arcでテスト
-//         }
-//     }
-//     return path;
-// };
-const drawFusionPath = (layer: Layer, color: string) =>
-{
-    const units = layer.units.filter(u => 0 < u.body.radius);  // 有効units
-
-    // 融合グラフ構築 (連結成分)
-    const graph: number[][] = Array.from({ length: units.length }, () => []);
-    for (let i = 0; i < units.length; i++) {
-        for (let j = i + 1; j < units.length; j++) {
-            const dist = Math.hypot(units[i].body.x - units[j].body.x, units[i].body.y - units[j].body.y);
-            if (dist < (units[i].body.radius + units[j].body.radius) + (Math.min(units[i].body.radius, units[j].body.radius) *fusionThreshold)) {
-                graph[i].push(j);
-                graph[j].push(i);
-            }
-        }
-    }
-
-    // 連結成分探索 (DFSでグループ化)
-    const visited = new Array(units.length).fill(false);
-    for (let i = 0; i < units.length; i++) {
-        if (visited[i]) continue;
-        const group: Unit[] = [];
-        const stack = [i];
-        while (stack.length) {
-            const idx = stack.pop()!;
-            if (!visited[idx]) {
-                visited[idx] = true;
-                group.push(units[idx]);
-                stack.push(...graph[idx]);
-            }
-        }
-
-        if (group.length === 1) {
-            // 孤立円: 単純arc
-            const u = group[0];
-            context.beginPath();
-            context.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
-            context.fillStyle = color;
-            // connection.fillStyle = "#00000088";
-            context.fill();
-            context.closePath();
-        } else {
-            // 融合グループ: ペアごとベジェ+arc
-            for (let j = 0; j < group.length; j++) {
-                const u = group[j];
-                context.beginPath();
-                context.arc(u.body.x, u.body.y, u.body.radius, 0, Math.PI * 2);
-                context.fillStyle = color;
-                // connection.fillStyle = "#00000088";
-                context.fill();
-                context.closePath();
-                for (let k = j + 1; k < group.length; k++) {
-                    const tangents = getTangentPoints(group[j].body, group[k].body);
-                    if (tangents) {
                 context.beginPath();
 
-                        // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
-                        context.moveTo(tangents.tp1.x, tangents.tp1.y);
-                        context.quadraticCurveTo(tangents.cp1.x, tangents.cp1.y, tangents.tp4.x, tangents.tp4.y);  // またはbezierCurveToでcubic
+                // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
+                context.moveTo(tp1.x, tp1.y);
+                context.quadraticCurveTo(cp1.x, cp1.y, tp4.x, tp4.y);  // またはbezierCurveToでcubic
 
-                        // 下側ベジェ: tp2 -> cp -> tp4
-                        context.lineTo(tangents.tp3.x, tangents.tp3.y);
-                        context.quadraticCurveTo(tangents.cp2.x, tangents.cp2.y, tangents.tp2.x, tangents.tp2.y);
-                        context.lineTo(tangents.tp1.x, tangents.tp1.y);
+                // 下側ベジェ: tp2 -> cp -> tp4
+                context.lineTo(tp3.x, tp3.y);
+                context.quadraticCurveTo(cp2.x, cp2.y, tp2.x, tp2.y);
+                context.lineTo(tp1.x, tp1.y);
 
                 context.fillStyle = color;
                 // connection.fillStyle = "#00000088";
@@ -561,28 +420,19 @@ const drawFusionPath = (layer: Layer, color: string) =>
                 context.closePath();
 
 
-            // connection.beginPath();
-            // connection.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
-            // connection.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
-            // connection.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
-            // connection.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
-            // connection.fillStyle = "#00000088";
-            // connection.fill();
-            // connection.closePath();
+        // connection.beginPath();
+        // connection.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
+        // connection.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
+        // connection.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
+        // connection.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
+        // connection.fillStyle = "#00000088";
+        // connection.fill();
+        // connection.closePath();
 
-
-                    }
-                }
-                // グループの各円の露出arcを追加 (融合部分以外)
-                // 簡略: 全円arcを追加し、compositeで重ね (or clip)だが、重なりでOKならスキップ
             }
-            // 完全閉じ: グループ全体をconvex hullで囲む拡張可能だが、まずはベジェ+arcでテスト
         }
     }
-    //return path;
 };
-
-
 const drawCircle = (circle: Circle, color: string) =>
 {
     if (0 <= circle.radius)
@@ -597,67 +447,118 @@ const drawCircle = (circle: Circle, color: string) =>
         context.closePath();
     }
 };
-const drawEye = (unit: Unit) =>
-{
-    if (unit.eye)
-    {
-        drawCircle(makeCircle(addPoints(unit.body, unit.eye.white), unit.eye.white.radius), config.coloring[style].base);
-        drawCircle(makeCircle(addPoints(unit.body, unit.eye.iris), unit.eye.iris.radius), config.coloring[style].accent);
-    }
-};
 const drawLayer = (layer: Layer, color: string) =>
 {
-    if (useFusion) {
-        const shortSide = Math.min(canvas.width, canvas.height);
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        // unitsの座標をCanvas単位に変換 (一時的)
-        layer.units.forEach(u => {
-            u.body.x = (u.body.x * shortSide) + centerX;
-            u.body.y = (u.body.y * shortSide) + centerY;
-            u.body.radius *= shortSide;
-            // eyeも同様
-        });
-
-        // const path = buildFusionPath(layer);
-        // connection.fillStyle = color;
-        // connection.fill(path, 'nonzero');  // 塗りつぶし
-
-        drawFusionPath(layer, color);
-
-        // eye描画 (融合後重ね)
-        layer.units.forEach(drawEye);
-
-        // 元座標に戻す (必要なら)
-        layer.units.forEach(u => {
-            u.body.x = (u.body.x - centerX) / shortSide;
-            u.body.y = (u.body.y - centerY) / shortSide;
-            u.body.radius /= shortSide;
-        });
-        // layer.units.forEach
-        // (
-        //     (unit) =>
-        //     {
-        //         // drawCircle
-        //         // (
-        //         //     {
-        //         //         x: unit.body.x,
-        //         //         y: unit.body.y,
-        //         //         radius: unit.body.radius *0.9,
-        //         //     },
-        //         //     color
-        //         // );
-        //         drawCircle(unit.body, "#88888888");
-        //         drawEye(unit);
-        //     }
-        // );
-    } else {
+    const shortSide = Math.min(canvas.width, canvas.height);
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    drawFusionPath
+    (
+        layer.units.map(u => u.body)
+        // .concat([ { x: 0, y: 0, radius: 0.1, } ])
+        .filter(c => !isOutOfCanvas(c))
+        .map
+        (
+            c =>
+            ({
+                x: (c.x * shortSide) + centerX,
+                y: (c.y * shortSide) + centerY,
+                radius: c.radius *shortSide,
+            })
+        ),
+        color
+    );
+    layer.units.forEach
+    (
+        (unit) =>
+        {
+            drawCircle(unit.body, color);
+        }
+    );
+    if (layer === Data.main)
+    {
+        drawFusionPath
+        (
+            layer.units.map(u => u.body)
+            .filter(c => config.eye.appearRate <= c.radius)
+            .filter(c => !isOutOfCanvas(c))
+            .map
+            (
+                c =>
+                ({
+                    x: (c.x * shortSide) + centerX,
+                    y: (c.y * shortSide) + centerY,
+                    radius: c.radius *shortSide *config.eye.whiteRate,
+                })
+            ),
+            config.coloring[style].base
+        );
+        drawFusionPath
+        (
+            layer.units.map(u => u.eye?.white)
+            .filter(c => undefined !== c)
+            .filter(c => !isOutOfCanvas(c))
+            .map
+            (
+                c =>
+                ({
+                    x: (c.x * shortSide) + centerX,
+                    y: (c.y * shortSide) + centerY,
+                    radius: c.radius *shortSide,
+                })
+            ),
+            config.coloring[style].base
+        );
         layer.units.forEach
         (
             (unit) =>
             {
-                drawCircle(unit.body, color);
-                drawEye(unit);
+                if (config.eye.appearRate <= unit.body.radius && ! isOutOfCanvas(unit.body))
+                {
+                    drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius *config.eye.whiteRate, }, config.coloring[style].base);
+                }
+            }
+        );
+        drawFusionPath
+        (
+            layer.units.map(u => u.body)
+            .filter(c => config.eye.appearRate <= c.radius)
+            .filter(c => !isOutOfCanvas(c))
+            .map
+            (
+                c =>
+                ({
+                    x: (c.x * shortSide) + centerX,
+                    y: (c.y * shortSide) + centerY,
+                    radius: c.radius *shortSide *config.eye.irisRate,
+                })
+            ),
+            config.coloring[style].accent
+        );
+        drawFusionPath
+        (
+            layer.units.map(u => u.eye?.iris)
+            .filter(c => undefined !== c)
+            .filter(c => !isOutOfCanvas(c))
+            .map
+            (
+                c =>
+                ({
+                    x: (c.x * shortSide) + centerX,
+                    y: (c.y * shortSide) + centerY,
+                    radius: c.radius *shortSide,
+                })
+            ),
+            config.coloring[style].accent
+        );
+        layer.units.forEach
+        (
+            (unit) =>
+            {
+                if (config.eye.appearRate <= unit.body.radius && ! isOutOfCanvas(unit.body))
+                {
+                    drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius *config.eye.irisRate, }, config.coloring[style].accent);
+                }
             }
         );
     }
@@ -665,14 +566,13 @@ const drawLayer = (layer: Layer, color: string) =>
 const draw = () =>
 {
     context.fillStyle = config.coloring[style].base;
-    //connection.globalCompositeOperation = "destination-out";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    //connection.globalCompositeOperation = "source-over";
     drawLayer(Data.accent, config.coloring[style].accent);
     drawLayer(Data.main, config.coloring[style].main);
-    //drawCircle({ x: 0, y: 0, radius: 0.1, }, config.coloring[style].main);
-    //drawCircle({ x: 0, y: 0, radius: 0.05, }, config.coloring[style].base);
-    //drawCircle({ x: 0, y: 0, radius: 0.025, }, config.coloring[style].accent);
+    // const body = 0.1;
+    // drawCircle({ x: 0, y: 0, radius: body, }, config.coloring[style].main);
+    // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.coloring[style].base);
+    // drawCircle({ x: 0, y: 0, radius: body *config.eye.irisRate, }, config.coloring[style].accent);
 };
 if (context)
 {
@@ -760,11 +660,10 @@ document.addEventListener
     "click",
     () =>
     {
-        // const keys = Object.keys(config.coloring) as (keyof typeof config["coloring"])[];
-        // const currentIndex = keys.indexOf(style);
-        // const nextIndex = (currentIndex + 1) %keys.length;
-        // style = keys[nextIndex];
-        useFusion = ! useFusion;
+        const keys = Object.keys(config.coloring) as (keyof typeof config["coloring"])[];
+        const currentIndex = keys.indexOf(style);
+        const nextIndex = (currentIndex + 1) %keys.length;
+        style = keys[nextIndex];
     }
 );
 export class ToggleClassForWhileTimer
