@@ -4,7 +4,7 @@ export namespace Render
 {
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const context = canvas.getContext("2d") as CanvasRenderingContext2D;
-    export let style = "regular" as keyof typeof config["coloring"];
+    export let style = "regular" as keyof typeof config["styles"];
     type FusionStatus = "none" | "proximity" | "contact" | "inclusion";
     const hasFusionPath = (fusionStatus: FusionStatus) =>
         [ "none", "inclusion" ].indexOf(fusionStatus) < 0;
@@ -198,7 +198,7 @@ export namespace Render
                         radius: c.radius *shortSide *config.eye.whiteRate,
                     })
                 ),
-                config.coloring[style].base
+                config.styles[style].base
             );
             drawFusionPath
             (
@@ -214,7 +214,7 @@ export namespace Render
                         radius: c.radius *shortSide,
                     })
                 ),
-                config.coloring[style].base
+                config.styles[style].base
             );
             layer.units.forEach
             (
@@ -222,7 +222,7 @@ export namespace Render
                 {
                     if (config.eye.appearRate <= unit.body.radius && ! Model.isOutOfCanvas(unit.body))
                     {
-                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius *config.eye.whiteRate, }, config.coloring[style].base);
+                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius *config.eye.whiteRate, }, config.styles[style].base);
                     }
                 }
             );
@@ -240,7 +240,7 @@ export namespace Render
                         radius: c.radius *shortSide *config.eye.irisRate,
                     })
                 ),
-                config.coloring[style].accent
+                config.styles[style].accent
             );
             drawFusionPath
             (
@@ -256,7 +256,7 @@ export namespace Render
                         radius: c.radius *shortSide,
                     })
                 ),
-                config.coloring[style].accent
+                config.styles[style].accent
             );
             layer.units.forEach
             (
@@ -264,7 +264,7 @@ export namespace Render
                 {
                     if (config.eye.appearRate <= unit.body.radius && ! Model.isOutOfCanvas(unit.body))
                     {
-                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius *config.eye.irisRate, }, config.coloring[style].accent);
+                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius *config.eye.irisRate, }, config.styles[style].accent);
                     }
                 }
             );
@@ -272,13 +272,13 @@ export namespace Render
     };
     export const draw = () =>
     {
-        context.fillStyle = config.coloring[style].base;
+        context.fillStyle = config.styles[style].base;
         context.fillRect(0, 0, canvas.width, canvas.height);
-        drawLayer(Model.Data.accent, config.coloring[style].accent);
-        drawLayer(Model.Data.main, config.coloring[style].main);
+        drawLayer(Model.Data.accent, config.styles[style].accent);
+        drawLayer(Model.Data.main, config.styles[style].main);
         // const body = 0.1;
-        // drawCircle({ x: 0, y: 0, radius: body, }, config.coloring[style].main);
-        // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.coloring[style].base);
-        // drawCircle({ x: 0, y: 0, radius: body *config.eye.irisRate, }, config.coloring[style].accent);
+        // drawCircle({ x: 0, y: 0, radius: body, }, config.styles[style].main);
+        // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.styles[style].base);
+        // drawCircle({ x: 0, y: 0, radius: body *config.eye.irisRate, }, config.styles[style].accent);
     };
 }

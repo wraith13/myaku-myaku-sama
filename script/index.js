@@ -10,7 +10,7 @@ define("resource/config", [], {
     "rendering": {
         "marginRate": 0.9
     },
-    "coloring": {
+    "styles": {
         "regular": {
             "base": "#FFFFFF",
             "main": "#E50012",
@@ -453,7 +453,7 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
                         y: (c.y * shortSide) + centerY,
                         radius: c.radius * shortSide * config_json_2.default.eye.whiteRate,
                     });
-                }), config_json_2.default.coloring[Render.style].base);
+                }), config_json_2.default.styles[Render.style].base);
                 drawFusionPath(layer.units.map(function (u) { var _a; return (_a = u.eye) === null || _a === void 0 ? void 0 : _a.white; })
                     .filter(function (c) { return undefined !== c; })
                     .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
@@ -463,10 +463,10 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
                         y: (c.y * shortSide) + centerY,
                         radius: c.radius * shortSide,
                     });
-                }), config_json_2.default.coloring[Render.style].base);
+                }), config_json_2.default.styles[Render.style].base);
                 layer.units.forEach(function (unit) {
                     if (config_json_2.default.eye.appearRate <= unit.body.radius && !model_1.Model.isOutOfCanvas(unit.body)) {
-                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.whiteRate, }, config_json_2.default.coloring[Render.style].base);
+                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.whiteRate, }, config_json_2.default.styles[Render.style].base);
                     }
                 });
                 drawFusionPath(layer.units.map(function (u) { return u.body; })
@@ -478,7 +478,7 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
                         y: (c.y * shortSide) + centerY,
                         radius: c.radius * shortSide * config_json_2.default.eye.irisRate,
                     });
-                }), config_json_2.default.coloring[Render.style].accent);
+                }), config_json_2.default.styles[Render.style].accent);
                 drawFusionPath(layer.units.map(function (u) { var _a; return (_a = u.eye) === null || _a === void 0 ? void 0 : _a.iris; })
                     .filter(function (c) { return undefined !== c; })
                     .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
@@ -488,23 +488,23 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
                         y: (c.y * shortSide) + centerY,
                         radius: c.radius * shortSide,
                     });
-                }), config_json_2.default.coloring[Render.style].accent);
+                }), config_json_2.default.styles[Render.style].accent);
                 layer.units.forEach(function (unit) {
                     if (config_json_2.default.eye.appearRate <= unit.body.radius && !model_1.Model.isOutOfCanvas(unit.body)) {
-                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.irisRate, }, config_json_2.default.coloring[Render.style].accent);
+                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.irisRate, }, config_json_2.default.styles[Render.style].accent);
                     }
                 });
             }
         };
         Render.draw = function () {
-            context.fillStyle = config_json_2.default.coloring[Render.style].base;
+            context.fillStyle = config_json_2.default.styles[Render.style].base;
             context.fillRect(0, 0, canvas.width, canvas.height);
-            drawLayer(model_1.Model.Data.accent, config_json_2.default.coloring[Render.style].accent);
-            drawLayer(model_1.Model.Data.main, config_json_2.default.coloring[Render.style].main);
+            drawLayer(model_1.Model.Data.accent, config_json_2.default.styles[Render.style].accent);
+            drawLayer(model_1.Model.Data.main, config_json_2.default.styles[Render.style].main);
             // const body = 0.1;
-            // drawCircle({ x: 0, y: 0, radius: body, }, config.coloring[style].main);
-            // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.coloring[style].base);
-            // drawCircle({ x: 0, y: 0, radius: body *config.eye.irisRate, }, config.coloring[style].accent);
+            // drawCircle({ x: 0, y: 0, radius: body, }, config.styles[style].main);
+            // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.styles[style].base);
+            // drawCircle({ x: 0, y: 0, radius: body *config.eye.irisRate, }, config.styles[style].accent);
         };
     })(Render || (exports.Render = Render = {}));
 });
@@ -628,6 +628,11 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     exports.mousemove = exports.ToggleClassForWhileTimer = void 0;
     config_json_3 = __importDefault(config_json_3);
     var fpsDiv = document.getElementById("fps");
+    var controlPanelDiv = document.getElementById("control-panel");
+    var stylesButton = document.getElementById("styles-button");
+    var fullScreenButton = document.getElementById("full-screen-button");
+    var fpsButton = document.getElementById("fps-button");
+    var jumpOutButton = document.getElementById("jump-out-button");
     console.log("Window loaded.");
     var step = function (timestamp) {
         model_2.Model.updateData(timestamp);
@@ -639,51 +644,113 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         window.requestAnimationFrame(step);
     };
     window.requestAnimationFrame(step);
-    if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
-        document.addEventListener("keydown", function (event) {
-            if ("f" === event.key.toLowerCase()) {
-                var elem = document.documentElement;
-                if (document.fullscreenEnabled) {
-                    if (!document.fullscreenElement) {
-                        elem.requestFullscreen();
-                    }
-                    else {
-                        document.exitFullscreen();
-                    }
-                }
-                else {
-                    if (document.webkitFullscreenEnabled) {
-                        if (!document.webkitFullscreenElement) {
-                            elem.webkitRequestFullscreen();
-                        }
-                        else {
-                            document.webkitExitFullscreen();
-                        }
-                    }
-                }
+    var toggleFpsDisplay = function () {
+        if (fpsDiv) {
+            if ("none" === fpsDiv.style.display) {
+                fpsDiv.style.display = "block";
             }
-        });
-    }
+            else {
+                fpsDiv.style.display = "none";
+            }
+        }
+    };
     if (fpsDiv) {
-        //fpsDiv.style.display = "none";
+        fpsDiv.style.display = "none";
         document.addEventListener("keydown", function (event) {
             if ("s" === event.key.toLowerCase()) {
-                if ("none" === fpsDiv.style.display) {
-                    fpsDiv.style.display = "block";
+                toggleFpsDisplay();
+            }
+        });
+    }
+    var fullscreenEnabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+    var toggleFullScreen = function () {
+        var elem = document.documentElement;
+        if (document.fullscreenEnabled) {
+            if (!document.fullscreenElement) {
+                elem.requestFullscreen();
+            }
+            else {
+                document.exitFullscreen();
+            }
+        }
+        else {
+            if (document.webkitFullscreenEnabled) {
+                if (!document.webkitFullscreenElement) {
+                    elem.webkitRequestFullscreen();
                 }
                 else {
-                    fpsDiv.style.display = "none";
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+    };
+    if (fullscreenEnabled) {
+        document.addEventListener("keydown", function (event) {
+            if ("f" === event.key.toLowerCase()) {
+                toggleFullScreen();
+            }
+        });
+    }
+    if (controlPanelDiv) {
+        controlPanelDiv.style.display = "none";
+        document.addEventListener("click", function () {
+            if ("none" === controlPanelDiv.style.display) {
+                controlPanelDiv.style.display = "flex";
+            }
+            else {
+                controlPanelDiv.style.display = "none";
+            }
+        });
+    }
+    if (stylesButton) {
+        stylesButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            var keys = Object.keys(config_json_3.default.styles);
+            var currentIndex = keys.indexOf(render_1.Render.style);
+            var nextIndex = (currentIndex + 1) % keys.length;
+            render_1.Render.style = keys[nextIndex];
+            console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
+        });
+    }
+    if (fpsButton && fpsDiv) {
+        fpsButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            toggleFpsDisplay();
+        });
+    }
+    ;
+    if (fullScreenButton) {
+        fullScreenButton.style.display = fullscreenEnabled ? "block" : "none";
+        fullScreenButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            var elem = document.documentElement;
+            if (document.fullscreenEnabled) {
+                if (!document.fullscreenElement) {
+                    elem.requestFullscreen();
+                }
+                else {
+                    document.exitFullscreen();
+                }
+            }
+            else {
+                if (document.webkitFullscreenEnabled) {
+                    if (!document.webkitFullscreenElement) {
+                        elem.webkitRequestFullscreen();
+                    }
+                    else {
+                        document.webkitExitFullscreen();
+                    }
                 }
             }
         });
     }
-    document.addEventListener("click", function () {
-        var keys = Object.keys(config_json_3.default.coloring);
-        var currentIndex = keys.indexOf(render_1.Render.style);
-        var nextIndex = (currentIndex + 1) % keys.length;
-        render_1.Render.style = keys[nextIndex];
-        console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
-    });
+    if (jumpOutButton) {
+        jumpOutButton.style.display = window.top !== window.self ? "block" : "none";
+        jumpOutButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            window.open(window.location.href, "_blank");
+        });
+    }
     var ToggleClassForWhileTimer = /** @class */ (function () {
         function ToggleClassForWhileTimer() {
             var _this = this;

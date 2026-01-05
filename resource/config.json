@@ -8,7 +8,7 @@
     {
         "marginRate": 0.9
     },
-    "coloring":
+    "styles":
     {
         "regular": {
             "base": "#FFFFFF",

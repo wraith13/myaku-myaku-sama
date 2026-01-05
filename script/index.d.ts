@@ -83,7 +83,7 @@ declare module "script/model" {
 declare module "script/render" {
     import config from "resource/config";
     export namespace Render {
-        let style: keyof (typeof config)["coloring"];
+        let style: keyof (typeof config)["styles"];
         const draw: () => void;
     }
 }

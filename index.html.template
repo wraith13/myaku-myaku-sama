@@ -7,7 +7,7 @@
 -->
 <!-- license:
 __LICENSE__-->
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>__APPLICATION_TITLE__</title>
@@ -56,6 +56,12 @@ __STYLE__
 </noscript>
 <canvas id="canvas" role="presentation"></canvas>
 <div id="fps"></div>
+<div id="control-panel">
+    <button id="styles-button">🎨<!-- __PALETTE_ICON___ --></button>
+    <button id="fps-button">⏲️<!-- __METER_ICON___ --></button>
+    <button id="full-screen-button">🖥️<!-- __FULL_SCREEN_ICON__ --></button>
+    <button id="jump-out-button">↗️<!-- __JUMP_OUT_ICON__ --></button>
+</div>
 <script type="text/javascript">
 const build = {
     at: "__BUILD_TIMESTAMP__",

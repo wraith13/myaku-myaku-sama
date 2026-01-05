@@ -4,6 +4,11 @@ import { Render } from "./render";
 import { Fps } from "./fps";
 import config from "@resource/config.json";
 const fpsDiv = document.getElementById("fps");
+const controlPanelDiv = document.getElementById("control-panel");
+const stylesButton = document.getElementById("styles-button");
+const fullScreenButton = document.getElementById("full-screen-button");
+const fpsButton = document.getElementById("fps-button");
+const jumpOutButton = document.getElementById("jump-out-button");
 console.log("Window loaded.");
 const step = (timestamp: number) =>
 {
@@ -17,7 +22,66 @@ const step = (timestamp: number) =>
     window.requestAnimationFrame(step);
 };
 window.requestAnimationFrame(step);
-if (document.fullscreenEnabled || (<any>document).webkitFullscreenEnabled)
+const toggleFpsDisplay = () =>
+{
+    if (fpsDiv)
+    {
+        if ("none" === fpsDiv.style.display)
+        {
+            fpsDiv.style.display = "block";
+        }
+        else
+        {
+            fpsDiv.style.display = "none";
+        }
+    }
+}
+if (fpsDiv)
+{
+    fpsDiv.style.display = "none";
+    document.addEventListener
+    (
+        "keydown",
+        (event) =>
+        {
+            if ("s" === event.key.toLowerCase())
+            {
+                toggleFpsDisplay();
+            }
+        }
+    );
+}
+const fullscreenEnabled = document.fullscreenEnabled || (<any>document).webkitFullscreenEnabled;
+const toggleFullScreen = () =>
+{
+    const elem = document.documentElement;
+    if (document.fullscreenEnabled)
+    {
+        if ( ! document.fullscreenElement)
+        {
+            elem.requestFullscreen();
+        }
+        else
+        {
+            document.exitFullscreen();
+        }
+    }
+    else
+    {
+        if ((<any>document).webkitFullscreenEnabled)
+        {
+            if ( ! (<any>document).webkitFullscreenElement)
+            {
+                (<any>elem).webkitRequestFullscreen();
+            }
+            else
+            {
+                (<any>document).webkitExitFullscreen();
+            }
+        }
+    }
+};
+if (fullscreenEnabled)
 {
     document.addEventListener
     (
@@ -26,70 +90,109 @@ if (document.fullscreenEnabled || (<any>document).webkitFullscreenEnabled)
         {
             if ("f" === event.key.toLowerCase())
             {
-                const elem = document.documentElement;
-                if (document.fullscreenEnabled)
+                toggleFullScreen();
+            }
+        }
+    );
+}
+if (controlPanelDiv)
+{
+    controlPanelDiv.style.display = "none";
+    document.addEventListener
+    (
+        "click",
+        () =>
+        {
+            if ("none" === controlPanelDiv.style.display)
+            {
+                controlPanelDiv.style.display = "flex";
+            }
+            else
+            {
+                controlPanelDiv.style.display = "none";
+            }
+        }
+    );
+}
+if (stylesButton)
+{
+    stylesButton.addEventListener
+    (
+        "click",
+        event =>
+        {
+            event.stopPropagation();
+            const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
+            const currentIndex = keys.indexOf(Render.style);
+            const nextIndex = (currentIndex + 1) %keys.length;
+            Render.style = keys[nextIndex];
+            console.log(`🎨 Style changed: ${Render.style}`);
+        }
+    );
+}
+if (fpsButton && fpsDiv)
+{
+    fpsButton.addEventListener
+    (
+        "click",
+        event =>
+        {
+            event.stopPropagation();
+            toggleFpsDisplay();
+        }
+    );
+};
+if (fullScreenButton)
+{
+    fullScreenButton.style.display = fullscreenEnabled ? "block" : "none";
+    fullScreenButton.addEventListener
+    (
+        "click",
+        event =>
+        {
+            event.stopPropagation();
+            const elem = document.documentElement;
+            if (document.fullscreenEnabled)
+            {
+                if ( ! document.fullscreenElement)
                 {
-                    if ( ! document.fullscreenElement)
+                    elem.requestFullscreen();
+                }
+                else
+                {
+                    document.exitFullscreen();
+                }
+            }
+            else
+            {
+                if ((<any>document).webkitFullscreenEnabled)
+                {
+                    if ( ! (<any>document).webkitFullscreenElement)
                     {
-                        elem.requestFullscreen();
+                        (<any>elem).webkitRequestFullscreen();
                     }
                     else
                     {
-                        document.exitFullscreen();
-                    }
-                }
-                else
-                {
-                    if ((<any>document).webkitFullscreenEnabled)
-                    {
-                        if ( ! (<any>document).webkitFullscreenElement)
-                        {
-                            (<any>elem).webkitRequestFullscreen();
-                        }
-                        else
-                        {
-                            (<any>document).webkitExitFullscreen();
-                        }
+                        (<any>document).webkitExitFullscreen();
                     }
                 }
             }
         }
     );
 }
-if (fpsDiv)
+if (jumpOutButton)
 {
-    //fpsDiv.style.display = "none";
-    document.addEventListener
+    jumpOutButton.style.display = window.top !== window.self ? "block" : "none";
+    jumpOutButton.addEventListener
     (
-        "keydown",
-        (event) =>
+        "click",
+        event =>
         {
-            if ("s" === event.key.toLowerCase())
-            {
-                if ("none" === fpsDiv.style.display)
-                {
-                    fpsDiv.style.display = "block";
-                }
-                else
-                {
-                    fpsDiv.style.display = "none";
-                }
-            }
+            event.stopPropagation();
+            window.open(window.location.href, "_blank");
         }
-    );
-}
-document.addEventListener
-(
-    "click",
-    () =>
-    {
-        const keys = Object.keys(config.coloring) as (keyof typeof config["coloring"])[];
-        const currentIndex = keys.indexOf(Render.style);
-        const nextIndex = (currentIndex + 1) %keys.length;
-        Render.style = keys[nextIndex];
-        console.log(`🎨 Style changed: ${Render.style}`);
-    }
 );
+}
 export class ToggleClassForWhileTimer
 {
     timer: ReturnType<typeof setTimeout> | undefined;
