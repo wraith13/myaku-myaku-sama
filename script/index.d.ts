@@ -80,6 +80,13 @@ declare module "script/model" {
         const updateData: (timestamp: number) => void;
     }
 }
+declare module "script/render" {
+    import config from "resource/config";
+    export namespace Render {
+        let style: keyof (typeof config)["coloring"];
+        const draw: () => void;
+    }
+}
 declare module "script/fps" {
     export namespace Fps {
         export class OnlineStandardDeviation {

@@ -300,6 +300,214 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
         };
     })(Model || (exports.Model = Model = {}));
 });
+define("script/render", ["require", "exports", "script/model", "resource/config"], function (require, exports, model_1, config_json_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Render = void 0;
+    config_json_2 = __importDefault(config_json_2);
+    var Render;
+    (function (Render) {
+        var canvas = document.getElementById("canvas");
+        var context = canvas.getContext("2d");
+        Render.style = "regular";
+        var hasFusionPath = function (fusionStatus) {
+            return ["none", "inclusion"].indexOf(fusionStatus) < 0;
+        };
+        var isContacted = function (fusionStatus) {
+            return 0 <= ["contact", "inclusion"].indexOf(fusionStatus);
+        };
+        var getFusionStatus = function (data) {
+            if (data.fusionLimit < data.distance) {
+                return "none";
+            }
+            if (data.sumRadius < data.distance) {
+                return "proximity";
+            }
+            if (data.sumRadius - data.minRadius * 2 < data.distance) {
+                return "contact";
+            }
+            return "inclusion";
+        };
+        var fusionLimitRate = 3;
+        var minCurveAngleRate = 1.0;
+        var drawFusionPath = function (circles, color) {
+            for (var i = 0; i < circles.length; i++) {
+                for (var j = i + 1; j < circles.length; j++) {
+                    var a = circles[i];
+                    var b = circles[j];
+                    var sumRadius = a.radius + b.radius;
+                    var minRadius = Math.min(a.radius, b.radius);
+                    var maxRadius = Math.min(a.radius, b.radius);
+                    var fusionLimit = sumRadius + Math.min(minRadius * fusionLimitRate, maxRadius);
+                    var dx = b.x - a.x;
+                    var dy = b.y - a.y;
+                    var angle = Math.atan2(dy, dx);
+                    var distance = Math.hypot(dx, dy);
+                    var fusionStatus = getFusionStatus({ sumRadius: sumRadius, minRadius: minRadius, fusionLimit: fusionLimit, distance: distance, });
+                    if (hasFusionPath(fusionStatus)) {
+                        var contactAngle = isContacted(fusionStatus) ? Math.acos(distance / sumRadius) : null;
+                        var curveAngleRate = minCurveAngleRate *
+                            (isContacted(fusionStatus) ? 1 :
+                                Math.pow(((fusionLimit - sumRadius) - (distance - sumRadius)) / (fusionLimit - sumRadius), 0.3));
+                        var minCurveAngle1 = curveAngleRate * minRadius / a.radius;
+                        var minCurveAngle2 = curveAngleRate * minRadius / b.radius;
+                        var theta1 = Math.min((contactAngle !== null && contactAngle !== void 0 ? contactAngle : 0) + minCurveAngle1, Math.PI - minCurveAngle1);
+                        var theta2 = Math.min((contactAngle !== null && contactAngle !== void 0 ? contactAngle : 0) + minCurveAngle2, Math.PI - minCurveAngle2);
+                        // 左タンジェント (tp1 on c1, tp3 on c2)
+                        var tp1 = {
+                            x: a.x + a.radius * Math.cos(angle + theta1),
+                            y: a.y + a.radius * Math.sin(angle + theta1)
+                        };
+                        var tp3 = {
+                            x: b.x + b.radius * Math.cos(angle + (Math.PI + theta2)),
+                            y: b.y + b.radius * Math.sin(angle + (Math.PI + theta2))
+                        };
+                        // 右タンジェント (tp2 on c1, tp4 on c2)
+                        var tp2 = {
+                            x: a.x + a.radius * Math.cos(angle - theta1),
+                            y: a.y + a.radius * Math.sin(angle - theta1)
+                        };
+                        var tp4 = {
+                            x: b.x + b.radius * Math.cos(angle + (Math.PI - theta2)),
+                            y: b.y + b.radius * Math.sin(angle + (Math.PI - theta2))
+                        };
+                        var cp0 = {
+                            x: (tp1.x + tp2.x + tp3.x + tp4.x) / 4,
+                            y: (tp1.y + tp2.y + tp3.y + tp4.y) / 4,
+                        };
+                        var contactDist = sumRadius + minRadius;
+                        var cpRate = contactDist <= distance ? 0 :
+                            Math.min(1, (contactDist - distance) / (minRadius * 2));
+                        var cp1 = contactDist <= distance ?
+                            cp0 :
+                            {
+                                x: cp0.x * (1 - cpRate) + ((tp1.x + tp4.x) / 2) * cpRate,
+                                y: cp0.y * (1 - cpRate) + ((tp1.y + tp4.y) / 2) * cpRate,
+                            };
+                        var cp2 = contactDist <= distance ?
+                            cp0 :
+                            {
+                                x: cp0.x * (1 - cpRate) + ((tp2.x + tp3.x) / 2) * cpRate,
+                                y: cp0.y * (1 - cpRate) + ((tp2.y + tp3.y) / 2) * cpRate,
+                            };
+                        context.beginPath();
+                        // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
+                        context.moveTo(tp1.x, tp1.y);
+                        context.quadraticCurveTo(cp1.x, cp1.y, tp4.x, tp4.y); // またはbezierCurveToでcubic
+                        // 下側ベジェ: tp2 -> cp -> tp4
+                        context.lineTo(tp3.x, tp3.y);
+                        context.quadraticCurveTo(cp2.x, cp2.y, tp2.x, tp2.y);
+                        context.lineTo(tp1.x, tp1.y);
+                        context.fillStyle = color;
+                        // connection.fillStyle = "#00000088";
+                        context.fill();
+                        context.closePath();
+                        // connection.beginPath();
+                        // connection.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
+                        // connection.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
+                        // connection.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
+                        // connection.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
+                        // connection.fillStyle = "#00000088";
+                        // connection.fill();
+                        // connection.closePath();
+                    }
+                }
+            }
+        };
+        var drawCircle = function (circle, color) {
+            if (0 <= circle.radius) {
+                var shortSide = Math.min(canvas.width, canvas.height);
+                var centerX = canvas.width / 2;
+                var centerY = canvas.height / 2;
+                context.beginPath();
+                context.arc((circle.x * shortSide) + centerX, (circle.y * shortSide) + centerY, circle.radius * shortSide, 0, Math.PI * 2);
+                context.fillStyle = color;
+                context.fill();
+                context.closePath();
+            }
+        };
+        var drawLayer = function (layer, color) {
+            var shortSide = Math.min(canvas.width, canvas.height);
+            var centerX = canvas.width / 2;
+            var centerY = canvas.height / 2;
+            drawFusionPath(layer.units.map(function (u) { return u.body; })
+                // .concat([ { x: 0, y: 0, radius: 0.1, } ])
+                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
+                .map(function (c) {
+                return ({
+                    x: (c.x * shortSide) + centerX,
+                    y: (c.y * shortSide) + centerY,
+                    radius: c.radius * shortSide,
+                });
+            }), color);
+            layer.units.forEach(function (unit) {
+                drawCircle(unit.body, color);
+            });
+            if (layer === model_1.Model.Data.main) {
+                drawFusionPath(layer.units.map(function (u) { return u.body; })
+                    .filter(function (c) { return config_json_2.default.eye.appearRate <= c.radius; })
+                    .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
+                    .map(function (c) {
+                    return ({
+                        x: (c.x * shortSide) + centerX,
+                        y: (c.y * shortSide) + centerY,
+                        radius: c.radius * shortSide * config_json_2.default.eye.whiteRate,
+                    });
+                }), config_json_2.default.coloring[Render.style].base);
+                drawFusionPath(layer.units.map(function (u) { var _a; return (_a = u.eye) === null || _a === void 0 ? void 0 : _a.white; })
+                    .filter(function (c) { return undefined !== c; })
+                    .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
+                    .map(function (c) {
+                    return ({
+                        x: (c.x * shortSide) + centerX,
+                        y: (c.y * shortSide) + centerY,
+                        radius: c.radius * shortSide,
+                    });
+                }), config_json_2.default.coloring[Render.style].base);
+                layer.units.forEach(function (unit) {
+                    if (config_json_2.default.eye.appearRate <= unit.body.radius && !model_1.Model.isOutOfCanvas(unit.body)) {
+                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.whiteRate, }, config_json_2.default.coloring[Render.style].base);
+                    }
+                });
+                drawFusionPath(layer.units.map(function (u) { return u.body; })
+                    .filter(function (c) { return config_json_2.default.eye.appearRate <= c.radius; })
+                    .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
+                    .map(function (c) {
+                    return ({
+                        x: (c.x * shortSide) + centerX,
+                        y: (c.y * shortSide) + centerY,
+                        radius: c.radius * shortSide * config_json_2.default.eye.irisRate,
+                    });
+                }), config_json_2.default.coloring[Render.style].accent);
+                drawFusionPath(layer.units.map(function (u) { var _a; return (_a = u.eye) === null || _a === void 0 ? void 0 : _a.iris; })
+                    .filter(function (c) { return undefined !== c; })
+                    .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
+                    .map(function (c) {
+                    return ({
+                        x: (c.x * shortSide) + centerX,
+                        y: (c.y * shortSide) + centerY,
+                        radius: c.radius * shortSide,
+                    });
+                }), config_json_2.default.coloring[Render.style].accent);
+                layer.units.forEach(function (unit) {
+                    if (config_json_2.default.eye.appearRate <= unit.body.radius && !model_1.Model.isOutOfCanvas(unit.body)) {
+                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.irisRate, }, config_json_2.default.coloring[Render.style].accent);
+                    }
+                });
+            }
+        };
+        Render.draw = function () {
+            context.fillStyle = config_json_2.default.coloring[Render.style].base;
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            drawLayer(model_1.Model.Data.accent, config_json_2.default.coloring[Render.style].accent);
+            drawLayer(model_1.Model.Data.main, config_json_2.default.coloring[Render.style].main);
+            // const body = 0.1;
+            // drawCircle({ x: 0, y: 0, radius: body, }, config.coloring[style].main);
+            // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.coloring[style].base);
+            // drawCircle({ x: 0, y: 0, radius: body *config.eye.irisRate, }, config.coloring[style].accent);
+        };
+    })(Render || (exports.Render = Render = {}));
+});
 define("script/fps", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -414,228 +622,23 @@ define("script/fps", ["require", "exports"], function (require, exports) {
         Fps.isUnderFuseFps = function () { return Fps.isValid && Fps.currentMaxFps.fps < Fps.fuseFps; };
     })(Fps || (exports.Fps = Fps = {}));
 });
-define("script/index", ["require", "exports", "script/model", "script/fps", "resource/config"], function (require, exports, model_1, fps_1, config_json_2) {
+define("script/index", ["require", "exports", "script/model", "script/render", "script/fps", "resource/config"], function (require, exports, model_2, render_1, fps_1, config_json_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.mousemove = exports.ToggleClassForWhileTimer = void 0;
-    config_json_2 = __importDefault(config_json_2);
+    config_json_3 = __importDefault(config_json_3);
     var fpsDiv = document.getElementById("fps");
     console.log("Window loaded.");
-    var canvas = document.getElementById("canvas");
-    var context = canvas.getContext("2d");
-    var style = "regular";
-    var hasFusionPath = function (fusionStatus) {
-        return ["none", "inclusion"].indexOf(fusionStatus) < 0;
-    };
-    var isContacted = function (fusionStatus) {
-        return 0 <= ["contact", "inclusion"].indexOf(fusionStatus);
-    };
-    var getFusionStatus = function (data) {
-        if (data.fusionLimit < data.distance) {
-            return "none";
+    var step = function (timestamp) {
+        model_2.Model.updateData(timestamp);
+        render_1.Render.draw();
+        if (fpsDiv && fpsDiv.style.display !== "none") {
+            fps_1.Fps.step(timestamp);
+            fpsDiv.innerText = fps_1.Fps.getText();
         }
-        if (data.sumRadius < data.distance) {
-            return "proximity";
-        }
-        if (data.sumRadius - data.minRadius * 2 < data.distance) {
-            return "contact";
-        }
-        return "inclusion";
+        window.requestAnimationFrame(step);
     };
-    var fusionLimitRate = 3;
-    var minCurveAngleRate = 1.0;
-    var drawFusionPath = function (circles, color) {
-        for (var i = 0; i < circles.length; i++) {
-            for (var j = i + 1; j < circles.length; j++) {
-                var a = circles[i];
-                var b = circles[j];
-                var sumRadius = a.radius + b.radius;
-                var minRadius = Math.min(a.radius, b.radius);
-                var maxRadius = Math.min(a.radius, b.radius);
-                var fusionLimit = sumRadius + Math.min(minRadius * fusionLimitRate, maxRadius);
-                var dx = b.x - a.x;
-                var dy = b.y - a.y;
-                var angle = Math.atan2(dy, dx);
-                var distance = Math.hypot(dx, dy);
-                var fusionStatus = getFusionStatus({ sumRadius: sumRadius, minRadius: minRadius, fusionLimit: fusionLimit, distance: distance, });
-                if (hasFusionPath(fusionStatus)) {
-                    var contactAngle = isContacted(fusionStatus) ? Math.acos(distance / sumRadius) : null;
-                    var curveAngleRate = minCurveAngleRate *
-                        (isContacted(fusionStatus) ? 1 :
-                            Math.pow(((fusionLimit - sumRadius) - (distance - sumRadius)) / (fusionLimit - sumRadius), 0.3));
-                    var minCurveAngle1 = curveAngleRate * minRadius / a.radius;
-                    var minCurveAngle2 = curveAngleRate * minRadius / b.radius;
-                    var theta1 = Math.min((contactAngle !== null && contactAngle !== void 0 ? contactAngle : 0) + minCurveAngle1, Math.PI - minCurveAngle1);
-                    var theta2 = Math.min((contactAngle !== null && contactAngle !== void 0 ? contactAngle : 0) + minCurveAngle2, Math.PI - minCurveAngle2);
-                    // 左タンジェント (tp1 on c1, tp3 on c2)
-                    var tp1 = {
-                        x: a.x + a.radius * Math.cos(angle + theta1),
-                        y: a.y + a.radius * Math.sin(angle + theta1)
-                    };
-                    var tp3 = {
-                        x: b.x + b.radius * Math.cos(angle + (Math.PI + theta2)),
-                        y: b.y + b.radius * Math.sin(angle + (Math.PI + theta2))
-                    };
-                    // 右タンジェント (tp2 on c1, tp4 on c2)
-                    var tp2 = {
-                        x: a.x + a.radius * Math.cos(angle - theta1),
-                        y: a.y + a.radius * Math.sin(angle - theta1)
-                    };
-                    var tp4 = {
-                        x: b.x + b.radius * Math.cos(angle + (Math.PI - theta2)),
-                        y: b.y + b.radius * Math.sin(angle + (Math.PI - theta2))
-                    };
-                    var cp0 = {
-                        x: (tp1.x + tp2.x + tp3.x + tp4.x) / 4,
-                        y: (tp1.y + tp2.y + tp3.y + tp4.y) / 4,
-                    };
-                    var contactDist = sumRadius + minRadius;
-                    var cpRate = contactDist <= distance ? 0 :
-                        Math.min(1, (contactDist - distance) / (minRadius * 2));
-                    var cp1 = contactDist <= distance ?
-                        cp0 :
-                        {
-                            x: cp0.x * (1 - cpRate) + ((tp1.x + tp4.x) / 2) * cpRate,
-                            y: cp0.y * (1 - cpRate) + ((tp1.y + tp4.y) / 2) * cpRate,
-                        };
-                    var cp2 = contactDist <= distance ?
-                        cp0 :
-                        {
-                            x: cp0.x * (1 - cpRate) + ((tp2.x + tp3.x) / 2) * cpRate,
-                            y: cp0.y * (1 - cpRate) + ((tp2.y + tp3.y) / 2) * cpRate,
-                        };
-                    context.beginPath();
-                    // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
-                    context.moveTo(tp1.x, tp1.y);
-                    context.quadraticCurveTo(cp1.x, cp1.y, tp4.x, tp4.y); // またはbezierCurveToでcubic
-                    // 下側ベジェ: tp2 -> cp -> tp4
-                    context.lineTo(tp3.x, tp3.y);
-                    context.quadraticCurveTo(cp2.x, cp2.y, tp2.x, tp2.y);
-                    context.lineTo(tp1.x, tp1.y);
-                    context.fillStyle = color;
-                    // connection.fillStyle = "#00000088";
-                    context.fill();
-                    context.closePath();
-                    // connection.beginPath();
-                    // connection.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
-                    // connection.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
-                    // connection.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
-                    // connection.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
-                    // connection.fillStyle = "#00000088";
-                    // connection.fill();
-                    // connection.closePath();
-                }
-            }
-        }
-    };
-    var drawCircle = function (circle, color) {
-        if (0 <= circle.radius) {
-            var shortSide = Math.min(canvas.width, canvas.height);
-            var centerX = canvas.width / 2;
-            var centerY = canvas.height / 2;
-            context.beginPath();
-            context.arc((circle.x * shortSide) + centerX, (circle.y * shortSide) + centerY, circle.radius * shortSide, 0, Math.PI * 2);
-            context.fillStyle = color;
-            context.fill();
-            context.closePath();
-        }
-    };
-    var drawLayer = function (layer, color) {
-        var shortSide = Math.min(canvas.width, canvas.height);
-        var centerX = canvas.width / 2;
-        var centerY = canvas.height / 2;
-        drawFusionPath(layer.units.map(function (u) { return u.body; })
-            // .concat([ { x: 0, y: 0, radius: 0.1, } ])
-            .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
-            .map(function (c) {
-            return ({
-                x: (c.x * shortSide) + centerX,
-                y: (c.y * shortSide) + centerY,
-                radius: c.radius * shortSide,
-            });
-        }), color);
-        layer.units.forEach(function (unit) {
-            drawCircle(unit.body, color);
-        });
-        if (layer === model_1.Model.Data.main) {
-            drawFusionPath(layer.units.map(function (u) { return u.body; })
-                .filter(function (c) { return config_json_2.default.eye.appearRate <= c.radius; })
-                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
-                .map(function (c) {
-                return ({
-                    x: (c.x * shortSide) + centerX,
-                    y: (c.y * shortSide) + centerY,
-                    radius: c.radius * shortSide * config_json_2.default.eye.whiteRate,
-                });
-            }), config_json_2.default.coloring[style].base);
-            drawFusionPath(layer.units.map(function (u) { var _a; return (_a = u.eye) === null || _a === void 0 ? void 0 : _a.white; })
-                .filter(function (c) { return undefined !== c; })
-                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
-                .map(function (c) {
-                return ({
-                    x: (c.x * shortSide) + centerX,
-                    y: (c.y * shortSide) + centerY,
-                    radius: c.radius * shortSide,
-                });
-            }), config_json_2.default.coloring[style].base);
-            layer.units.forEach(function (unit) {
-                if (config_json_2.default.eye.appearRate <= unit.body.radius && !model_1.Model.isOutOfCanvas(unit.body)) {
-                    drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.whiteRate, }, config_json_2.default.coloring[style].base);
-                }
-            });
-            drawFusionPath(layer.units.map(function (u) { return u.body; })
-                .filter(function (c) { return config_json_2.default.eye.appearRate <= c.radius; })
-                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
-                .map(function (c) {
-                return ({
-                    x: (c.x * shortSide) + centerX,
-                    y: (c.y * shortSide) + centerY,
-                    radius: c.radius * shortSide * config_json_2.default.eye.irisRate,
-                });
-            }), config_json_2.default.coloring[style].accent);
-            drawFusionPath(layer.units.map(function (u) { var _a; return (_a = u.eye) === null || _a === void 0 ? void 0 : _a.iris; })
-                .filter(function (c) { return undefined !== c; })
-                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
-                .map(function (c) {
-                return ({
-                    x: (c.x * shortSide) + centerX,
-                    y: (c.y * shortSide) + centerY,
-                    radius: c.radius * shortSide,
-                });
-            }), config_json_2.default.coloring[style].accent);
-            layer.units.forEach(function (unit) {
-                if (config_json_2.default.eye.appearRate <= unit.body.radius && !model_1.Model.isOutOfCanvas(unit.body)) {
-                    drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius * config_json_2.default.eye.irisRate, }, config_json_2.default.coloring[style].accent);
-                }
-            });
-        }
-    };
-    var draw = function () {
-        context.fillStyle = config_json_2.default.coloring[style].base;
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        drawLayer(model_1.Model.Data.accent, config_json_2.default.coloring[style].accent);
-        drawLayer(model_1.Model.Data.main, config_json_2.default.coloring[style].main);
-        // const body = 0.1;
-        // drawCircle({ x: 0, y: 0, radius: body, }, config.coloring[style].main);
-        // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.coloring[style].base);
-        // drawCircle({ x: 0, y: 0, radius: body *config.eye.irisRate, }, config.coloring[style].accent);
-    };
-    if (context) {
-        var step_1 = function (timestamp) {
-            model_1.Model.updateData(timestamp);
-            draw();
-            if (fpsDiv && fpsDiv.style.display !== "none") {
-                fps_1.Fps.step(timestamp);
-                fpsDiv.innerText = fps_1.Fps.getText();
-            }
-            window.requestAnimationFrame(step_1);
-        };
-        window.requestAnimationFrame(step_1);
-        console.log("Canvas initialized.");
-    }
-    else {
-        console.error("Failed to get 2D connection.");
-    }
+    window.requestAnimationFrame(step);
     if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
         document.addEventListener("keydown", function (event) {
             if ("f" === event.key.toLowerCase()) {
@@ -675,11 +678,11 @@ define("script/index", ["require", "exports", "script/model", "script/fps", "res
         });
     }
     document.addEventListener("click", function () {
-        var keys = Object.keys(config_json_2.default.coloring);
-        var currentIndex = keys.indexOf(style);
+        var keys = Object.keys(config_json_3.default.coloring);
+        var currentIndex = keys.indexOf(render_1.Render.style);
         var nextIndex = (currentIndex + 1) % keys.length;
-        style = keys[nextIndex];
-        console.log("\uD83C\uDFA8 Style changed: ".concat(style));
+        render_1.Render.style = keys[nextIndex];
+        console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
     });
     var ToggleClassForWhileTimer = /** @class */ (function () {
         function ToggleClassForWhileTimer() {
@@ -714,5 +717,6 @@ define("script/index", ["require", "exports", "script/model", "script/fps", "res
     document.addEventListener("mousemove", function (_event) {
         (0, exports.mousemove)();
     });
+    console.log("Canvas initialized.");
 });
 //# sourceMappingURL=index.js.map
