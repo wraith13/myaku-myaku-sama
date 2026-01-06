@@ -76,6 +76,34 @@
                 },
                 "__EVIL_TIMER_CONFIG__": {
                     "path": "./resource/evil-timer.js.config.json"
+                },
+                "__PALETTE_ICON___": {
+                    "path": "./image/palette.1024.svg",
+                    "replace": {
+                        "match": "<svg ",
+                        "text": "<svg role=\"presentation\" aria-hidden=\"true\" "
+                    }
+                },
+                "__METER_ICON___": {
+                    "path": "./image/meter.1024.svg",
+                    "replace": {
+                        "match": "<svg ",
+                        "text": "<svg role=\"presentation\" aria-hidden=\"true\" "
+                    }
+                },
+                "__FULLSCREEN_ICON__": {
+                    "path": "./image/fullscreen.1024.svg",
+                    "replace": {
+                        "match": "<svg ",
+                        "text": "<svg role=\"presentation\" aria-hidden=\"true\" "
+                    }
+                },
+                "__JUMP_OUT_ICON__": {
+                    "path": "./image/jump-out.1024.svg",
+                    "replace": {
+                        "match": "<svg ",
+                        "text": "<svg role=\"presentation\" aria-hidden=\"true\" "
+                    }
                 }
             }
         },

@@ -286,12 +286,16 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
             });
         };
         Model.updateStretch = function () {
-            canvas.width = Model.Data.width = window.innerWidth;
-            canvas.height = Model.Data.height = window.innerHeight;
+            //const devicePixelRatio = window.devicePixelRatio ?? 1;
+            var devicePixelRatio = 1;
+            canvas.width = Model.Data.width = window.innerWidth * devicePixelRatio;
+            canvas.height = Model.Data.height = window.innerHeight * devicePixelRatio;
         };
         Model.updateData = function (timestamp) {
+            //const devicePixelRatio = window.devicePixelRatio ?? 1;
+            var devicePixelRatio = 1;
             var step = 0 < Model.Data.previousTimestamp ? Math.min(timestamp - Model.Data.previousTimestamp, 500) : 0;
-            if (window.innerWidth !== Model.Data.width || window.innerHeight !== Model.Data.height) {
+            if (window.innerWidth * devicePixelRatio !== Model.Data.width || window.innerHeight * devicePixelRatio !== Model.Data.height) {
                 Model.updateStretch();
             }
             Model.updateLayer(Model.Data.accent, timestamp, step);
@@ -630,7 +634,7 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     var fpsDiv = document.getElementById("fps");
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
-    var fullScreenButton = document.getElementById("full-screen-button");
+    var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");
     var jumpOutButton = document.getElementById("jump-out-button");
     console.log("Window loaded.");
@@ -644,6 +648,19 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         window.requestAnimationFrame(step);
     };
     window.requestAnimationFrame(step);
+    var setAriaHidden = function (element, hidden) {
+        var attributeKey = "aria-hidden";
+        if (hidden) {
+            var attribute = document.createAttribute(attributeKey);
+            attribute.value = "true";
+            element.attributes.setNamedItem(attribute);
+        }
+        else {
+            if (element.attributes.getNamedItem(attributeKey)) {
+                element.attributes.removeNamedItem(attributeKey);
+            }
+        }
+    };
     var toggleFpsDisplay = function () {
         if (fpsDiv) {
             if ("none" === fpsDiv.style.display) {
@@ -692,24 +709,45 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         });
     }
     if (controlPanelDiv) {
-        controlPanelDiv.style.display = "none";
-        document.addEventListener("click", function () {
-            if ("none" === controlPanelDiv.style.display) {
+        var toggleControlPanelDisplay_1 = function (show) {
+            if (true === show || (undefined === show && "none" === controlPanelDiv.style.display)) {
                 controlPanelDiv.style.display = "flex";
             }
             else {
                 controlPanelDiv.style.display = "none";
             }
+        };
+        toggleControlPanelDisplay_1(false);
+        document.addEventListener("click", function () { return toggleControlPanelDisplay_1(); });
+        document.addEventListener("keydown", function (event) {
+            if (" " === event.key.toLowerCase()) {
+                toggleControlPanelDisplay_1();
+            }
         });
     }
     if (stylesButton) {
+        var toggleStyle_1 = function (style) {
+            if (typeof style === "boolean" || undefined === style) {
+                var keys = Object.keys(config_json_3.default.styles);
+                var currentIndex = keys.indexOf(render_1.Render.style);
+                var nextIndex = (currentIndex + (false !== style ? 1 : -1)) % keys.length;
+                render_1.Render.style = keys[nextIndex];
+            }
+            else {
+                if (Object.keys(config_json_3.default.styles).includes(style)) {
+                    render_1.Render.style = style;
+                }
+            }
+            console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
+        };
         stylesButton.addEventListener("click", function (event) {
             event.stopPropagation();
-            var keys = Object.keys(config_json_3.default.styles);
-            var currentIndex = keys.indexOf(render_1.Render.style);
-            var nextIndex = (currentIndex + 1) % keys.length;
-            render_1.Render.style = keys[nextIndex];
-            console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
+            toggleStyle_1(!event.shiftKey);
+        });
+        document.addEventListener("keydown", function (event) {
+            if ("c" === event.key.toLowerCase()) {
+                toggleStyle_1(!event.shiftKey);
+            }
         });
     }
     if (fpsButton && fpsDiv) {
@@ -719,9 +757,10 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         });
     }
     ;
-    if (fullScreenButton) {
-        fullScreenButton.style.display = fullscreenEnabled ? "block" : "none";
-        fullScreenButton.addEventListener("click", function (event) {
+    if (fullscreenButton) {
+        fullscreenButton.style.display = fullscreenEnabled ? "block" : "none";
+        setAriaHidden(fullscreenButton, !fullscreenEnabled);
+        fullscreenButton.addEventListener("click", function (event) {
             event.stopPropagation();
             var elem = document.documentElement;
             if (document.fullscreenEnabled) {
@@ -745,7 +784,9 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         });
     }
     if (jumpOutButton) {
-        jumpOutButton.style.display = window.top !== window.self ? "block" : "none";
+        var isInIframe = window.top !== window.self;
+        jumpOutButton.style.display = isInIframe ? "block" : "none";
+        setAriaHidden(jumpOutButton, isInIframe);
         jumpOutButton.addEventListener("click", function (event) {
             event.stopPropagation();
             window.open(window.location.href, "_blank");

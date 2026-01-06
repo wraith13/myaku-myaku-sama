@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Mon Jan 05 2026 22:47:43 GMT+0900 (日本標準時)
+    build at: Tue Jan 06 2026 10:07:44 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -69,7 +69,7 @@ DEALINGS IN THE SOFTWARE.
 {
     box-sizing: border-box;
 }
-html, body
+html, body, canvas
 {
     height: 100%;
     min-height: 100vh;
@@ -81,6 +81,9 @@ html, body
     min-width: 100lvw;
     max-width: 100vw;
     max-width: 100lvw;
+}
+html, body
+{
     margin: 0px;
     padding: 0px;
     overflow: visible;
@@ -99,15 +102,14 @@ body:not(.mousemove)
     position: fixed;
     z-index: 100;
     top: 0.5rem;
-    top: calc(0.5rem + env(safe-area-inset-top));
+    top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
     left: 0.5rem;
-    left: calc(0.5rem + env(safe-area-inset-left));
+    left: max(0.5rem, env(safe-area-inset-left, 0.5rem));
     color: white;
     background-color: rgba(0, 0, 0, 0.5);
     font-family: monospace;
     font-size: 12px;
     padding: 0.25rem 0.5rem;
-    margin: 0px;
     border-radius: 0.5rem;
     white-space: pre;
     backdrop-filter: blur(0.5rem);
@@ -117,29 +119,36 @@ body:not(.mousemove)
     position: fixed;
     z-index: 100;
     bottom: 0.5rem;
-    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
     right: 0.5rem;
-    right: calc(0.5rem + env(safe-area-inset-right));
+    right: max(0.5rem, env(safe-area-inset-right, 0.5rem));
     color: white;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(0.5rem);
     padding: 0.25rem;
-    margin: 0px;
     border-radius: 2rem;
     display: flex;
     flex-direction: row;
 }
 button
 {
-    font-size: 1.5rem;
     background-color: rgba(0, 0, 0, 0.5);
     border-radius: 50%;
     height: 3rem;
     width: 3rem;
+    padding: calc(0.5rem - 1px);
     border-width: 1px;
     border-style: solid;
     border-color: black;
+    svg
+    {
+        height: 2.0rem;
+        width: 2.0rem;
+        color: white;
+        fill: white;
+    }
 }
+
 </style>
 </head>
 <body>
@@ -152,17 +161,45 @@ button
     </div>
 </noscript>
 <canvas id="canvas" role="presentation"></canvas>
-<div id="fps"></div>
-<div id="control-panel">
-    <button id="styles-button">🎨<!-- __PALETTE_ICON___ --></button>
-    <button id="fps-button">⏲️<!-- __METER_ICON___ --></button>
-    <button id="full-screen-button">🖥️<!-- __FULL_SCREEN_ICON__ --></button>
-    <button id="jump-out-button">↗️<!-- __JUMP_OUT_ICON__ --></button>
+<div id="fps" aria-hidden="true"></div>
+<div id="control-panel" aria-label="Control Panel" title="Control Panel(&#x2423;)" aria-keyshortcuts="Space">
+    <button id="styles-button" aria-label="Change Style" title="Change Style(C&#x0332;)" aria-keyshortcuts="c"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1.2381,0,0,1.2381,16.7619,16.7619)">
+        <path d="M378.182,735.302C202.891,724.044 64,578.114 64,400C64,214.557 214.557,64 400,64C585.443,64 736,214.557 736,400C736,407.836 735.731,415.611 735.202,423.314C733.374,449.93 728.441,475.697 720.763,500.257C718.312,500.188 715.852,500.154 713.385,500.154C685.114,500.154 657.897,504.703 632.427,513.108C565.915,535.056 511.315,583.301 480.958,645.508C468.078,671.901 459.563,700.808 456.354,731.286C438.029,734.386 419.201,736 400,736C392.671,736 385.396,735.765 378.182,735.302ZM510.689,490.695C552.829,458.752 602.723,436.516 657.031,427.329C657.977,418.348 658.462,409.23 658.462,400C658.462,257.351 542.649,141.538 400,141.538C257.351,141.538 141.538,257.351 141.538,400C141.538,540.181 253.379,654.447 392.622,658.358C413.27,592.315 453.772,535.006 507.124,493.434C508.257,492.455 509.447,491.54 510.689,490.695ZM400,180.308C421.397,180.308 438.769,197.68 438.769,219.077C438.769,240.474 421.397,257.846 400,257.846C378.603,257.846 361.231,240.474 361.231,219.077C361.231,197.68 378.603,180.308 400,180.308ZM219.077,361.231C240.474,361.231 257.846,378.603 257.846,400C257.846,421.397 240.474,438.769 219.077,438.769C197.68,438.769 180.308,421.397 180.308,400C180.308,378.603 197.68,361.231 219.077,361.231ZM267.538,484C288.936,484 306.308,501.372 306.308,522.769C306.308,544.167 288.936,561.538 267.538,561.538C246.141,561.538 228.769,544.167 228.769,522.769C228.769,501.372 246.141,484 267.538,484ZM474.308,341.846C506.404,341.846 532.462,367.904 532.462,400C532.462,432.096 506.404,458.154 474.308,458.154C442.212,458.154 416.154,432.096 416.154,400C416.154,367.904 442.212,341.846 474.308,341.846ZM580.923,361.231C602.32,361.231 619.692,378.603 619.692,400C619.692,421.397 602.32,438.769 580.923,438.769C559.526,438.769 542.154,421.397 542.154,400C542.154,378.603 559.526,361.231 580.923,361.231ZM267.538,238.462C288.936,238.462 306.308,255.833 306.308,277.231C306.308,298.628 288.936,316 267.538,316C246.141,316 228.769,298.628 228.769,277.231C228.769,255.833 246.141,238.462 267.538,238.462ZM532.462,238.462C553.859,238.462 571.231,255.833 571.231,277.231C571.231,298.628 553.859,316 532.462,316C511.064,316 493.692,298.628 493.692,277.231C493.692,255.833 511.064,238.462 532.462,238.462Z"/>
+    </g>
+</svg>
+</button>
+    <button id="fps-button" aria-label="Show FPS" title="Show FPS(S&#x0332;)" aria-keyshortcuts="s"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1.2381,0,0,1.2381,16.7619,16.7619)">
+        <path d="M179.265,653.243C108.649,591.628 64,500.987 64,400C64,214.557 214.557,64 400,64C585.443,64 736,214.557 736,400C736,500.987 691.351,591.628 620.735,653.243C561.677,704.772 484.456,736 400,736C315.544,736 238.323,704.772 179.265,653.243ZM570.885,593.846C615.433,554.538 646.347,500.129 655.584,438.664C635.528,437.189 619.692,420.429 619.692,400C619.692,379.571 635.528,362.811 655.584,361.336C649.205,318.887 632.487,279.804 608.079,246.736C601.083,253.606 591.494,257.846 580.923,257.846C559.526,257.846 542.154,240.474 542.154,219.077C542.154,208.506 546.394,198.917 553.264,191.921C520.196,167.513 481.113,150.795 438.664,144.416C437.189,164.472 420.429,180.308 400,180.308C379.571,180.308 362.811,164.472 361.336,144.416C318.887,150.795 279.804,167.513 246.736,191.921C253.606,198.917 257.846,208.506 257.846,219.077C257.846,240.474 240.474,257.846 219.077,257.846C208.506,257.846 198.917,253.606 191.921,246.736C167.513,279.804 150.795,318.887 144.416,361.336C164.472,362.811 180.308,379.571 180.308,400C180.308,420.429 164.472,437.189 144.416,438.664C153.653,500.129 184.567,554.538 229.115,593.846C273.758,554.454 332.094,530.227 396.025,529.261L487.13,315.774C495.462,296.251 518.075,287.165 537.598,295.497L538.169,295.741C557.692,304.072 566.778,326.685 558.447,346.208L475.548,540.465C511.209,551.364 543.604,569.773 570.885,593.846Z"/>
+    </g>
+</svg>
+</button>
+    <button id="fullscreen-button" aria-label="Toggle Fullscreen" title="Toggle Fullscreen(F&#x0332;)" aria-keyshortcuts="f"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1.44538,0,0,1.44538,-479.529,-17.0084)">
+        <path d="M623.733,128L623.733,172.279L519.509,172.279C504.481,172.279 492.279,184.481 492.279,199.509L492.279,298.198L448,298.198L448,196.227C448,158.572 478.572,128 516.227,128L623.733,128ZM924,298.198L879.721,298.198L879.721,199.509C879.721,184.481 867.519,172.279 852.491,172.279L748.267,172.279L748.267,128L855.773,128C893.428,128 924,158.572 924,196.227L924,298.198ZM748.267,604L748.267,559.731L852.491,559.731C867.519,559.731 879.721,547.529 879.721,532.5L879.721,422.733L924,422.733L924,535.773C924,573.428 893.428,604 855.773,604L748.267,604ZM448,422.733L492.279,422.733L492.279,532.5C492.279,547.529 504.481,559.731 519.509,559.731L623.733,559.731L623.733,604L516.227,604C478.572,604 448,573.428 448,535.773L448,422.733Z"/>
+    </g>
+</svg>
+</button>
+    <button id="jump-out-button" aria-label="Open in New Tab" title="Open in New Tab"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1.44538,0,0,1.44538,-479.529,-17.0084)">
+        <path d="M647.256,128L647.256,172.279L519.509,172.279C504.481,172.279 492.279,184.481 492.279,199.509L492.279,532.5C492.279,547.529 504.481,559.731 519.509,559.731L852.491,559.731C867.519,559.731 879.721,547.529 879.721,532.5L879.721,401.977L924,401.977L924,535.773C924,573.428 893.428,604 855.773,604L516.227,604C478.572,604 448,573.428 448,535.773L448,196.227C448,158.572 478.572,128 516.227,128L647.256,128ZM805.054,294.003L666.546,432.51C653.586,445.471 632.542,445.471 619.581,432.51C606.621,419.55 606.621,398.506 619.581,385.545L758.089,247.037L695.737,184.685C689.233,178.181 685.993,169.642 686.017,161.11L686.017,160.577C686.008,142.395 700.761,127.626 718.943,127.617L890.893,127.529C900.027,127.524 908.3,131.246 914.273,137.256C919.161,142.113 922.535,148.491 923.622,155.617C924.075,158.289 924.2,161.005 923.998,163.702L923.913,329.42C924.911,339.032 921.73,348.996 914.372,356.355C906.829,363.897 896.55,367.05 886.718,365.814C877.859,364.817 870.06,360.301 864.751,353.699L805.054,294.003Z"/>
+    </g>
+</svg>
+</button>
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Mon Jan 05 2026 22:47:43 GMT+0900 (日本標準時)",
-    tick: 1767620863738
+    at: "Tue Jan 06 2026 10:07:44 GMT+0900 (日本標準時)",
+    tick: 1767661664526
 };
 const evilCommonjsConfig = {
     "log": {
@@ -2010,12 +2047,16 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
             });
         };
         Model.updateStretch = function () {
-            canvas.width = Model.Data.width = window.innerWidth;
-            canvas.height = Model.Data.height = window.innerHeight;
+            //const devicePixelRatio = window.devicePixelRatio ?? 1;
+            var devicePixelRatio = 1;
+            canvas.width = Model.Data.width = window.innerWidth * devicePixelRatio;
+            canvas.height = Model.Data.height = window.innerHeight * devicePixelRatio;
         };
         Model.updateData = function (timestamp) {
+            //const devicePixelRatio = window.devicePixelRatio ?? 1;
+            var devicePixelRatio = 1;
             var step = 0 < Model.Data.previousTimestamp ? Math.min(timestamp - Model.Data.previousTimestamp, 500) : 0;
-            if (window.innerWidth !== Model.Data.width || window.innerHeight !== Model.Data.height) {
+            if (window.innerWidth * devicePixelRatio !== Model.Data.width || window.innerHeight * devicePixelRatio !== Model.Data.height) {
                 Model.updateStretch();
             }
             Model.updateLayer(Model.Data.accent, timestamp, step);
@@ -2354,7 +2395,7 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     var fpsDiv = document.getElementById("fps");
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
-    var fullScreenButton = document.getElementById("full-screen-button");
+    var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");
     var jumpOutButton = document.getElementById("jump-out-button");
     console.log("Window loaded.");
@@ -2368,6 +2409,19 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         window.requestAnimationFrame(step);
     };
     window.requestAnimationFrame(step);
+    var setAriaHidden = function (element, hidden) {
+        var attributeKey = "aria-hidden";
+        if (hidden) {
+            var attribute = document.createAttribute(attributeKey);
+            attribute.value = "true";
+            element.attributes.setNamedItem(attribute);
+        }
+        else {
+            if (element.attributes.getNamedItem(attributeKey)) {
+                element.attributes.removeNamedItem(attributeKey);
+            }
+        }
+    };
     var toggleFpsDisplay = function () {
         if (fpsDiv) {
             if ("none" === fpsDiv.style.display) {
@@ -2416,24 +2470,45 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         });
     }
     if (controlPanelDiv) {
-        controlPanelDiv.style.display = "none";
-        document.addEventListener("click", function () {
-            if ("none" === controlPanelDiv.style.display) {
+        var toggleControlPanelDisplay_1 = function (show) {
+            if (true === show || (undefined === show && "none" === controlPanelDiv.style.display)) {
                 controlPanelDiv.style.display = "flex";
             }
             else {
                 controlPanelDiv.style.display = "none";
             }
+        };
+        toggleControlPanelDisplay_1(false);
+        document.addEventListener("click", function () { return toggleControlPanelDisplay_1(); });
+        document.addEventListener("keydown", function (event) {
+            if (" " === event.key.toLowerCase()) {
+                toggleControlPanelDisplay_1();
+            }
         });
     }
     if (stylesButton) {
+        var toggleStyle_1 = function (style) {
+            if (typeof style === "boolean" || undefined === style) {
+                var keys = Object.keys(config_json_3.default.styles);
+                var currentIndex = keys.indexOf(render_1.Render.style);
+                var nextIndex = (currentIndex + (false !== style ? 1 : -1)) % keys.length;
+                render_1.Render.style = keys[nextIndex];
+            }
+            else {
+                if (Object.keys(config_json_3.default.styles).includes(style)) {
+                    render_1.Render.style = style;
+                }
+            }
+            console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
+        };
         stylesButton.addEventListener("click", function (event) {
             event.stopPropagation();
-            var keys = Object.keys(config_json_3.default.styles);
-            var currentIndex = keys.indexOf(render_1.Render.style);
-            var nextIndex = (currentIndex + 1) % keys.length;
-            render_1.Render.style = keys[nextIndex];
-            console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
+            toggleStyle_1(!event.shiftKey);
+        });
+        document.addEventListener("keydown", function (event) {
+            if ("c" === event.key.toLowerCase()) {
+                toggleStyle_1(!event.shiftKey);
+            }
         });
     }
     if (fpsButton && fpsDiv) {
@@ -2443,9 +2518,10 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         });
     }
     ;
-    if (fullScreenButton) {
-        fullScreenButton.style.display = fullscreenEnabled ? "block" : "none";
-        fullScreenButton.addEventListener("click", function (event) {
+    if (fullscreenButton) {
+        fullscreenButton.style.display = fullscreenEnabled ? "block" : "none";
+        setAriaHidden(fullscreenButton, !fullscreenEnabled);
+        fullscreenButton.addEventListener("click", function (event) {
             event.stopPropagation();
             var elem = document.documentElement;
             if (document.fullscreenEnabled) {
@@ -2469,7 +2545,9 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         });
     }
     if (jumpOutButton) {
-        jumpOutButton.style.display = window.top !== window.self ? "block" : "none";
+        var isInIframe = window.top !== window.self;
+        jumpOutButton.style.display = isInIframe ? "block" : "none";
+        setAriaHidden(jumpOutButton, isInIframe);
         jumpOutButton.addEventListener("click", function (event) {
             event.stopPropagation();
             window.open(window.location.href, "_blank");

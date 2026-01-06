@@ -273,13 +273,17 @@ export namespace Model
     };
     export const updateStretch = () =>
     {
-        canvas.width = Data.width = window.innerWidth;
-        canvas.height = Data.height = window.innerHeight;
+        //const devicePixelRatio = window.devicePixelRatio ?? 1;
+        const devicePixelRatio = 1;
+        canvas.width = Data.width = window.innerWidth *devicePixelRatio;
+        canvas.height = Data.height = window.innerHeight *devicePixelRatio;
     };
     export const updateData = (timestamp: number) =>
     {
+        //const devicePixelRatio = window.devicePixelRatio ?? 1;
+        const devicePixelRatio = 1;
         const step = 0 < Data.previousTimestamp ? Math.min(timestamp - Data.previousTimestamp, 500): 0;
-        if (window.innerWidth !== Data.width || window.innerHeight !== Data.height)
+        if (window.innerWidth *devicePixelRatio !== Data.width || window.innerHeight *devicePixelRatio !== Data.height)
         {
             updateStretch();
         }

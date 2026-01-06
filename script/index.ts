@@ -6,7 +6,7 @@ import config from "@resource/config.json";
 const fpsDiv = document.getElementById("fps");
 const controlPanelDiv = document.getElementById("control-panel");
 const stylesButton = document.getElementById("styles-button");
-const fullScreenButton = document.getElementById("full-screen-button");
+const fullscreenButton = document.getElementById("fullscreen-button");
 const fpsButton = document.getElementById("fps-button");
 const jumpOutButton = document.getElementById("jump-out-button");
 console.log("Window loaded.");
@@ -22,6 +22,24 @@ const step = (timestamp: number) =>
     window.requestAnimationFrame(step);
 };
 window.requestAnimationFrame(step);
+const setAriaHidden = (element: HTMLElement, hidden: boolean) =>
+{
+    const attributeKey = "aria-hidden";
+    if (hidden)
+    {
+        const attribute = document.createAttribute(attributeKey);
+        attribute.value = "true";
+        element.attributes.setNamedItem(attribute);
+
+    }
+    else
+    {
+        if (element.attributes.getNamedItem(attributeKey))
+        {
+            element.attributes.removeNamedItem(attributeKey);
+        }
+    }
+};
 const toggleFpsDisplay = () =>
 {
     if (fpsDiv)
@@ -97,36 +115,69 @@ if (fullscreenEnabled)
 }
 if (controlPanelDiv)
 {
-    controlPanelDiv.style.display = "none";
+    const toggleControlPanelDisplay = (show?: boolean) =>
+    {
+        if (true === show || (undefined === show && "none" === controlPanelDiv.style.display))
+        {
+            controlPanelDiv.style.display = "flex";
+        }
+        else
+        {
+            controlPanelDiv.style.display = "none";
+        }
+    };
+    toggleControlPanelDisplay(false);
+    document.addEventListener("click", () => toggleControlPanelDisplay());
     document.addEventListener
     (
-        "click",
-        () =>
+        "keydown",
+        (event) =>
         {
-            if ("none" === controlPanelDiv.style.display)
+            if (" " === event.key.toLowerCase())
             {
-                controlPanelDiv.style.display = "flex";
-            }
-            else
-            {
-                controlPanelDiv.style.display = "none";
+                toggleControlPanelDisplay();
             }
         }
     );
 }
 if (stylesButton)
 {
+    const toggleStyle = (style?: boolean | keyof typeof config["styles"]) =>
+    {
+        if (typeof style === "boolean" || undefined === style)
+        {
+            const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
+            const currentIndex = keys.indexOf(Render.style);
+            const nextIndex = (currentIndex + (false !== style ? 1: -1)) %keys.length;
+            Render.style = keys[nextIndex];
+        }
+        else
+        {
+            if (Object.keys(config.styles).includes(style))
+            {
+                Render.style = style;
+            }
+        }
+        console.log(`🎨 Style changed: ${Render.style}`);
+    };
     stylesButton.addEventListener
     (
         "click",
         event =>
         {
             event.stopPropagation();
-            const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
-            const currentIndex = keys.indexOf(Render.style);
-            const nextIndex = (currentIndex + 1) %keys.length;
-            Render.style = keys[nextIndex];
-            console.log(`🎨 Style changed: ${Render.style}`);
+            toggleStyle( ! event.shiftKey);
+        }
+    );
+    document.addEventListener
+    (
+        "keydown",
+        (event) =>
+        {
+            if ("c" === event.key.toLowerCase())
+            {
+                toggleStyle( ! event.shiftKey);
+            }
         }
     );
 }
@@ -142,10 +193,11 @@ if (fpsButton && fpsDiv)
         }
     );
 };
-if (fullScreenButton)
+if (fullscreenButton)
 {
-    fullScreenButton.style.display = fullscreenEnabled ? "block" : "none";
-    fullScreenButton.addEventListener
+    fullscreenButton.style.display = fullscreenEnabled ? "block" : "none";
+    setAriaHidden(fullscreenButton, ! fullscreenEnabled);
+    fullscreenButton.addEventListener
     (
         "click",
         event =>
@@ -182,7 +234,9 @@ if (fullScreenButton)
 }
 if (jumpOutButton)
 {
-    jumpOutButton.style.display = window.top !== window.self ? "block" : "none";
+    const isInIframe = window.top !== window.self;
+    jumpOutButton.style.display = isInIframe ? "block" : "none";
+    setAriaHidden(jumpOutButton, isInIframe);
     jumpOutButton.addEventListener
     (
         "click",

@@ -55,12 +55,12 @@ __STYLE__
     </div>
 </noscript>
 <canvas id="canvas" role="presentation"></canvas>
-<div id="fps"></div>
-<div id="control-panel">
-    <button id="styles-button">🎨<!-- __PALETTE_ICON___ --></button>
-    <button id="fps-button">⏲️<!-- __METER_ICON___ --></button>
-    <button id="full-screen-button">🖥️<!-- __FULL_SCREEN_ICON__ --></button>
-    <button id="jump-out-button">↗️<!-- __JUMP_OUT_ICON__ --></button>
+<div id="fps" aria-hidden="true"></div>
+<div id="control-panel" aria-label="Control Panel" title="Control Panel(&#x2423;)" aria-keyshortcuts="Space">
+    <button id="styles-button" aria-label="Change Style" title="Change Style(C&#x0332;)" aria-keyshortcuts="c">__PALETTE_ICON___</button>
+    <button id="fps-button" aria-label="Show FPS" title="Show FPS(S&#x0332;)" aria-keyshortcuts="s">__METER_ICON___</button>
+    <button id="fullscreen-button" aria-label="Toggle Fullscreen" title="Toggle Fullscreen(F&#x0332;)" aria-keyshortcuts="f">__FULLSCREEN_ICON__</button>
+    <button id="jump-out-button" aria-label="Open in New Tab" title="Open in New Tab">__JUMP_OUT_ICON__</button>
 </div>
 <script type="text/javascript">
 const build = {

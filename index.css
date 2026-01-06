@@ -2,7 +2,7 @@
 {
     box-sizing: border-box;
 }
-html, body
+html, body, canvas
 {
     height: 100%;
     min-height: 100vh;
@@ -14,6 +14,9 @@ html, body
     min-width: 100lvw;
     max-width: 100vw;
     max-width: 100lvw;
+}
+html, body
+{
     margin: 0px;
     padding: 0px;
     overflow: visible;
@@ -32,15 +35,14 @@ body:not(.mousemove)
     position: fixed;
     z-index: 100;
     top: 0.5rem;
-    top: calc(0.5rem + env(safe-area-inset-top));
+    top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
     left: 0.5rem;
-    left: calc(0.5rem + env(safe-area-inset-left));
+    left: max(0.5rem, env(safe-area-inset-left, 0.5rem));
     color: white;
     background-color: rgba(0, 0, 0, 0.5);
     font-family: monospace;
     font-size: 12px;
     padding: 0.25rem 0.5rem;
-    margin: 0px;
     border-radius: 0.5rem;
     white-space: pre;
     backdrop-filter: blur(0.5rem);
@@ -50,26 +52,32 @@ body:not(.mousemove)
     position: fixed;
     z-index: 100;
     bottom: 0.5rem;
-    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
     right: 0.5rem;
-    right: calc(0.5rem + env(safe-area-inset-right));
+    right: max(0.5rem, env(safe-area-inset-right, 0.5rem));
     color: white;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(0.5rem);
     padding: 0.25rem;
-    margin: 0px;
     border-radius: 2rem;
     display: flex;
     flex-direction: row;
 }
 button
 {
-    font-size: 1.5rem;
     background-color: rgba(0, 0, 0, 0.5);
     border-radius: 50%;
     height: 3rem;
     width: 3rem;
+    padding: calc(0.5rem - 1px);
     border-width: 1px;
     border-style: solid;
     border-color: black;
+    svg
+    {
+        height: 2.0rem;
+        width: 2.0rem;
+        color: white;
+        fill: white;
+    }
 }
