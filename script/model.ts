@@ -271,17 +271,60 @@ export namespace Model
             }
         );
     };
+    export type PixelRatioMode = "half" | "regular" | "full";
+    export const PixelRatioModeKeys = [ "half", "regular", "full", ] as const;
+    let pixelRatioMode: PixelRatioMode = "regular";
+    export const togglePixelRatioMode = (value?: boolean | PixelRatioMode) =>
+    {
+        if (typeof value === "boolean" || undefined === value)
+        {
+            const currentIndex = PixelRatioModeKeys.indexOf(pixelRatioMode);
+            const nextIndex = (currentIndex + (false !== value ? 1: -1)) %PixelRatioModeKeys.length;
+            pixelRatioMode = PixelRatioModeKeys[nextIndex];
+        }
+        else
+        {
+            if (PixelRatioModeKeys.includes(value))
+            {
+                pixelRatioMode = value;
+            }
+        }
+        console.log(`🖥️ Quality changed: ${pixelRatioMode}`);
+        updateStretch();
+    };
+    export const getPixcelRatioLevel = (): number =>
+    {
+        switch (pixelRatioMode)
+        {
+            case "half":
+                return 1;
+            case "regular":
+                return 2;
+            case "full":
+                return 3;
+        }
+    };
+    export const getPixcelRatio = (): number =>
+    {
+        switch (pixelRatioMode)
+        {
+            case "half":
+                return 0.5;
+            case "regular":
+                return 1;
+            case "full":
+                return window.devicePixelRatio ?? 1;
+        }
+    };
     export const updateStretch = () =>
     {
-        //const devicePixelRatio = window.devicePixelRatio ?? 1;
-        const devicePixelRatio = 1;
+        const devicePixelRatio = getPixcelRatio();
         canvas.width = Data.width = window.innerWidth *devicePixelRatio;
         canvas.height = Data.height = window.innerHeight *devicePixelRatio;
     };
     export const updateData = (timestamp: number) =>
     {
-        //const devicePixelRatio = window.devicePixelRatio ?? 1;
-        const devicePixelRatio = 1;
+        const devicePixelRatio = getPixcelRatio();
         const step = 0 < Data.previousTimestamp ? Math.min(timestamp - Data.previousTimestamp, 500): 0;
         if (window.innerWidth *devicePixelRatio !== Data.width || window.innerHeight *devicePixelRatio !== Data.height)
         {

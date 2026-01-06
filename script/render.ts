@@ -5,11 +5,11 @@ export namespace Render
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const context = canvas.getContext("2d") as CanvasRenderingContext2D;
     export let style = "regular" as keyof typeof config["styles"];
-    type FusionStatus = "none" | "proximity" | "contact" | "inclusion";
+    type FusionStatus = "none" | "near" | "overlap" | "inclusion";
     const hasFusionPath = (fusionStatus: FusionStatus) =>
         [ "none", "inclusion" ].indexOf(fusionStatus) < 0;
     const isContacted = (fusionStatus: FusionStatus) =>
-        0 <= [ "contact", "inclusion" ].indexOf(fusionStatus);
+        0 <= [ "overlap", "inclusion" ].indexOf(fusionStatus);
     interface CirclesConnection
     {
         sumRadius: number;
@@ -26,11 +26,11 @@ export namespace Render
         }
         if (data.sumRadius < data.distance)
         {
-            return "proximity";
+            return "near";
         }
         if (data.sumRadius -data.minRadius *2 < data.distance)
         {
-            return "contact";
+            return "overlap";
         }
         return "inclusion";
     };
@@ -94,20 +94,61 @@ export namespace Render
                         x: (tp1.x +tp2.x + tp3.x + tp4.x) /4,
                         y: (tp1.y +tp2.y + tp3.y + tp4.y) /4,
                     };
-                    const contactDist = sumRadius +minRadius;
-                    const cpRate = contactDist <= distance ? 0:
-                        Math.min(1, (contactDist -distance) / (minRadius *2));
-                    const cp1: Model.Point = contactDist <= distance ?
-                    cp0:
+
+                    // const cpRate = sumRadius +minRadius <= distance ? 0:
+                    //     Math.min(1, (sumRadius +minRadius -distance) / (minRadius *2));
+                    // const cp1: Model.Point =
+                    // {
+                    //     x: cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate,
+                    //     y: cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate,
+                    // };
+                    // const cp2: Model.Point =
+                    // {
+                    //     x: cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate,
+                    //     y: cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate,
+                    // };
+
+
+                    // // const contactDist = fusionLimit; //sumRadius +minRadius;
+                    // // const surfaceDist = distance -sumRadius;
+                    // // const fusionSurfaceLimit = fusionLimit -sumRadius;
+                    
+                    // // const cpRate = contactDist <= distance ? 1:
+                    // //     //Math.min(1, (contactDist -distance) / (minRadius *2));
+                    // //     fusionSurfaceLimit /2 <= surfaceDist ?
+                    // //         Math.min(1, (surfaceDist -(fusionSurfaceLimit /2)) / (fusionSurfaceLimit /2)):
+                    // //         0;
+                    let cpRate: number = 0;;
+                    //const surfaceDist = distance -sumRadius;
+                    //const fusionSurfaceLimit = fusionLimit -sumRadius;
+                    switch(fusionStatus)
                     {
-                        x: cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate,
-                        y: cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate,
+                    case "near":
+                        cpRate = sumRadius +minRadius <= distance  ?
+                            -Math.min(1, (distance -(sumRadius +minRadius)) / (fusionLimit - (sumRadius +minRadius))):
+                            Math.min(1, (sumRadius +minRadius -distance) / (minRadius *2));
+                        break;
+                    case "overlap":
+                        cpRate = Math.min(1, (sumRadius +minRadius -distance) / (minRadius *2));
+                        break;
+                    }
+                    const cp1: Model.Point =
+                    {
+                        x: 0 <= cpRate ?
+                            cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate:
+                            cp0.x *(1 +cpRate) + ((tp2.x +tp3.x) /2) *-cpRate,
+                        y: 0 <= cpRate ?
+                            cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate:
+                            cp0.y *(1 +cpRate) + ((tp2.y +tp3.y) /2) *-cpRate,
                     };
-                    const cp2: Model.Point = contactDist <= distance ?
-                    cp0:
+                    const cp2: Model.Point =
                     {
-                        x: cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate,
-                        y: cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate,
+                        x: 0 <= cpRate ?
+                            cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate:
+                            cp0.x *(1 +cpRate) + ((tp1.x +tp4.x) /2) *-cpRate,
+                        y: 0 <= cpRate ?
+                            cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate:
+                            cp0.y *(1 +cpRate) + ((tp1.y +tp4.y) /2) *-cpRate,
                     };
 
                     context.beginPath();

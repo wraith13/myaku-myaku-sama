@@ -285,15 +285,50 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                 }
             });
         };
+        Model.PixelRatioModeKeys = ["half", "regular", "full",];
+        var pixelRatioMode = "regular";
+        Model.togglePixelRatioMode = function (value) {
+            if (typeof value === "boolean" || undefined === value) {
+                var currentIndex = Model.PixelRatioModeKeys.indexOf(pixelRatioMode);
+                var nextIndex = (currentIndex + (false !== value ? 1 : -1)) % Model.PixelRatioModeKeys.length;
+                pixelRatioMode = Model.PixelRatioModeKeys[nextIndex];
+            }
+            else {
+                if (Model.PixelRatioModeKeys.includes(value)) {
+                    pixelRatioMode = value;
+                }
+            }
+            console.log("\uD83D\uDDA5\uFE0F Quality changed: ".concat(pixelRatioMode));
+            Model.updateStretch();
+        };
+        Model.getPixcelRatioLevel = function () {
+            switch (pixelRatioMode) {
+                case "half":
+                    return 1;
+                case "regular":
+                    return 2;
+                case "full":
+                    return 3;
+            }
+        };
+        Model.getPixcelRatio = function () {
+            var _a;
+            switch (pixelRatioMode) {
+                case "half":
+                    return 0.5;
+                case "regular":
+                    return 1;
+                case "full":
+                    return (_a = window.devicePixelRatio) !== null && _a !== void 0 ? _a : 1;
+            }
+        };
         Model.updateStretch = function () {
-            //const devicePixelRatio = window.devicePixelRatio ?? 1;
-            var devicePixelRatio = 1;
+            var devicePixelRatio = Model.getPixcelRatio();
             canvas.width = Model.Data.width = window.innerWidth * devicePixelRatio;
             canvas.height = Model.Data.height = window.innerHeight * devicePixelRatio;
         };
         Model.updateData = function (timestamp) {
-            //const devicePixelRatio = window.devicePixelRatio ?? 1;
-            var devicePixelRatio = 1;
+            var devicePixelRatio = Model.getPixcelRatio();
             var step = 0 < Model.Data.previousTimestamp ? Math.min(timestamp - Model.Data.previousTimestamp, 500) : 0;
             if (window.innerWidth * devicePixelRatio !== Model.Data.width || window.innerHeight * devicePixelRatio !== Model.Data.height) {
                 Model.updateStretch();
@@ -318,17 +353,17 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
             return ["none", "inclusion"].indexOf(fusionStatus) < 0;
         };
         var isContacted = function (fusionStatus) {
-            return 0 <= ["contact", "inclusion"].indexOf(fusionStatus);
+            return 0 <= ["overlap", "inclusion"].indexOf(fusionStatus);
         };
         var getFusionStatus = function (data) {
             if (data.fusionLimit < data.distance) {
                 return "none";
             }
             if (data.sumRadius < data.distance) {
-                return "proximity";
+                return "near";
             }
             if (data.sumRadius - data.minRadius * 2 < data.distance) {
-                return "contact";
+                return "overlap";
             }
             return "inclusion";
         };
@@ -379,21 +414,56 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
                             x: (tp1.x + tp2.x + tp3.x + tp4.x) / 4,
                             y: (tp1.y + tp2.y + tp3.y + tp4.y) / 4,
                         };
-                        var contactDist = sumRadius + minRadius;
-                        var cpRate = contactDist <= distance ? 0 :
-                            Math.min(1, (contactDist - distance) / (minRadius * 2));
-                        var cp1 = contactDist <= distance ?
-                            cp0 :
-                            {
-                                x: cp0.x * (1 - cpRate) + ((tp1.x + tp4.x) / 2) * cpRate,
-                                y: cp0.y * (1 - cpRate) + ((tp1.y + tp4.y) / 2) * cpRate,
-                            };
-                        var cp2 = contactDist <= distance ?
-                            cp0 :
-                            {
-                                x: cp0.x * (1 - cpRate) + ((tp2.x + tp3.x) / 2) * cpRate,
-                                y: cp0.y * (1 - cpRate) + ((tp2.y + tp3.y) / 2) * cpRate,
-                            };
+                        // const cpRate = sumRadius +minRadius <= distance ? 0:
+                        //     Math.min(1, (sumRadius +minRadius -distance) / (minRadius *2));
+                        // const cp1: Model.Point =
+                        // {
+                        //     x: cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate,
+                        //     y: cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate,
+                        // };
+                        // const cp2: Model.Point =
+                        // {
+                        //     x: cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate,
+                        //     y: cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate,
+                        // };
+                        // // const contactDist = fusionLimit; //sumRadius +minRadius;
+                        // // const surfaceDist = distance -sumRadius;
+                        // // const fusionSurfaceLimit = fusionLimit -sumRadius;
+                        // // const cpRate = contactDist <= distance ? 1:
+                        // //     //Math.min(1, (contactDist -distance) / (minRadius *2));
+                        // //     fusionSurfaceLimit /2 <= surfaceDist ?
+                        // //         Math.min(1, (surfaceDist -(fusionSurfaceLimit /2)) / (fusionSurfaceLimit /2)):
+                        // //         0;
+                        var cpRate = 0;
+                        ;
+                        //const surfaceDist = distance -sumRadius;
+                        //const fusionSurfaceLimit = fusionLimit -sumRadius;
+                        switch (fusionStatus) {
+                            case "near":
+                                cpRate = sumRadius + minRadius <= distance ?
+                                    -Math.min(1, (distance - (sumRadius + minRadius)) / (fusionLimit - (sumRadius + minRadius))) :
+                                    Math.min(1, (sumRadius + minRadius - distance) / (minRadius * 2));
+                                break;
+                            case "overlap":
+                                cpRate = Math.min(1, (sumRadius + minRadius - distance) / (minRadius * 2));
+                                break;
+                        }
+                        var cp1 = {
+                            x: 0 <= cpRate ?
+                                cp0.x * (1 - cpRate) + ((tp1.x + tp4.x) / 2) * cpRate :
+                                cp0.x * (1 + cpRate) + ((tp2.x + tp3.x) / 2) * -cpRate,
+                            y: 0 <= cpRate ?
+                                cp0.y * (1 - cpRate) + ((tp1.y + tp4.y) / 2) * cpRate :
+                                cp0.y * (1 + cpRate) + ((tp2.y + tp3.y) / 2) * -cpRate,
+                        };
+                        var cp2 = {
+                            x: 0 <= cpRate ?
+                                cp0.x * (1 - cpRate) + ((tp2.x + tp3.x) / 2) * cpRate :
+                                cp0.x * (1 + cpRate) + ((tp1.x + tp4.x) / 2) * -cpRate,
+                            y: 0 <= cpRate ?
+                                cp0.y * (1 - cpRate) + ((tp2.y + tp3.y) / 2) * cpRate :
+                                cp0.y * (1 + cpRate) + ((tp1.y + tp4.y) / 2) * -cpRate,
+                        };
                         context.beginPath();
                         // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
                         context.moveTo(tp1.x, tp1.y);
@@ -631,9 +701,10 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.mousemove = exports.ToggleClassForWhileTimer = void 0;
     config_json_3 = __importDefault(config_json_3);
-    var fpsDiv = document.getElementById("fps");
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
+    var hdButton = document.getElementById("hd-button");
+    var fpsDiv = document.getElementById("fps");
     var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");
     var jumpOutButton = document.getElementById("jump-out-button");
@@ -747,6 +818,17 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         document.addEventListener("keydown", function (event) {
             if ("c" === event.key.toLowerCase()) {
                 toggleStyle_1(!event.shiftKey);
+            }
+        });
+    }
+    if (hdButton) {
+        hdButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            model_2.Model.togglePixelRatioMode(!event.shiftKey);
+        });
+        document.addEventListener("keydown", function (event) {
+            if ("q" === event.key.toLowerCase()) {
+                model_2.Model.togglePixelRatioMode(!event.shiftKey);
             }
         });
     }

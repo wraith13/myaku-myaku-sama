@@ -76,6 +76,11 @@ declare module "script/model" {
         const makeUnit: (point: Point) => Unit;
         const updateUnit: (unit: Unit, step: number) => void;
         const updateLayer: (layer: Layer, timestamp: number, step: number) => void;
+        type PixelRatioMode = "half" | "regular" | "full";
+        const PixelRatioModeKeys: readonly ["half", "regular", "full"];
+        const togglePixelRatioMode: (value?: boolean | PixelRatioMode) => void;
+        const getPixcelRatioLevel: () => number;
+        const getPixcelRatio: () => number;
         const updateStretch: () => void;
         const updateData: (timestamp: number) => void;
     }

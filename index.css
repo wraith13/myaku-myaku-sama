@@ -73,6 +73,7 @@ button
     border-width: 1px;
     border-style: solid;
     border-color: black;
+    color: white;
     svg
     {
         height: 2.0rem;

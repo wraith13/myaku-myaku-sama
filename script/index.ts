@@ -3,9 +3,10 @@ import { Model } from "./model";
 import { Render } from "./render";
 import { Fps } from "./fps";
 import config from "@resource/config.json";
-const fpsDiv = document.getElementById("fps");
 const controlPanelDiv = document.getElementById("control-panel");
 const stylesButton = document.getElementById("styles-button");
+const hdButton = document.getElementById("hd-button");
+const fpsDiv = document.getElementById("fps");
 const fullscreenButton = document.getElementById("fullscreen-button");
 const fpsButton = document.getElementById("fps-button");
 const jumpOutButton = document.getElementById("jump-out-button");
@@ -177,6 +178,29 @@ if (stylesButton)
             if ("c" === event.key.toLowerCase())
             {
                 toggleStyle( ! event.shiftKey);
+            }
+        }
+    );
+}
+if (hdButton)
+{
+    hdButton.addEventListener
+    (
+        "click",
+        event =>
+        {
+            event.stopPropagation();
+            Model.togglePixelRatioMode( ! event.shiftKey);
+        }
+    );
+    document.addEventListener
+    (
+        "keydown",
+        (event) =>
+        {
+            if ("q" === event.key.toLowerCase())
+            {
+                Model.togglePixelRatioMode( ! event.shiftKey);
             }
         }
     );
