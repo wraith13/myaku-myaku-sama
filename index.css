@@ -1,3 +1,15 @@
+@property --low
+{
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+}
+@property --high
+{
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+}
 *
 {
     box-sizing: border-box;
@@ -65,12 +77,13 @@ body:not(.mousemove)
 }
 button
 {
+    position: relative;
     background-color: rgba(0, 0, 0, 0.5);
     border-radius: 50%;
     height: 3rem;
     width: 3rem;
-    padding: calc(0.5rem - 1px);
-    border-width: 1px;
+    padding: calc(0.5rem - 2px);
+    border-width: 2px;
     border-style: solid;
     border-color: black;
     color: white;
@@ -81,4 +94,19 @@ button
         color: white;
         fill: white;
     }
+    .round-volume
+    {
+        position: absolute;
+        height: 3rem;
+        width: 3rem;
+        top: -2px;
+        left: -2px;
+    }
+}
+.round-volume
+{
+    transition: --low 0.25s ease, --high 0.25s ease;
+    border-radius: 50%;
+    mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 2px), white calc(70.71% - 2px));
+    background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
 }

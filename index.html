@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Tue Jan 06 2026 22:40:08 GMT+0900 (日本標準時)
+    build at: Wed Jan 07 2026 09:09:29 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -65,6 +65,18 @@ DEALINGS IN THE SOFTWARE.
 <meta property="og:locale" content="en_US" />
 <link rel="image_src" href="https://wraith13.github.io/myaku-myaku-sama/image/twitter-card.png" />
 <style>
+@property --low
+{
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+}
+@property --high
+{
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+}
 *
 {
     box-sizing: border-box;
@@ -132,12 +144,13 @@ body:not(.mousemove)
 }
 button
 {
+    position: relative;
     background-color: rgba(0, 0, 0, 0.5);
     border-radius: 50%;
     height: 3rem;
     width: 3rem;
-    padding: calc(0.5rem - 1px);
-    border-width: 1px;
+    padding: calc(0.5rem - 2px);
+    border-width: 2px;
     border-style: solid;
     border-color: black;
     color: white;
@@ -148,6 +161,21 @@ button
         color: white;
         fill: white;
     }
+    .round-volume
+    {
+        position: absolute;
+        height: 3rem;
+        width: 3rem;
+        top: -2px;
+        left: -2px;
+    }
+}
+.round-volume
+{
+    transition: --low 0.25s ease, --high 0.25s ease;
+    border-radius: 50%;
+    mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 2px), white calc(70.71% - 2px));
+    background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
 }
 
 </style>
@@ -172,7 +200,7 @@ button
     </g>
 </svg>
 </button>
-    <button id="hd-button" aria-label="Change Quality" title="Change Quality(Q&#x0332;)" aria-keyshortcuts="q">HD</button>
+    <button id="hd-button" aria-label="Change Quality" title="Change Quality(Q&#x0332;)" aria-keyshortcuts="q"><div id="hd-volume" class="round-volume"></div>HD</button>
     <button id="fps-button" aria-label="Show FPS" title="Show FPS(S&#x0332;)" aria-keyshortcuts="s"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
@@ -200,8 +228,8 @@ button
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Tue Jan 06 2026 22:40:08 GMT+0900 (日本標準時)",
-    tick: 1767706808327
+    at: "Wed Jan 07 2026 09:09:29 GMT+0900 (日本標準時)",
+    tick: 1767744569132
 };
 const evilCommonjsConfig = {
     "log": {
@@ -2467,6 +2495,7 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
     var hdButton = document.getElementById("hd-button");
+    var hdVolumeDiv = document.getElementById("hd-volume");
     var fpsDiv = document.getElementById("fps");
     var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");
@@ -2584,14 +2613,22 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
             }
         });
     }
+    var updateHdVolumeDisplay = function () {
+        if (hdVolumeDiv) {
+            hdVolumeDiv.style.setProperty("--high", "".concat(model_2.Model.getPixcelRatioLevel() / model_2.Model.PixelRatioModeKeys.length));
+        }
+    };
+    updateHdVolumeDisplay();
     if (hdButton) {
         hdButton.addEventListener("click", function (event) {
             event.stopPropagation();
             model_2.Model.togglePixelRatioMode(!event.shiftKey);
+            updateHdVolumeDisplay();
         });
         document.addEventListener("keydown", function (event) {
             if ("q" === event.key.toLowerCase()) {
                 model_2.Model.togglePixelRatioMode(!event.shiftKey);
+                updateHdVolumeDisplay();
             }
         });
     }

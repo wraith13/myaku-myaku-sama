@@ -6,6 +6,7 @@ import config from "@resource/config.json";
 const controlPanelDiv = document.getElementById("control-panel");
 const stylesButton = document.getElementById("styles-button");
 const hdButton = document.getElementById("hd-button");
+const hdVolumeDiv = document.getElementById("hd-volume");
 const fpsDiv = document.getElementById("fps");
 const fullscreenButton = document.getElementById("fullscreen-button");
 const fpsButton = document.getElementById("fps-button");
@@ -182,6 +183,14 @@ if (stylesButton)
         }
     );
 }
+const updateHdVolumeDisplay = () =>
+{
+    if (hdVolumeDiv)
+    {
+        hdVolumeDiv.style.setProperty("--high", `${Model.getPixcelRatioLevel() /Model.PixelRatioModeKeys.length}`);
+    }
+};
+updateHdVolumeDisplay();
 if (hdButton)
 {
     hdButton.addEventListener
@@ -191,6 +200,7 @@ if (hdButton)
         {
             event.stopPropagation();
             Model.togglePixelRatioMode( ! event.shiftKey);
+            updateHdVolumeDisplay();
         }
     );
     document.addEventListener
@@ -201,6 +211,7 @@ if (hdButton)
             if ("q" === event.key.toLowerCase())
             {
                 Model.togglePixelRatioMode( ! event.shiftKey);
+                updateHdVolumeDisplay();
             }
         }
     );

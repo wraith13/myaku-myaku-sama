@@ -704,6 +704,7 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
     var hdButton = document.getElementById("hd-button");
+    var hdVolumeDiv = document.getElementById("hd-volume");
     var fpsDiv = document.getElementById("fps");
     var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");
@@ -821,14 +822,22 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
             }
         });
     }
+    var updateHdVolumeDisplay = function () {
+        if (hdVolumeDiv) {
+            hdVolumeDiv.style.setProperty("--high", "".concat(model_2.Model.getPixcelRatioLevel() / model_2.Model.PixelRatioModeKeys.length));
+        }
+    };
+    updateHdVolumeDisplay();
     if (hdButton) {
         hdButton.addEventListener("click", function (event) {
             event.stopPropagation();
             model_2.Model.togglePixelRatioMode(!event.shiftKey);
+            updateHdVolumeDisplay();
         });
         document.addEventListener("keydown", function (event) {
             if ("q" === event.key.toLowerCase()) {
                 model_2.Model.togglePixelRatioMode(!event.shiftKey);
+                updateHdVolumeDisplay();
             }
         });
     }
