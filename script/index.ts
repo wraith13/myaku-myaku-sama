@@ -6,7 +6,7 @@ import config from "@resource/config.json";
 const controlPanelDiv = document.getElementById("control-panel");
 const stylesButton = document.getElementById("styles-button");
 const hdButton = document.getElementById("hd-button");
-const hdVolumeDiv = document.getElementById("hd-volume");
+//const hdVolumeDiv = document.getElementById("hd-volume");
 const fpsDiv = document.getElementById("fps");
 const fullscreenButton = document.getElementById("fullscreen-button");
 const fpsButton = document.getElementById("fps-button");
@@ -49,10 +49,12 @@ const toggleFpsDisplay = () =>
         if ("none" === fpsDiv.style.display)
         {
             fpsDiv.style.display = "block";
+            fpsButton?.classList.add("on");
         }
         else
         {
             fpsDiv.style.display = "none";
+            fpsButton?.classList.remove("on");
         }
     }
 }
@@ -135,31 +137,47 @@ if (controlPanelDiv)
         "keydown",
         (event) =>
         {
-            if (" " === event.key.toLowerCase())
+            if (" " === event.key.toLowerCase() && event.target === document.body)
             {
                 toggleControlPanelDisplay();
             }
         }
     );
-}
+};
+let styleRoundBarIndex = 0;
+const updateStyleRoundBar = () =>
+{
+    if (stylesButton)
+    {
+        const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
+        //stylesButton.style.setProperty("--low", `${styleRoundBarIndex /keys.length}`);
+        stylesButton.style.setProperty("--high", `${1 /keys.length}`);
+        stylesButton.style.setProperty("--rotate", `${styleRoundBarIndex /keys.length}`);
+    }
+};
+updateStyleRoundBar();
 if (stylesButton)
 {
     const toggleStyle = (style?: boolean | keyof typeof config["styles"]) =>
     {
+        const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
         if (typeof style === "boolean" || undefined === style)
         {
-            const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
             const currentIndex = keys.indexOf(Render.style);
-            const nextIndex = (currentIndex + (false !== style ? 1: -1)) %keys.length;
+            const nextIndex = (keys.length +currentIndex + (false !== style ? 1: -1)) %keys.length;
+            console.log({currentIndex, nextIndex, keysLength: keys.length, style});
             Render.style = keys[nextIndex];
+            styleRoundBarIndex += false !== style ? 1: -1;
         }
         else
         {
             if (Object.keys(config.styles).includes(style))
             {
                 Render.style = style;
+                styleRoundBarIndex = keys.indexOf(style);
             }
         }
+        updateStyleRoundBar();
         console.log(`🎨 Style changed: ${Render.style}`);
     };
     stylesButton.addEventListener
@@ -183,14 +201,14 @@ if (stylesButton)
         }
     );
 }
-const updateHdVolumeDisplay = () =>
+const updateHdRoundBar = () =>
 {
-    if (hdVolumeDiv)
+    if (hdButton)
     {
-        hdVolumeDiv.style.setProperty("--high", `${Model.getPixcelRatioLevel() /Model.PixelRatioModeKeys.length}`);
+        hdButton.style.setProperty("--high", `${Model.getPixcelRatioLevel() /Model.PixelRatioModeKeys.length}`);
     }
 };
-updateHdVolumeDisplay();
+updateHdRoundBar();
 if (hdButton)
 {
     hdButton.addEventListener
@@ -200,7 +218,7 @@ if (hdButton)
         {
             event.stopPropagation();
             Model.togglePixelRatioMode( ! event.shiftKey);
-            updateHdVolumeDisplay();
+            updateHdRoundBar();
         }
     );
     document.addEventListener
@@ -211,7 +229,7 @@ if (hdButton)
             if ("q" === event.key.toLowerCase())
             {
                 Model.togglePixelRatioMode( ! event.shiftKey);
-                updateHdVolumeDisplay();
+                updateHdRoundBar();
             }
         }
     );
@@ -267,6 +285,17 @@ if (fullscreenButton)
         }
     );
 }
+const updateFullscreenState = () =>
+{
+    if (fullscreenButton)
+    {
+        const isFullscreen = document.fullscreenElement || (<any>document).webkitFullscreenElement;
+        fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
+    }
+};
+document.addEventListener("fullscreenchange", updateFullscreenState);
+document.addEventListener("webkitfullscreenchange", updateFullscreenState);
+updateFullscreenState();
 if (jumpOutButton)
 {
     const isInIframe = window.top !== window.self;

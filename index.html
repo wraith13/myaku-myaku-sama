@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Wed Jan 07 2026 09:09:29 GMT+0900 (日本標準時)
+    build at: Wed Jan 07 2026 22:08:30 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -68,13 +68,19 @@ DEALINGS IN THE SOFTWARE.
 @property --low
 {
     syntax: '<number>';
-    inherits: false;
+    inherits: true;
     initial-value: 0;
 }
 @property --high
 {
     syntax: '<number>';
-    inherits: false;
+    inherits: true;
+    initial-value: 0;
+}
+@property --rotate
+{
+    syntax: '<number>';
+    inherits: true;
     initial-value: 0;
 }
 *
@@ -149,10 +155,11 @@ button
     border-radius: 50%;
     height: 3rem;
     width: 3rem;
-    padding: calc(0.5rem - 2px);
-    border-width: 2px;
+    padding: calc(0.5rem - 4px);
+    border-width: 4px;
     border-style: solid;
     border-color: black;
+    transition: border-color 0.25s ease;
     color: white;
     svg
     {
@@ -161,21 +168,36 @@ button
         color: white;
         fill: white;
     }
-    .round-volume
+    &.round-bar::before
     {
         position: absolute;
+        content: "";
         height: 3rem;
         width: 3rem;
-        top: -2px;
-        left: -2px;
+        top: -4px;
+        left: -4px;
+        transition: --low 0.25s ease, --high 0.25s ease, --rotate 0.25s ease;
+        border-radius: 50%;
+        mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 4px), white calc(70.71% - 4px));
+        background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
+        transform: rotate(calc(var(--rotate) * 360deg));
     }
-}
-.round-volume
-{
-    transition: --low 0.25s ease, --high 0.25s ease;
-    border-radius: 50%;
-    mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 2px), white calc(70.71% - 2px));
-    background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
+    &.on
+    {
+        border-color: white;
+    }
+    &:focus
+    {
+        outline: none;
+        background-color: hsla(200, 100%, 35%, 0.9);
+    }
+    @media (hover: hover)
+    {
+        &:hover
+        {
+            background-color: hsla(100, 100%, 25%, 0.9);
+        }
+    }
 }
 
 </style>
@@ -192,7 +214,7 @@ button
 <canvas id="canvas" role="presentation"></canvas>
 <div id="fps" aria-hidden="true"></div>
 <div id="control-panel" aria-label="Control Panel" title="Control Panel(&#x2423;)" aria-keyshortcuts="Space">
-    <button id="styles-button" aria-label="Change Style" title="Change Style(C&#x0332;)" aria-keyshortcuts="c"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <button id="styles-button" class="round-bar" aria-label="Change Style" title="Change Style(C&#x0332;)" aria-keyshortcuts="c"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
     <g transform="matrix(1.2381,0,0,1.2381,16.7619,16.7619)">
@@ -200,7 +222,7 @@ button
     </g>
 </svg>
 </button>
-    <button id="hd-button" aria-label="Change Quality" title="Change Quality(Q&#x0332;)" aria-keyshortcuts="q"><div id="hd-volume" class="round-volume"></div>HD</button>
+    <button id="hd-button" class="round-bar" aria-label="Change Quality" title="Change Quality(Q&#x0332;)" aria-keyshortcuts="q">HD</button>
     <button id="fps-button" aria-label="Show FPS" title="Show FPS(S&#x0332;)" aria-keyshortcuts="s"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
@@ -228,8 +250,8 @@ button
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Wed Jan 07 2026 09:09:29 GMT+0900 (日本標準時)",
-    tick: 1767744569132
+    at: "Wed Jan 07 2026 22:08:30 GMT+0900 (日本標準時)",
+    tick: 1767791310545
 };
 const evilCommonjsConfig = {
     "log": {
@@ -2076,12 +2098,12 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                 }
             });
         };
-        Model.PixelRatioModeKeys = ["half", "regular", "full",];
+        Model.PixelRatioModeKeys = ["eighth", "quarter", "half", "regular", "full",];
         var pixelRatioMode = "regular";
         Model.togglePixelRatioMode = function (value) {
             if (typeof value === "boolean" || undefined === value) {
                 var currentIndex = Model.PixelRatioModeKeys.indexOf(pixelRatioMode);
-                var nextIndex = (currentIndex + (false !== value ? 1 : -1)) % Model.PixelRatioModeKeys.length;
+                var nextIndex = (Model.PixelRatioModeKeys.length + currentIndex + (false !== value ? 1 : -1)) % Model.PixelRatioModeKeys.length;
                 pixelRatioMode = Model.PixelRatioModeKeys[nextIndex];
             }
             else {
@@ -2094,17 +2116,25 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
         };
         Model.getPixcelRatioLevel = function () {
             switch (pixelRatioMode) {
-                case "half":
+                case "eighth":
                     return 1;
-                case "regular":
+                case "quarter":
                     return 2;
-                case "full":
+                case "half":
                     return 3;
+                case "regular":
+                    return 4;
+                case "full":
+                    return 5;
             }
         };
         Model.getPixcelRatio = function () {
             var _a;
             switch (pixelRatioMode) {
+                case "eighth":
+                    return 0.125;
+                case "quarter":
+                    return 0.25;
                 case "half":
                     return 0.5;
                 case "regular":
@@ -2495,7 +2525,7 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
     var hdButton = document.getElementById("hd-button");
-    var hdVolumeDiv = document.getElementById("hd-volume");
+    //const hdVolumeDiv = document.getElementById("hd-volume");
     var fpsDiv = document.getElementById("fps");
     var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");
@@ -2528,9 +2558,11 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         if (fpsDiv) {
             if ("none" === fpsDiv.style.display) {
                 fpsDiv.style.display = "block";
+                fpsButton === null || fpsButton === void 0 ? void 0 : fpsButton.classList.add("on");
             }
             else {
                 fpsDiv.style.display = "none";
+                fpsButton === null || fpsButton === void 0 ? void 0 : fpsButton.classList.remove("on");
             }
         }
     };
@@ -2583,24 +2615,39 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         toggleControlPanelDisplay_1(false);
         document.addEventListener("click", function () { return toggleControlPanelDisplay_1(); });
         document.addEventListener("keydown", function (event) {
-            if (" " === event.key.toLowerCase()) {
+            if (" " === event.key.toLowerCase() && event.target === document.body) {
                 toggleControlPanelDisplay_1();
             }
         });
     }
+    ;
+    var styleRoundBarIndex = 0;
+    var updateStyleRoundBar = function () {
+        if (stylesButton) {
+            var keys = Object.keys(config_json_3.default.styles);
+            //stylesButton.style.setProperty("--low", `${styleRoundBarIndex /keys.length}`);
+            stylesButton.style.setProperty("--high", "".concat(1 / keys.length));
+            stylesButton.style.setProperty("--rotate", "".concat(styleRoundBarIndex / keys.length));
+        }
+    };
+    updateStyleRoundBar();
     if (stylesButton) {
         var toggleStyle_1 = function (style) {
+            var keys = Object.keys(config_json_3.default.styles);
             if (typeof style === "boolean" || undefined === style) {
-                var keys = Object.keys(config_json_3.default.styles);
                 var currentIndex = keys.indexOf(render_1.Render.style);
-                var nextIndex = (currentIndex + (false !== style ? 1 : -1)) % keys.length;
+                var nextIndex = (keys.length + currentIndex + (false !== style ? 1 : -1)) % keys.length;
+                console.log({ currentIndex: currentIndex, nextIndex: nextIndex, keysLength: keys.length, style: style });
                 render_1.Render.style = keys[nextIndex];
+                styleRoundBarIndex += false !== style ? 1 : -1;
             }
             else {
                 if (Object.keys(config_json_3.default.styles).includes(style)) {
                     render_1.Render.style = style;
+                    styleRoundBarIndex = keys.indexOf(style);
                 }
             }
+            updateStyleRoundBar();
             console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
         };
         stylesButton.addEventListener("click", function (event) {
@@ -2613,22 +2660,22 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
             }
         });
     }
-    var updateHdVolumeDisplay = function () {
-        if (hdVolumeDiv) {
-            hdVolumeDiv.style.setProperty("--high", "".concat(model_2.Model.getPixcelRatioLevel() / model_2.Model.PixelRatioModeKeys.length));
+    var updateHdRoundBar = function () {
+        if (hdButton) {
+            hdButton.style.setProperty("--high", "".concat(model_2.Model.getPixcelRatioLevel() / model_2.Model.PixelRatioModeKeys.length));
         }
     };
-    updateHdVolumeDisplay();
+    updateHdRoundBar();
     if (hdButton) {
         hdButton.addEventListener("click", function (event) {
             event.stopPropagation();
             model_2.Model.togglePixelRatioMode(!event.shiftKey);
-            updateHdVolumeDisplay();
+            updateHdRoundBar();
         });
         document.addEventListener("keydown", function (event) {
             if ("q" === event.key.toLowerCase()) {
                 model_2.Model.togglePixelRatioMode(!event.shiftKey);
-                updateHdVolumeDisplay();
+                updateHdRoundBar();
             }
         });
     }
@@ -2665,6 +2712,15 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
             }
         });
     }
+    var updateFullscreenState = function () {
+        if (fullscreenButton) {
+            var isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+            fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
+        }
+    };
+    document.addEventListener("fullscreenchange", updateFullscreenState);
+    document.addEventListener("webkitfullscreenchange", updateFullscreenState);
+    updateFullscreenState();
     if (jumpOutButton) {
         var isInIframe = window.top !== window.self;
         jumpOutButton.style.display = isInIframe ? "block" : "none";

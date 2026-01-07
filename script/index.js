@@ -285,12 +285,12 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                 }
             });
         };
-        Model.PixelRatioModeKeys = ["half", "regular", "full",];
+        Model.PixelRatioModeKeys = ["eighth", "quarter", "half", "regular", "full",];
         var pixelRatioMode = "regular";
         Model.togglePixelRatioMode = function (value) {
             if (typeof value === "boolean" || undefined === value) {
                 var currentIndex = Model.PixelRatioModeKeys.indexOf(pixelRatioMode);
-                var nextIndex = (currentIndex + (false !== value ? 1 : -1)) % Model.PixelRatioModeKeys.length;
+                var nextIndex = (Model.PixelRatioModeKeys.length + currentIndex + (false !== value ? 1 : -1)) % Model.PixelRatioModeKeys.length;
                 pixelRatioMode = Model.PixelRatioModeKeys[nextIndex];
             }
             else {
@@ -303,17 +303,25 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
         };
         Model.getPixcelRatioLevel = function () {
             switch (pixelRatioMode) {
-                case "half":
+                case "eighth":
                     return 1;
-                case "regular":
+                case "quarter":
                     return 2;
-                case "full":
+                case "half":
                     return 3;
+                case "regular":
+                    return 4;
+                case "full":
+                    return 5;
             }
         };
         Model.getPixcelRatio = function () {
             var _a;
             switch (pixelRatioMode) {
+                case "eighth":
+                    return 0.125;
+                case "quarter":
+                    return 0.25;
                 case "half":
                     return 0.5;
                 case "regular":
@@ -704,7 +712,7 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
     var hdButton = document.getElementById("hd-button");
-    var hdVolumeDiv = document.getElementById("hd-volume");
+    //const hdVolumeDiv = document.getElementById("hd-volume");
     var fpsDiv = document.getElementById("fps");
     var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");
@@ -737,9 +745,11 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         if (fpsDiv) {
             if ("none" === fpsDiv.style.display) {
                 fpsDiv.style.display = "block";
+                fpsButton === null || fpsButton === void 0 ? void 0 : fpsButton.classList.add("on");
             }
             else {
                 fpsDiv.style.display = "none";
+                fpsButton === null || fpsButton === void 0 ? void 0 : fpsButton.classList.remove("on");
             }
         }
     };
@@ -792,24 +802,39 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
         toggleControlPanelDisplay_1(false);
         document.addEventListener("click", function () { return toggleControlPanelDisplay_1(); });
         document.addEventListener("keydown", function (event) {
-            if (" " === event.key.toLowerCase()) {
+            if (" " === event.key.toLowerCase() && event.target === document.body) {
                 toggleControlPanelDisplay_1();
             }
         });
     }
+    ;
+    var styleRoundBarIndex = 0;
+    var updateStyleRoundBar = function () {
+        if (stylesButton) {
+            var keys = Object.keys(config_json_3.default.styles);
+            //stylesButton.style.setProperty("--low", `${styleRoundBarIndex /keys.length}`);
+            stylesButton.style.setProperty("--high", "".concat(1 / keys.length));
+            stylesButton.style.setProperty("--rotate", "".concat(styleRoundBarIndex / keys.length));
+        }
+    };
+    updateStyleRoundBar();
     if (stylesButton) {
         var toggleStyle_1 = function (style) {
+            var keys = Object.keys(config_json_3.default.styles);
             if (typeof style === "boolean" || undefined === style) {
-                var keys = Object.keys(config_json_3.default.styles);
                 var currentIndex = keys.indexOf(render_1.Render.style);
-                var nextIndex = (currentIndex + (false !== style ? 1 : -1)) % keys.length;
+                var nextIndex = (keys.length + currentIndex + (false !== style ? 1 : -1)) % keys.length;
+                console.log({ currentIndex: currentIndex, nextIndex: nextIndex, keysLength: keys.length, style: style });
                 render_1.Render.style = keys[nextIndex];
+                styleRoundBarIndex += false !== style ? 1 : -1;
             }
             else {
                 if (Object.keys(config_json_3.default.styles).includes(style)) {
                     render_1.Render.style = style;
+                    styleRoundBarIndex = keys.indexOf(style);
                 }
             }
+            updateStyleRoundBar();
             console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
         };
         stylesButton.addEventListener("click", function (event) {
@@ -822,22 +847,22 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
             }
         });
     }
-    var updateHdVolumeDisplay = function () {
-        if (hdVolumeDiv) {
-            hdVolumeDiv.style.setProperty("--high", "".concat(model_2.Model.getPixcelRatioLevel() / model_2.Model.PixelRatioModeKeys.length));
+    var updateHdRoundBar = function () {
+        if (hdButton) {
+            hdButton.style.setProperty("--high", "".concat(model_2.Model.getPixcelRatioLevel() / model_2.Model.PixelRatioModeKeys.length));
         }
     };
-    updateHdVolumeDisplay();
+    updateHdRoundBar();
     if (hdButton) {
         hdButton.addEventListener("click", function (event) {
             event.stopPropagation();
             model_2.Model.togglePixelRatioMode(!event.shiftKey);
-            updateHdVolumeDisplay();
+            updateHdRoundBar();
         });
         document.addEventListener("keydown", function (event) {
             if ("q" === event.key.toLowerCase()) {
                 model_2.Model.togglePixelRatioMode(!event.shiftKey);
-                updateHdVolumeDisplay();
+                updateHdRoundBar();
             }
         });
     }
@@ -874,6 +899,15 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
             }
         });
     }
+    var updateFullscreenState = function () {
+        if (fullscreenButton) {
+            var isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+            fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
+        }
+    };
+    document.addEventListener("fullscreenchange", updateFullscreenState);
+    document.addEventListener("webkitfullscreenchange", updateFullscreenState);
+    updateFullscreenState();
     if (jumpOutButton) {
         var isInIframe = window.top !== window.self;
         jumpOutButton.style.display = isInIframe ? "block" : "none";
