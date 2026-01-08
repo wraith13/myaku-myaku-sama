@@ -271,8 +271,8 @@ export namespace Model
             }
         );
     };
-    export type PixelRatioMode = "eighth" | "quarter" | "half" | "regular" | "full";
-    export const PixelRatioModeKeys = [ "eighth", "quarter","half", "regular", "full", ] as const;
+    export type PixelRatioMode = "thirty-second" | "sixteenth" | "eighth" | "quarter" | "half" | "regular" | "full";
+    export const PixelRatioModeKeys = [ "thirty-second", "sixteenth", "eighth", "quarter","half", "regular", "full", ] as const;
     let pixelRatioMode: PixelRatioMode = "regular";
     export const togglePixelRatioMode = (value?: boolean | PixelRatioMode) =>
     {
@@ -296,22 +296,30 @@ export namespace Model
     {
         switch (pixelRatioMode)
         {
-        case "eighth":
+        case "thirty-second":
             return 1;
-        case "quarter":
+        case "sixteenth":
             return 2;
-        case "half":
+        case "eighth":
             return 3;
-        case "regular":
+        case "quarter":
             return 4;
-        case "full":
+        case "half":
             return 5;
+        case "regular":
+            return 6;
+        case "full":
+            return 7;
         }
     };
     export const getPixcelRatio = (): number =>
     {
         switch (pixelRatioMode)
         {
+        case "thirty-second":
+            return 0.03125;
+        case "sixteenth":
+            return 0.0625;
         case "eighth":
             return 0.125;
         case "quarter":

@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Thu Jan 08 2026 08:14:04 GMT+0900 (日本標準時)
+    build at: Thu Jan 08 2026 21:43:40 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -110,6 +110,7 @@ canvas
 {
     position: fixed;
     inset: 0px;
+    image-rendering: pixelated;
 }
 body:not(.mousemove)
 {
@@ -257,8 +258,8 @@ button
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Thu Jan 08 2026 08:14:04 GMT+0900 (日本標準時)",
-    tick: 1767827644586
+    at: "Thu Jan 08 2026 21:43:40 GMT+0900 (日本標準時)",
+    tick: 1767876220382
 };
 const evilCommonjsConfig = {
     "log": {
@@ -2105,7 +2106,7 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                 }
             });
         };
-        Model.PixelRatioModeKeys = ["eighth", "quarter", "half", "regular", "full",];
+        Model.PixelRatioModeKeys = ["thirty-second", "sixteenth", "eighth", "quarter", "half", "regular", "full",];
         var pixelRatioMode = "regular";
         Model.togglePixelRatioMode = function (value) {
             if (typeof value === "boolean" || undefined === value) {
@@ -2123,21 +2124,29 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
         };
         Model.getPixcelRatioLevel = function () {
             switch (pixelRatioMode) {
-                case "eighth":
+                case "thirty-second":
                     return 1;
-                case "quarter":
+                case "sixteenth":
                     return 2;
-                case "half":
+                case "eighth":
                     return 3;
-                case "regular":
+                case "quarter":
                     return 4;
-                case "full":
+                case "half":
                     return 5;
+                case "regular":
+                    return 6;
+                case "full":
+                    return 7;
             }
         };
         Model.getPixcelRatio = function () {
             var _a;
             switch (pixelRatioMode) {
+                case "thirty-second":
+                    return 0.03125;
+                case "sixteenth":
+                    return 0.0625;
                 case "eighth":
                     return 0.125;
                 case "quarter":

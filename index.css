@@ -43,6 +43,7 @@ canvas
 {
     position: fixed;
     inset: 0px;
+    image-rendering: pixelated;
 }
 body:not(.mousemove)
 {

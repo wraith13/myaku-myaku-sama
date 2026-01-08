@@ -285,7 +285,7 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                 }
             });
         };
-        Model.PixelRatioModeKeys = ["eighth", "quarter", "half", "regular", "full",];
+        Model.PixelRatioModeKeys = ["thirty-second", "sixteenth", "eighth", "quarter", "half", "regular", "full",];
         var pixelRatioMode = "regular";
         Model.togglePixelRatioMode = function (value) {
             if (typeof value === "boolean" || undefined === value) {
@@ -303,21 +303,29 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
         };
         Model.getPixcelRatioLevel = function () {
             switch (pixelRatioMode) {
-                case "eighth":
+                case "thirty-second":
                     return 1;
-                case "quarter":
+                case "sixteenth":
                     return 2;
-                case "half":
+                case "eighth":
                     return 3;
-                case "regular":
+                case "quarter":
                     return 4;
-                case "full":
+                case "half":
                     return 5;
+                case "regular":
+                    return 6;
+                case "full":
+                    return 7;
             }
         };
         Model.getPixcelRatio = function () {
             var _a;
             switch (pixelRatioMode) {
+                case "thirty-second":
+                    return 0.03125;
+                case "sixteenth":
+                    return 0.0625;
                 case "eighth":
                     return 0.125;
                 case "quarter":
