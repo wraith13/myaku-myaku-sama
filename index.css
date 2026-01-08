@@ -92,7 +92,7 @@ button
     border-width: 4px;
     border-style: solid;
     border-color: black;
-    transition: border-color 0.25s ease;
+    transition: border-color 0.5s ease;
     color: white;
     svg
     {
@@ -109,7 +109,7 @@ button
         width: 3rem;
         top: -4px;
         left: -4px;
-        transition: --low 0.25s ease, --high 0.25s ease, --rotate 0.25s ease;
+        transition: --low 0.5s ease, --high 0.5s ease, --rotate 0.5s ease;
         border-radius: 50%;
         mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 4px), white calc(70.71% - 4px));
         background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));

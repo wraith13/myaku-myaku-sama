@@ -712,7 +712,6 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
     var hdButton = document.getElementById("hd-button");
-    //const hdVolumeDiv = document.getElementById("hd-volume");
     var fpsDiv = document.getElementById("fps");
     var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");

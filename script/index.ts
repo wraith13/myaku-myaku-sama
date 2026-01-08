@@ -6,7 +6,6 @@ import config from "@resource/config.json";
 const controlPanelDiv = document.getElementById("control-panel");
 const stylesButton = document.getElementById("styles-button");
 const hdButton = document.getElementById("hd-button");
-//const hdVolumeDiv = document.getElementById("hd-volume");
 const fpsDiv = document.getElementById("fps");
 const fullscreenButton = document.getElementById("fullscreen-button");
 const fpsButton = document.getElementById("fps-button");

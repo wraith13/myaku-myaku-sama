@@ -84,6 +84,13 @@
                         "text": "<svg role=\"presentation\" aria-hidden=\"true\" "
                     }
                 },
+                "__HD_ICON___": {
+                    "path": "./image/hd.1024.svg",
+                    "replace": {
+                        "match": "<svg ",
+                        "text": "<svg role=\"presentation\" aria-hidden=\"true\" "
+                    }
+                },
                 "__METER_ICON___": {
                     "path": "./image/meter.1024.svg",
                     "replace": {

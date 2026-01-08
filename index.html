@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Wed Jan 07 2026 22:08:30 GMT+0900 (日本標準時)
+    build at: Thu Jan 08 2026 08:14:04 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -159,7 +159,7 @@ button
     border-width: 4px;
     border-style: solid;
     border-color: black;
-    transition: border-color 0.25s ease;
+    transition: border-color 0.5s ease;
     color: white;
     svg
     {
@@ -176,7 +176,7 @@ button
         width: 3rem;
         top: -4px;
         left: -4px;
-        transition: --low 0.25s ease, --high 0.25s ease, --rotate 0.25s ease;
+        transition: --low 0.5s ease, --high 0.5s ease, --rotate 0.5s ease;
         border-radius: 50%;
         mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 4px), white calc(70.71% - 4px));
         background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
@@ -214,7 +214,7 @@ button
 <canvas id="canvas" role="presentation"></canvas>
 <div id="fps" aria-hidden="true"></div>
 <div id="control-panel" aria-label="Control Panel" title="Control Panel(&#x2423;)" aria-keyshortcuts="Space">
-    <button id="styles-button" class="round-bar" aria-label="Change Style" title="Change Style(C&#x0332;)" aria-keyshortcuts="c"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <button id="styles-button" class="round-bar" aria-label="Change Style" title="Change Style(C)" aria-keyshortcuts="c"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
     <g transform="matrix(1.2381,0,0,1.2381,16.7619,16.7619)">
@@ -222,8 +222,15 @@ button
     </g>
 </svg>
 </button>
-    <button id="hd-button" class="round-bar" aria-label="Change Quality" title="Change Quality(Q&#x0332;)" aria-keyshortcuts="q">HD</button>
-    <button id="fps-button" aria-label="Show FPS" title="Show FPS(S&#x0332;)" aria-keyshortcuts="s"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <button id="hd-button" class="round-bar" aria-label="Change Quality" title="Change Quality(Q)" aria-keyshortcuts="q"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1.18182,0,0,1,-93.0909,-96)">
+        <path d="M864,412.755L864,803.245C864,836.776 840.965,864 812.592,864L211.408,864C183.035,864 160,836.776 160,803.245L160,412.755C160,379.224 183.035,352 211.408,352L812.592,352C840.965,352 864,379.224 864,412.755ZM302.154,752L356.308,752L356.308,640L440.923,640L440.923,752L495.077,752L495.077,464L440.923,464L440.923,576L356.308,576L356.308,464L302.154,464L302.154,752ZM545.846,752L627.077,752C694.326,752 748.923,687.476 748.923,608C748.923,528.524 694.326,464 627.077,464L545.846,464L545.846,752ZM600,528L627.077,528C664.437,528 694.769,563.847 694.769,608C694.769,652.153 664.437,688 627.077,688L600,688L600,528Z"/>
+    </g>
+</svg>
+</button>
+    <button id="fps-button" aria-label="Show FPS" title="Show FPS(S)" aria-keyshortcuts="s"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
     <g transform="matrix(1.2381,0,0,1.2381,16.7619,16.7619)">
@@ -231,7 +238,7 @@ button
     </g>
 </svg>
 </button>
-    <button id="fullscreen-button" aria-label="Toggle Fullscreen" title="Toggle Fullscreen(F&#x0332;)" aria-keyshortcuts="f"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <button id="fullscreen-button" aria-label="Toggle Fullscreen" title="Toggle Fullscreen(F)" aria-keyshortcuts="f"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
     <g transform="matrix(1.44538,0,0,1.44538,-479.529,-17.0084)">
@@ -250,8 +257,8 @@ button
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Wed Jan 07 2026 22:08:30 GMT+0900 (日本標準時)",
-    tick: 1767791310545
+    at: "Thu Jan 08 2026 08:14:04 GMT+0900 (日本標準時)",
+    tick: 1767827644586
 };
 const evilCommonjsConfig = {
     "log": {
@@ -2525,7 +2532,6 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
     var hdButton = document.getElementById("hd-button");
-    //const hdVolumeDiv = document.getElementById("hd-volume");
     var fpsDiv = document.getElementById("fps");
     var fullscreenButton = document.getElementById("fullscreen-button");
     var fpsButton = document.getElementById("fps-button");
