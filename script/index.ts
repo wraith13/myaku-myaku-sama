@@ -3,7 +3,6 @@ import { Model } from "./model";
 import { Render } from "./render";
 import { Fps } from "./fps";
 import config from "@resource/config.json";
-const controlPanelDiv = document.getElementById("control-panel");
 const stylesButton = document.getElementById("styles-button");
 const hdButton = document.getElementById("hd-button");
 const fpsDiv = document.getElementById("fps");
@@ -116,33 +115,6 @@ if (fullscreenEnabled)
         }
     );
 }
-if (controlPanelDiv)
-{
-    const toggleControlPanelDisplay = (show?: boolean) =>
-    {
-        if (true === show || (undefined === show && "none" === controlPanelDiv.style.display))
-        {
-            controlPanelDiv.style.display = "flex";
-        }
-        else
-        {
-            controlPanelDiv.style.display = "none";
-        }
-    };
-    toggleControlPanelDisplay(false);
-    document.addEventListener("click", () => toggleControlPanelDisplay());
-    document.addEventListener
-    (
-        "keydown",
-        (event) =>
-        {
-            if (" " === event.key.toLowerCase() && event.target === document.body)
-            {
-                toggleControlPanelDisplay();
-            }
-        }
-    );
-};
 let styleRoundBarIndex = 0;
 const updateStyleRoundBar = () =>
 {

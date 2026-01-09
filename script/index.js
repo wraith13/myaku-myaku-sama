@@ -717,7 +717,6 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.mousemove = exports.ToggleClassForWhileTimer = void 0;
     config_json_3 = __importDefault(config_json_3);
-    var controlPanelDiv = document.getElementById("control-panel");
     var stylesButton = document.getElementById("styles-button");
     var hdButton = document.getElementById("hd-button");
     var fpsDiv = document.getElementById("fps");
@@ -797,24 +796,6 @@ define("script/index", ["require", "exports", "script/model", "script/render", "
             }
         });
     }
-    if (controlPanelDiv) {
-        var toggleControlPanelDisplay_1 = function (show) {
-            if (true === show || (undefined === show && "none" === controlPanelDiv.style.display)) {
-                controlPanelDiv.style.display = "flex";
-            }
-            else {
-                controlPanelDiv.style.display = "none";
-            }
-        };
-        toggleControlPanelDisplay_1(false);
-        document.addEventListener("click", function () { return toggleControlPanelDisplay_1(); });
-        document.addEventListener("keydown", function (event) {
-            if (" " === event.key.toLowerCase() && event.target === document.body) {
-                toggleControlPanelDisplay_1();
-            }
-        });
-    }
-    ;
     var styleRoundBarIndex = 0;
     var updateStyleRoundBar = function () {
         if (stylesButton) {

@@ -30,6 +30,13 @@ Since ancient times in Japan, unusual natural phenomena and mysterious occurrenc
 
 Against that cultural background, Japanese internet users commonly refer to Myaku-Myaku with the "Sama" honorific—usually written as "Myaku-Myaku Sama".
 
+## ⌨️ Keyboard Shortcuts
+
+- <kbd>C</kbd>: Change Style ( +<kbd>Shift</kbd> Reverse )
+- <kbd>Q</kbd>: Change Quality ( +<kbd>Shift</kbd> Reverse )
+- <kbd>S</kbd>: Show FPS
+- <kbd>F</kbd>: Toggle Fullscreen
+
 ## ⚖️ License
 
 [Boost Software License](./LICENSE_1_0.txt)
