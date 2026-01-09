@@ -43,7 +43,7 @@ export namespace Model
     export interface EyeAnimation
     {
         //animationMode: animationMode;
-        moveAnimation: FloatAnimation[];
+        moveAnimation: FloatAnimation;
         appearAnimation?: Animation;
         vanishAnimation?: Animation;
     };
@@ -57,17 +57,18 @@ export namespace Model
         y: point.y,
         radius,
     });
+    export interface Eye
+    {
+        white: Circle;
+        iris: Circle;
+        animation: EyeAnimation;
+    };
     export interface Unit
     {
         body: Circle;
         scale: number;
         animation: UnitAnimation;
-        eye?:
-        {
-            white: Circle;
-            iris: Circle;
-            animation: EyeAnimation;
-        };
+        eye?: Eye;
     };
     export interface Layer
     {
@@ -189,7 +190,80 @@ export namespace Model
         };
         return result;
     };
-    export const updateUnit = (unit: Unit, step: number) =>
+    export const makeEye = (): Eye =>
+    {
+        const point: Point = { x: 0, y: 0,};
+        const xRatio = 1.0;
+        const yRatio = 1.0;
+        const white = makeCircle(point, config.eye.whiteRate);
+        const iris = makeCircle(point, config.eye.irisRate);
+        const result: Eye =
+        {
+            white,
+            iris,
+            animation:
+            {
+                moveAnimation:
+                {
+                    x: config.Layer.eye.moveAnimation.elements.map(i => makeAnimation(config.Layer.eye.moveAnimation, i *xRatio)),
+                    y: config.Layer.eye.moveAnimation.elements.map(i => makeAnimation(config.Layer.eye.moveAnimation, i *yRatio)),
+                }
+            },
+        };
+        result.animation.appearAnimation =
+        {
+            period: config.Layer.eye.appearAnimation.period,
+            phase: 0,
+            scale: config.eye.whiteRate,
+        };
+        return result;
+    };
+    const updateEye = (unit: Unit, step: number) =>
+    {
+        if (unit.eye)
+        {
+            const eye = unit.eye;
+            const rate = 0.005;
+            eye.white.x += accumulateAnimationSineIntegral(eye.animation.moveAnimation.x, step) *rate;
+            eye.white.y += accumulateAnimationSineIntegral(eye.animation.moveAnimation.y, step) *rate;
+            const distance = Math.hypot(eye.white.x, eye.white.y);
+            const maxDistance = 0.95;
+            if (maxDistance < distance +config.eye.whiteRate)
+            {
+                eye.white.x *= (maxDistance -config.eye.whiteRate) /distance;
+                eye.white.y *= (maxDistance -config.eye.whiteRate) /distance;
+            }
+            eye.iris.x = eye.white.x +eye.white.x *(config.eye.whiteRate -config.eye.irisRate);
+            eye.iris.y = eye.white.y +eye.white.y *(config.eye.whiteRate -config.eye.irisRate);
+            updateAnimations(eye.animation.moveAnimation.x, step);
+            updateAnimations(eye.animation.moveAnimation.y, step);
+            const transion = eye.animation.appearAnimation ?? eye.animation.vanishAnimation;
+            if (transion)
+            {
+                transion.phase += step;
+                if (eye.animation.vanishAnimation)
+                {
+                    eye.white.radius = config.eye.whiteRate *(1.0 - (transion.phase /transion.period));
+                    eye.iris.radius = config.eye.irisRate *(1.0 - (transion.phase /transion.period));
+                    if (transion.period <= transion.phase)
+                    {
+                        // eye.animation.vanishAnimation = undefined;
+                        unit.eye = undefined;
+                    }
+                }
+                else
+                {
+                    eye.white.radius = config.eye.whiteRate *(transion.phase /transion.period);
+                    eye.iris.radius = config.eye.irisRate *(transion.phase /transion.period);
+                    if (transion.period <= transion.phase)
+                    {
+                        eye.animation.appearAnimation = undefined;
+                    }
+                }
+            }
+        }
+    }
+    export const updateUnit = (layer: Layer, unit: Unit, step: number) =>
     {
         const rate = 0.0005;
         unit.body.x += accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step) *rate;
@@ -219,6 +293,23 @@ export namespace Model
         unit.body.radius = scale *(1 +(accumulateAnimationSize(unit.animation.sizeAnimation, step) *2.0));
         updateFloatAnimation(unit.animation.moveAnimation, step);
         updateAnimations(unit.animation.sizeAnimation, step);
+        if (layer === Model.Data.main && ! isOutOfCanvas(unit.body))
+        {
+            if (undefined === unit.eye && config.eye.appearRate <= unit.body.radius)
+            {
+                unit.eye = makeEye();
+            }
+        }
+        if (undefined !== unit.eye && undefined === unit.eye.animation.vanishAnimation && unit.body.radius < config.eye.vanishRate)
+        {
+            unit.eye.animation.vanishAnimation =
+            {
+                period: config.Layer.eye.vanishAnimation.period,
+                phase: 0,
+                scale: unit.eye.white.radius,
+            };
+        }
+        updateEye(unit, step);
     };
     export const updateLayer = (layer: Layer, timestamp: number, step: number) =>
     {
@@ -257,7 +348,7 @@ export namespace Model
                 }
             }
         }
-        layer.units.forEach((unit) => updateUnit(unit, step));
+        layer.units.forEach((unit) => updateUnit(layer, unit, step));
         const gabages = layer.units.filter((unit) => unit.body.radius <= 0);
         gabages.forEach
         (

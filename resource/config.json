@@ -98,6 +98,32 @@
             {
                 "period": 1500
             }
+        },
+        "eye": {
+            "moveAnimation": {
+                "period": {
+                    "base": 500,
+                    "pseudoGaussian": 2,
+                    "range": 9000
+                },
+                "scale": {
+                    "base": 0.05,
+                    "pseudoGaussian": 4,
+                    "range": 0.1
+                },
+                "elements": [
+                    1.0,
+                    0.5,
+                    0.25,
+                    0.125
+                ]
+            },
+            "appearAnimation": {
+                "period": 500
+            },
+            "vanishAnimation": {
+                "period": 500
+            }
         }
     }
 }

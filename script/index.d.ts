@@ -21,7 +21,7 @@ declare module "script/model" {
             vanishAnimation?: Animation;
         }
         interface EyeAnimation {
-            moveAnimation: FloatAnimation[];
+            moveAnimation: FloatAnimation;
             appearAnimation?: Animation;
             vanishAnimation?: Animation;
         }
@@ -29,15 +29,16 @@ declare module "script/model" {
             radius: number;
         }
         const makeCircle: (point: Point, radius: number) => Circle;
+        interface Eye {
+            white: Circle;
+            iris: Circle;
+            animation: EyeAnimation;
+        }
         interface Unit {
             body: Circle;
             scale: number;
             animation: UnitAnimation;
-            eye?: {
-                white: Circle;
-                iris: Circle;
-                animation: EyeAnimation;
-            };
+            eye?: Eye;
         }
         interface Layer {
             units: Unit[];
@@ -74,7 +75,8 @@ declare module "script/model" {
         }, scaleRate: number) => Animation;
         const makeUnitAnimation: () => UnitAnimation;
         const makeUnit: (point: Point) => Unit;
-        const updateUnit: (unit: Unit, step: number) => void;
+        const makeEye: () => Eye;
+        const updateUnit: (layer: Layer, unit: Unit, step: number) => void;
         const updateLayer: (layer: Layer, timestamp: number, step: number) => void;
         type PixelRatioMode = "thirty-second" | "sixteenth" | "eighth" | "quarter" | "half" | "regular" | "full";
         const PixelRatioModeKeys: readonly ["thirty-second", "sixteenth", "eighth", "quarter", "half", "regular", "full"];

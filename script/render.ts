@@ -185,11 +185,8 @@ export namespace Render
     {
         if (0 <= circle.radius)
         {
-            const shortSide = Math.min(canvas.width, canvas.height);
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
             context.beginPath();
-            context.arc((circle.x *shortSide) +centerX, (circle.y *shortSide) +centerY, circle.radius *shortSide, 0, Math.PI * 2);
+            context.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
             context.fillStyle = color;
             context.fill();
             context.closePath();
@@ -200,9 +197,7 @@ export namespace Render
         const shortSide = Math.min(canvas.width, canvas.height);
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        drawFusionPath
-        (
-            layer.units.map(u => u.body)
+        const bodies = layer.units.map(u => u.body)
             // .concat([ { x: 0, y: 0, radius: 0.1, } ])
             .filter(c => !Model.isOutOfCanvas(c))
             .map
@@ -213,102 +208,38 @@ export namespace Render
                     y: (c.y * shortSide) + centerY,
                     radius: c.radius *shortSide,
                 })
-            ),
-            color
-        );
-        layer.units.forEach
-        (
-            (unit) =>
-            {
-                drawCircle(unit.body, color);
-            }
-        );
+            );
+        drawFusionPath(bodies, color);
+        bodies.forEach(body => drawCircle(body, color));
         if (layer === Model.Data.main)
         {
-            drawFusionPath
-            (
-                layer.units.map(u => u.body)
-                .filter(c => config.eye.appearRate <= c.radius)
-                .filter(c => ! Model.isOutOfCanvas(c))
+            const whites = layer.units
+                .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.eye.white))
                 .map
                 (
-                    c =>
+                    u =>
                     ({
-                        x: (c.x * shortSide) + centerX,
-                        y: (c.y * shortSide) + centerY,
-                        radius: c.radius *shortSide *config.eye.whiteRate,
+                        x: ((u.body.x +(u.eye!.white.x *u.body.radius)) * shortSide) + centerX,
+                        y: ((u.body.y +(u.eye!.white.y *u.body.radius)) * shortSide) + centerY,
+                        radius: u.body.radius *u.eye!.white.radius *shortSide,
                     })
-                ),
-                config.styles[style].base
-            );
-            drawFusionPath
-            (
-                layer.units.map(u => u.eye?.white)
-                .filter(c => undefined !== c)
-                .filter(c => ! Model.isOutOfCanvas(c))
+                );
+            drawFusionPath(whites, config.styles[style].base);
+            whites.forEach(white => drawCircle(white, config.styles[style].base));
+            const irises = layer.units
+                .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.eye.iris))
                 .map
                 (
-                    c =>
+                    u =>
                     ({
-                        x: (c.x * shortSide) + centerX,
-                        y: (c.y * shortSide) + centerY,
-                        radius: c.radius *shortSide,
+                        x: ((u.body.x +(u.eye!.iris.x *u.body.radius)) * shortSide) + centerX,
+                        y: ((u.body.y +(u.eye!.iris.y *u.body.radius)) * shortSide) + centerY,
+                        radius: u.body.radius *u.eye!.iris.radius *shortSide,
                     })
-                ),
-                config.styles[style].base
-            );
-            layer.units.forEach
-            (
-                (unit) =>
-                {
-                    if (config.eye.appearRate <= unit.body.radius && ! Model.isOutOfCanvas(unit.body))
-                    {
-                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius *config.eye.whiteRate, }, config.styles[style].base);
-                    }
-                }
-            );
-            drawFusionPath
-            (
-                layer.units.map(u => u.body)
-                .filter(c => config.eye.appearRate <= c.radius)
-                .filter(c => ! Model.isOutOfCanvas(c))
-                .map
-                (
-                    c =>
-                    ({
-                        x: (c.x * shortSide) + centerX,
-                        y: (c.y * shortSide) + centerY,
-                        radius: c.radius *shortSide *config.eye.irisRate,
-                    })
-                ),
-                config.styles[style].accent
-            );
-            drawFusionPath
-            (
-                layer.units.map(u => u.eye?.iris)
-                .filter(c => undefined !== c)
-                .filter(c => ! Model.isOutOfCanvas(c))
-                .map
-                (
-                    c =>
-                    ({
-                        x: (c.x * shortSide) + centerX,
-                        y: (c.y * shortSide) + centerY,
-                        radius: c.radius *shortSide,
-                    })
-                ),
-                config.styles[style].accent
-            );
-            layer.units.forEach
-            (
-                (unit) =>
-                {
-                    if (config.eye.appearRate <= unit.body.radius && ! Model.isOutOfCanvas(unit.body))
-                    {
-                        drawCircle({ x: unit.body.x, y: unit.body.y, radius: unit.body.radius *config.eye.irisRate, }, config.styles[style].accent);
-                    }
-                }
-            );
+                );
+            drawFusionPath(irises, config.styles[style].accent);
+            irises.forEach(iris => drawCircle(iris, config.styles[style].accent));
+            console.log({ whites, irises });
         }
     };
     export const draw = () =>
@@ -317,9 +248,5 @@ export namespace Render
         context.fillRect(0, 0, canvas.width, canvas.height);
         drawLayer(Model.Data.accent, config.styles[style].accent);
         drawLayer(Model.Data.main, config.styles[style].main);
-        // const body = 0.1;
-        // drawCircle({ x: 0, y: 0, radius: body, }, config.styles[style].main);
-        // drawCircle({ x: 0, y: 0, radius: body *config.eye.whiteRate, }, config.styles[style].base);
-        // drawCircle({ x: 0, y: 0, radius: body *config.eye.irisRate, }, config.styles[style].accent);
     };
 }

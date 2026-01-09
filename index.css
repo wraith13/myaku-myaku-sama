@@ -101,41 +101,46 @@ button
     border-color: black;
     transition: border-color 0.5s ease;
     color: white;
-    svg
+}
+svg
+{
+    height: 2.0rem;
+    width: 2.0rem;
+    color: white;
+    fill: white;
+}
+svg path
+{
+    color: white !important;
+    fill: white !important;
+}
+button.round-bar::before
+{
+    position: absolute;
+    content: "";
+    height: 3rem;
+    width: 3rem;
+    top: -4px;
+    left: -4px;
+    transition: --low 0.5s ease, --high 0.5s ease, --rotate 0.5s ease;
+    border-radius: 50%;
+    mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 4px), white calc(70.71% - 4px));
+    background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
+    transform: rotate(calc(var(--rotate) * 360deg));
+}
+button.on
+{
+    border-color: white;
+}
+button:focus
+{
+    outline: none;
+    background-color: hsla(200, 100%, 35%, 0.9);
+}
+@media (hover: hover)
+{
+    button:hover
     {
-        height: 2.0rem;
-        width: 2.0rem;
-        color: white;
-        fill: white;
-    }
-    &.round-bar::before
-    {
-        position: absolute;
-        content: "";
-        height: 3rem;
-        width: 3rem;
-        top: -4px;
-        left: -4px;
-        transition: --low 0.5s ease, --high 0.5s ease, --rotate 0.5s ease;
-        border-radius: 50%;
-        mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 4px), white calc(70.71% - 4px));
-        background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
-        transform: rotate(calc(var(--rotate) * 360deg));
-    }
-    &.on
-    {
-        border-color: white;
-    }
-    &:focus
-    {
-        outline: none;
-        background-color: hsla(200, 100%, 35%, 0.9);
-    }
-    @media (hover: hover)
-    {
-        &:hover
-        {
-            background-color: hsla(100, 100%, 25%, 0.9);
-        }
+        background-color: hsla(100, 100%, 25%, 0.9);
     }
 }
