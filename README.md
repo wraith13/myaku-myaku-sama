@@ -34,6 +34,7 @@ Against that cultural background, Japanese internet users commonly refer to Myak
 
 - <kbd>C</kbd>: Change Style ( +<kbd>Shift</kbd> Reverse )
 - <kbd>Q</kbd>: Change Quality ( +<kbd>Shift</kbd> Reverse )
+- <kbd>W</kbd>: Show Watch ( +<kbd>Shift</kbd> Reverse )
 - <kbd>S</kbd>: Show FPS
 - <kbd>F</kbd>: Toggle Fullscreen
 

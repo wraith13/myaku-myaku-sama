@@ -1,3 +1,9 @@
+@property --short-side
+{
+    syntax: '<length>';
+    inherits: true;
+    initial-value: min(1vw, 1vh);
+}
 @property --low
 {
     syntax: '<number>';
@@ -48,6 +54,46 @@ canvas
 body:not(.mousemove)
 {
     cursor: none;
+}
+#overlay-panel
+{
+    position: fixed;
+    user-select: none;
+    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: calc(2 * var(--short-side));
+    backdrop-filter: blur(calc(1 * var(--short-side)));
+}
+time
+{
+    display: block;
+    text-align: center;
+}
+#time
+{
+    font-family: "Consolas", "Liberation Mono", "Courier New", monospace;
+    font-size: calc(14.8 * var(--short-side));
+    line-height: 100%;
+    white-space: nowrap;
+}
+#date
+{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: calc(4.2 * var(--short-side));
+    line-height: 100%;
+    white-space: nowrap;
+}
+.white time
+{
+    color: white;
+    text-shadow: -1px -1px 0px black, 1px -1px 0px black, -1px 1px 0px black, 1px 1px 0px black;
+}
+.black time
+{
+    color: black;
+    text-shadow: -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white, 1px 1px 0px white;
 }
 #fps
 {

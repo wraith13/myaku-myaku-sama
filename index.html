@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Sat Jan 10 2026 09:59:11 GMT+0900 (日本標準時)
+    build at: Sun Jan 11 2026 02:41:21 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -65,6 +65,12 @@ DEALINGS IN THE SOFTWARE.
 <meta property="og:locale" content="en_US" />
 <link rel="image_src" href="https://wraith13.github.io/myaku-myaku-sama/image/twitter-card.png" />
 <style>
+@property --short-side
+{
+    syntax: '<length>';
+    inherits: true;
+    initial-value: min(1vw, 1vh);
+}
 @property --low
 {
     syntax: '<number>';
@@ -115,6 +121,46 @@ canvas
 body:not(.mousemove)
 {
     cursor: none;
+}
+#overlay-panel
+{
+    position: fixed;
+    user-select: none;
+    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: calc(2 * var(--short-side));
+    backdrop-filter: blur(calc(1 * var(--short-side)));
+}
+time
+{
+    display: block;
+    text-align: center;
+}
+#time
+{
+    font-family: "Consolas", "Liberation Mono", "Courier New", monospace;
+    font-size: calc(14.8 * var(--short-side));
+    line-height: 100%;
+    white-space: nowrap;
+}
+#date
+{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: calc(4.2 * var(--short-side));
+    line-height: 100%;
+    white-space: nowrap;
+}
+.white time
+{
+    color: white;
+    text-shadow: -1px -1px 0px black, 1px -1px 0px black, -1px 1px 0px black, 1px 1px 0px black;
+}
+.black time
+{
+    color: black;
+    text-shadow: -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white, 1px 1px 0px white;
 }
 #fps
 {
@@ -224,6 +270,10 @@ button:focus
     </div>
 </noscript>
 <canvas id="canvas" role="presentation"></canvas>
+<div id="overlay-panel" role="presentation" class="black">
+    <time id="time" role="timer" aria-live="polite" aria-atomic="true"></time>
+    <time id="date" aria-live="polite" aria-atomic="true"></time>
+</div>
 <div id="fps" aria-hidden="true"></div>
 <div id="control-panel" aria-label="Control Panel" title="Control Panel">
     <button id="styles-button" class="round-bar" aria-label="Change Style" title="Change Style(C)" aria-keyshortcuts="C"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -240,6 +290,12 @@ button:focus
     <g transform="matrix(1.18182,0,0,1,-93.0909,-96)">
         <path d="M864,412.755L864,803.245C864,836.776 840.965,864 812.592,864L211.408,864C183.035,864 160,836.776 160,803.245L160,412.755C160,379.224 183.035,352 211.408,352L812.592,352C840.965,352 864,379.224 864,412.755ZM302.154,752L356.308,752L356.308,640L440.923,640L440.923,752L495.077,752L495.077,464L440.923,464L440.923,576L356.308,576L356.308,464L302.154,464L302.154,752ZM545.846,752L627.077,752C694.326,752 748.923,687.476 748.923,608C748.923,528.524 694.326,464 627.077,464L545.846,464L545.846,752ZM600,528L627.077,528C664.437,528 694.769,563.847 694.769,608C694.769,652.153 664.437,688 627.077,688L600,688L600,528Z"/>
     </g>
+</svg>
+</button>
+    <button id="watch-button" class="round-bar" aria-label="Show Watch" title="Show Watch(W)" aria-keyshortcuts="W"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="presentation" aria-hidden="true" width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <path d="M512,96C741.597,96 928,282.403 928,512C928,741.597 741.597,928 512,928C282.403,928 96,741.597 96,512C96,282.403 282.403,96 512,96ZM512,192C688.613,192 832,335.387 832,512C832,688.613 688.613,832 512,832C335.387,832 192,688.613 192,512C192,335.387 335.387,192 512,192ZM503.806,508.395L662.473,349.917C681.066,331.345 711.239,331.363 729.811,349.957L730.354,350.501C748.926,369.095 748.908,399.268 730.314,417.839L539.166,608.761C538.717,609.249 538.254,609.732 537.778,610.208C530.727,617.263 522.02,621.663 512.902,623.408L512.727,623.441L512.644,623.456L512.605,623.464L512.535,623.476L512.443,623.493L512.386,623.504L512.31,623.518L512.198,623.537L512.159,623.544L512.129,623.549L512.014,623.569L511.872,623.593C510.28,623.863 508.661,624.054 507.02,624.162L506.898,624.17L506.756,624.179L506.72,624.181L506.691,624.183L506.592,624.189L506.483,624.195L506.432,624.198L506.381,624.2L506.286,624.205L506.203,624.209L506.144,624.212L506.067,624.216L505.979,624.22L505.919,624.222L505.857,624.225L505.751,624.229L505.672,624.233L505.63,624.234L505.569,624.236L505.43,624.241L505.364,624.243L505.337,624.244L505.281,624.246L505.104,624.251L505.055,624.252L505.041,624.252L504.993,624.254L504.768,624.258L504.742,624.259C504.438,624.265 504.133,624.268 503.829,624.268L503.817,624.268L503.685,624.267L503.553,624.267L503.541,624.267L503.507,624.267L503.295,624.265L503.26,624.264C498.449,624.21 493.806,623.446 489.434,622.072L489.338,622.042L489.266,622.019C482.181,619.773 475.514,615.843 469.896,610.229L341.788,482.199C323.05,463.472 323.041,433.055 341.768,414.316C360.495,395.578 390.912,395.569 409.65,414.296L503.806,508.395Z"/>
 </svg>
 </button>
     <button id="fps-button" aria-label="Show FPS" title="Show FPS(S)" aria-keyshortcuts="S"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -269,8 +325,8 @@ button:focus
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Sat Jan 10 2026 09:59:11 GMT+0900 (日本標準時)",
-    tick: 1768006751531
+    at: "Sun Jan 11 2026 02:41:21 GMT+0900 (日本標準時)",
+    tick: 1768066881433
 };
 const evilCommonjsConfig = {
     "log": {
@@ -1833,6 +1889,37 @@ define("index", ["require", "exports", "generated/type"], function (require, exp
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+define("script/url", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Url = void 0;
+    //import config from "@resource/config.json";
+    var Url;
+    (function (Url) {
+        Url.parseParameter = function (url) {
+            var result = {};
+            var urlObj = new URL(url.replace(/#/g, "?"));
+            var params = urlObj.searchParams;
+            params.forEach(function (value, key) { return result[key] = value; });
+            return result;
+        };
+        Url.make = function (params) {
+            var url = new URL(window.location.href.replace(/#/g, "?"));
+            for (var _i = 0, _a = Object.entries(params); _i < _a.length; _i++) {
+                var _b = _a[_i], key = _b[0], value = _b[1];
+                url.searchParams.set(key, value);
+            }
+            return url.toString().replace(/\?/g, "#");
+        };
+        Url.addParameter = function (params, key, value) {
+            params[key] = value;
+            return params;
+        };
+        Url.initialize = function () {
+        };
+        Url.params = Url.parseParameter(window.location.href);
+    })(Url || (exports.Url = Url = {}));
+});
 define("resource/config", [], {
     "applicationTitle": "Myaku-Myaku Sama",
     "repositoryUrl": "https://github.com/wraith13/myaku-myaku-sama/",
@@ -1947,6 +2034,23 @@ define("resource/config", [], {
                 "period": 500
             }
         }
+    },
+    "watch": {
+        "alternate": {
+            "span": 47000
+        },
+        "dateFormat": {
+            "weekday": "long",
+            "year": "numeric",
+            "month": "long",
+            "day": "numeric"
+        },
+        "timeFormat": {
+            "hour": "2-digit",
+            "minute": "2-digit",
+            "second": "2-digit"
+        },
+        "firstDayOfWeek": 0
     }
 });
 define("script/model", ["require", "exports", "resource/config"], function (require, exports, config_json_1) {
@@ -2103,6 +2207,11 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                 };
             return result;
         };
+        var updateIris = function (eye) {
+            eye.iris.x = eye.white.x + eye.white.x * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate) / (1 - config_json_1.default.eye.whiteRate);
+            eye.iris.y = eye.white.y + eye.white.y * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate) / (1 - config_json_1.default.eye.whiteRate);
+            eye.iris.radius = eye.white.radius * (config_json_1.default.eye.irisRate / config_json_1.default.eye.whiteRate);
+        };
         var updateEye = function (unit, step) {
             var _a;
             if (unit.eye) {
@@ -2116,8 +2225,6 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                     eye.white.x *= (maxDistance - config_json_1.default.eye.whiteRate) / distance;
                     eye.white.y *= (maxDistance - config_json_1.default.eye.whiteRate) / distance;
                 }
-                eye.iris.x = eye.white.x + eye.white.x * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate) / (1 - config_json_1.default.eye.whiteRate);
-                eye.iris.y = eye.white.y + eye.white.y * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate) / (1 - config_json_1.default.eye.whiteRate);
                 Model.updateAnimations(eye.animation.moveAnimation.x, step);
                 Model.updateAnimations(eye.animation.moveAnimation.y, step);
                 var transion = (_a = eye.animation.appearAnimation) !== null && _a !== void 0 ? _a : eye.animation.vanishAnimation;
@@ -2125,7 +2232,6 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                     transion.phase += step;
                     if (eye.animation.vanishAnimation) {
                         eye.white.radius = config_json_1.default.eye.whiteRate * (1.0 - (transion.phase / transion.period));
-                        eye.iris.radius = config_json_1.default.eye.irisRate * (1.0 - (transion.phase / transion.period));
                         if (transion.period <= transion.phase) {
                             // eye.animation.vanishAnimation = undefined;
                             unit.eye = undefined;
@@ -2133,11 +2239,13 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                     }
                     else {
                         eye.white.radius = config_json_1.default.eye.whiteRate * (transion.phase / transion.period);
-                        eye.iris.radius = config_json_1.default.eye.irisRate * (transion.phase / transion.period);
                         if (transion.period <= transion.phase) {
                             eye.animation.appearAnimation = undefined;
                         }
                     }
+                }
+                if (undefined !== unit.eye) {
+                    updateIris(eye);
                 }
             }
         };
@@ -2290,15 +2398,232 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
         };
     })(Model || (exports.Model = Model = {}));
 });
-define("script/render", ["require", "exports", "script/model", "resource/config"], function (require, exports, model_1, config_json_2) {
+define("script/ui", ["require", "exports", "script/model", "resource/config"], function (require, exports, model_1, config_json_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.UI = void 0;
+    config_json_2 = __importDefault(config_json_2);
+    var UI;
+    (function (UI) {
+        var getElementById = function (tag, id) {
+            var element = document.getElementById(id);
+            if (!element) {
+                throw new Error("\uD83E\uDD8B FIXME: Element not found: ".concat(id));
+            }
+            if (tag !== element.tagName.toLowerCase()) {
+                throw new Error("\uD83E\uDD8B FIXME: Element is not <".concat(tag, ">: ").concat(id));
+            }
+            return element;
+        };
+        UI.canvas = getElementById("canvas", "canvas");
+        UI.overlayPanel = getElementById("div", "overlay-panel");
+        UI.time = getElementById("time", "time");
+        UI.date = getElementById("time", "date");
+        UI.fpsDiv = getElementById("div", "fps");
+        UI.stylesButton = getElementById("button", "styles-button");
+        UI.hdButton = getElementById("button", "hd-button");
+        UI.watchButton = getElementById("button", "watch-button");
+        UI.fpsButton = getElementById("button", "fps-button");
+        UI.fullscreenButton = getElementById("button", "fullscreen-button");
+        UI.jumpOutButton = getElementById("button", "jump-out-button");
+        UI.fullscreenEnabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+        UI.isInIframe = window.top !== window.self;
+        UI.setAriaHidden = function (element, hidden) {
+            var attributeKey = "aria-hidden";
+            if (hidden) {
+                var attribute = document.createAttribute(attributeKey);
+                attribute.value = "true";
+                element.attributes.setNamedItem(attribute);
+            }
+            else {
+                if (element.attributes.getNamedItem(attributeKey)) {
+                    element.attributes.removeNamedItem(attributeKey);
+                }
+            }
+        };
+        UI.WatchColorList = ["none", "white", "black", "raindom"];
+        UI.watchColor = "none";
+        UI.updateWatchVisibility = function () {
+            if ("none" !== UI.watchColor) {
+                UI.WatchColorList.forEach(function (color) { return UI.overlayPanel.classList.toggle(color, UI.watchColor === color); });
+                UI.time.style.display = "block";
+                UI.date.style.display = "block";
+                UI.setAriaHidden(UI.time, false);
+                UI.setAriaHidden(UI.date, false);
+            }
+            else {
+                UI.time.style.display = "none";
+                UI.date.style.display = "none";
+                UI.setAriaHidden(UI.time, true);
+                UI.setAriaHidden(UI.date, true);
+            }
+        };
+        var watchRoundBarIndex = 0;
+        UI.updateWatchRoundBar = function () {
+            //stylesButton.style.setProperty("--low", `${watchRoundBarIndex /WatchColorList.length}`);
+            if ("none" === UI.watchColor) {
+                UI.watchButton.style.setProperty("--low", "".concat(1 / (UI.WatchColorList.length - 1)));
+            }
+            else {
+                UI.watchButton.style.setProperty("--low", "0");
+            }
+            UI.watchButton.style.setProperty("--high", "".concat(1 / (UI.WatchColorList.length - 1)));
+            UI.watchButton.style.setProperty("--rotate", "".concat((watchRoundBarIndex - Math.floor(watchRoundBarIndex / UI.WatchColorList.length) - 1) / (UI.WatchColorList.length - 1)));
+        };
+        UI.toggleWatchDisplay = function (value) {
+            if (typeof value === "boolean" || undefined === value) {
+                var currentIndex = UI.WatchColorList.indexOf(UI.watchColor);
+                var nextIndex = (UI.WatchColorList.length + currentIndex + (false !== value ? 1 : -1)) % UI.WatchColorList.length;
+                UI.watchColor = UI.WatchColorList[nextIndex];
+                watchRoundBarIndex += false !== value ? 1 : -1;
+            }
+            else {
+                if (UI.WatchColorList.includes(value)) {
+                    UI.watchColor = value;
+                    watchRoundBarIndex = UI.WatchColorList.indexOf(value);
+                }
+            }
+            UI.updateWatchVisibility();
+            UI.updateWatchRoundBar();
+            console.log("\uD83D\uDD70\uFE0F Watch changed: ".concat(UI.watchColor));
+        };
+        UI.toggleFpsDisplay = function () {
+            if ("none" === UI.fpsDiv.style.display) {
+                UI.fpsDiv.style.display = "block";
+                UI.fpsButton.classList.add("on");
+            }
+            else {
+                UI.fpsDiv.style.display = "none";
+                UI.fpsButton.classList.remove("on");
+            }
+        };
+        UI.toggleFullScreen = function () {
+            var elem = document.documentElement;
+            if (document.fullscreenEnabled) {
+                if (!document.fullscreenElement) {
+                    elem.requestFullscreen();
+                }
+                else {
+                    document.exitFullscreen();
+                }
+            }
+            else {
+                if (document.webkitFullscreenEnabled) {
+                    if (!document.webkitFullscreenElement) {
+                        elem.webkitRequestFullscreen();
+                    }
+                    else {
+                        document.webkitExitFullscreen();
+                    }
+                }
+            }
+        };
+        UI.updateFullscreenState = function () {
+            var isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+            UI.fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
+        };
+        var styleRoundBarIndex = 0;
+        UI.updateStyleRoundBar = function () {
+            var keys = Object.keys(config_json_2.default.styles);
+            //stylesButton.style.setProperty("--low", `${styleRoundBarIndex /keys.length}`);
+            UI.stylesButton.style.setProperty("--high", "".concat(1 / keys.length));
+            UI.stylesButton.style.setProperty("--rotate", "".concat(styleRoundBarIndex / keys.length));
+        };
+        UI.style = "regular";
+        UI.toggleStyle = function (style) {
+            var keys = Object.keys(config_json_2.default.styles);
+            if (typeof style === "boolean" || undefined === style) {
+                var currentIndex = keys.indexOf(UI.style);
+                var nextIndex = (keys.length + currentIndex + (false !== style ? 1 : -1)) % keys.length;
+                console.log({ currentIndex: currentIndex, nextIndex: nextIndex, keysLength: keys.length, style: style });
+                UI.style = keys[nextIndex];
+                styleRoundBarIndex += false !== style ? 1 : -1;
+            }
+            else {
+                if (keys.includes(style)) {
+                    UI.style = style;
+                    styleRoundBarIndex = keys.indexOf(style);
+                }
+            }
+            UI.updateStyleRoundBar();
+            console.log("\uD83C\uDFA8 Style changed: ".concat(UI.style));
+        };
+        UI.updateHdRoundBar = function () {
+            UI.hdButton.style.setProperty("--high", "".concat(model_1.Model.getPixcelRatioLevel() / model_1.Model.PixelRatioModeKeys.length));
+        };
+        var ToggleClassForWhileTimer = /** @class */ (function () {
+            function ToggleClassForWhileTimer() {
+                var _this = this;
+                this.isInTimer = function () { return undefined !== _this.timer; };
+                this.timer = undefined;
+            }
+            ToggleClassForWhileTimer.prototype.start = function (element, token, span, onEnd) {
+                var _this = this;
+                if (this.isInTimer()) {
+                    clearTimeout(this.timer);
+                }
+                element.classList.toggle(token, true);
+                this.timer = setTimeout(function () {
+                    // if (config.log["ToggleClassForWhileTimer.Timeout"])
+                    // {
+                    //     console.log("⌛️ ToggleClassForWhileTimer.Timeout", element, token, span);
+                    // }
+                    _this.timer = undefined;
+                    element.classList.toggle(token, false);
+                    onEnd === null || onEnd === void 0 ? void 0 : onEnd();
+                }, span);
+            };
+            return ToggleClassForWhileTimer;
+        }());
+        UI.ToggleClassForWhileTimer = ToggleClassForWhileTimer;
+        var mouseMoveTimer = new ToggleClassForWhileTimer();
+        UI.mousemove = function () {
+            return mouseMoveTimer.start(document.body, "mousemove", 3000);
+        };
+        UI.setTextContent = function (element, text) {
+            if (element.textContent !== text) {
+                element.textContent = text;
+                return true;
+            }
+            return false;
+        };
+        UI.setAttribute = function (element, name, value) {
+            var _a;
+            if (((_a = element.getAttribute(name)) !== null && _a !== void 0 ? _a : "") !== (value !== null && value !== void 0 ? value : "")) {
+                if (undefined === value || null === value) {
+                    element.removeAttribute(name);
+                }
+                else {
+                    element.setAttribute(name, value);
+                }
+                return true;
+            }
+            return false;
+        };
+        UI.setStyle = function (element, name, value) {
+            var _a;
+            if (((_a = element.style.getPropertyValue(name)) !== null && _a !== void 0 ? _a : "") !== (value !== null && value !== void 0 ? value : "")) {
+                if (undefined === value || null === value || "" === value) {
+                    element.style.removeProperty(name);
+                }
+                else {
+                    element.style.setProperty(name, value);
+                }
+                return true;
+            }
+            return false;
+        };
+    })(UI || (exports.UI = UI = {}));
+});
+define("script/render", ["require", "exports", "script/model", "script/ui", "resource/config"], function (require, exports, model_2, ui_1, config_json_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Render = void 0;
-    config_json_2 = __importDefault(config_json_2);
+    config_json_3 = __importDefault(config_json_3);
     var Render;
     (function (Render) {
-        var canvas = document.getElementById("canvas");
-        var context = canvas.getContext("2d");
+        var getStyle = function () { return config_json_3.default.styles[ui_1.UI.style]; };
+        var context = ui_1.UI.canvas.getContext("2d");
         var mappingCircle = function (parent, circle) {
             return ({
                 x: (circle.x * parent.radius) + parent.x,
@@ -2306,7 +2631,24 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
                 radius: circle.radius * parent.radius,
             });
         };
-        Render.style = "regular";
+        // const remappingCircle = (parent: Model.Circle, circle: Model.Circle): Model.Circle =>
+        // ({
+        //     x: (circle.x -parent.x) /parent.radius,
+        //     y: (circle.y -parent.y) /parent.radius,
+        //     radius: circle.radius /parent.radius,
+        // });
+        // export const remappingPoint = (parent: Model.Circle, point: Model.Point): Model.Point =>
+        // ({
+        //     x: (point.x -parent.x) /parent.radius,
+        //     y: (point.y -parent.y) /parent.radius,
+        // });
+        Render.getCanvasCircle = function () {
+            return ({
+                x: ui_1.UI.canvas.width / 2,
+                y: ui_1.UI.canvas.height / 2,
+                radius: Math.hypot(ui_1.UI.canvas.width, ui_1.UI.canvas.height) / 2,
+            });
+        };
         var hasFusionPath = function (fusionStatus) {
             return ["none", "inclusion"].indexOf(fusionStatus) < 0;
         };
@@ -2456,34 +2798,32 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
             }
         };
         var drawLayer = function (layer, color) {
-            var canvasCircle = {
-                x: canvas.width / 2,
-                y: canvas.height / 2,
-                radius: Math.hypot(canvas.width, canvas.height) / 2,
-            };
+            var canvasCircle = Render.getCanvasCircle();
             var bodies = layer.units.map(function (u) { return u.body; })
-                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
+                .filter(function (c) { return !model_2.Model.isOutOfCanvas(c); })
                 .map(function (c) { return mappingCircle(canvasCircle, c); });
             drawFusionPath(bodies, color);
             bodies.forEach(function (body) { return drawCircle(body, color); });
-            if (layer === model_1.Model.Data.main) {
+            if (layer === model_2.Model.Data.main) {
+                var style_1 = getStyle();
                 var whites = layer.units
-                    .filter(function (u) { return undefined !== u.eye && !model_1.Model.isOutOfCanvas(u.body); })
+                    .filter(function (u) { return undefined !== u.eye && !model_2.Model.isOutOfCanvas(u.body); })
                     .map(function (u) { return mappingCircle(mappingCircle(canvasCircle, u.body), u.eye.white); });
-                drawFusionPath(whites, config_json_2.default.styles[Render.style].base);
-                whites.forEach(function (white) { return drawCircle(white, config_json_2.default.styles[Render.style].base); });
+                drawFusionPath(whites, style_1.base);
+                whites.forEach(function (white) { return drawCircle(white, style_1.base); });
                 var irises = layer.units
-                    .filter(function (u) { return undefined !== u.eye && !model_1.Model.isOutOfCanvas(u.body); })
+                    .filter(function (u) { return undefined !== u.eye && !model_2.Model.isOutOfCanvas(u.body); })
                     .map(function (u) { return mappingCircle(mappingCircle(canvasCircle, u.body), u.eye.iris); });
-                drawFusionPath(irises, config_json_2.default.styles[Render.style].accent);
-                irises.forEach(function (iris) { return drawCircle(iris, config_json_2.default.styles[Render.style].accent); });
+                drawFusionPath(irises, style_1.accent);
+                irises.forEach(function (iris) { return drawCircle(iris, style_1.accent); });
             }
         };
         Render.draw = function () {
-            context.fillStyle = config_json_2.default.styles[Render.style].base;
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            drawLayer(model_1.Model.Data.accent, config_json_2.default.styles[Render.style].accent);
-            drawLayer(model_1.Model.Data.main, config_json_2.default.styles[Render.style].main);
+            var style = getStyle();
+            context.fillStyle = style.base;
+            context.fillRect(0, 0, ui_1.UI.canvas.width, ui_1.UI.canvas.height);
+            drawLayer(model_2.Model.Data.accent, style.accent);
+            drawLayer(model_2.Model.Data.main, style.main);
         };
     })(Render || (exports.Render = Render = {}));
 });
@@ -2601,233 +2941,162 @@ define("script/fps", ["require", "exports"], function (require, exports) {
         Fps.isUnderFuseFps = function () { return Fps.isValid && Fps.currentMaxFps.fps < Fps.fuseFps; };
     })(Fps || (exports.Fps = Fps = {}));
 });
-define("script/index", ["require", "exports", "script/model", "script/render", "script/fps", "resource/config"], function (require, exports, model_2, render_1, fps_1, config_json_3) {
+define("script/event", ["require", "exports", "script/model", "script/ui"], function (require, exports, model_3, ui_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.mousemove = exports.ToggleClassForWhileTimer = void 0;
-    config_json_3 = __importDefault(config_json_3);
-    var stylesButton = document.getElementById("styles-button");
-    var hdButton = document.getElementById("hd-button");
-    var fpsDiv = document.getElementById("fps");
-    var fullscreenButton = document.getElementById("fullscreen-button");
-    var fpsButton = document.getElementById("fps-button");
-    var jumpOutButton = document.getElementById("jump-out-button");
-    console.log("Window loaded.");
+    exports.Event = void 0;
+    var Event;
+    (function (Event) {
+        Event.initialize = function () {
+            document.addEventListener("keydown", function (event) {
+                if ("s" === event.key.toLowerCase()) {
+                    ui_2.UI.toggleFpsDisplay();
+                }
+            });
+            if (ui_2.UI.fullscreenEnabled) {
+                document.addEventListener("keydown", function (event) {
+                    if ("f" === event.key.toLowerCase()) {
+                        ui_2.UI.toggleFullScreen();
+                    }
+                });
+            }
+            ui_2.UI.stylesButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                ui_2.UI.toggleStyle(!event.shiftKey);
+            });
+            document.addEventListener("keydown", function (event) {
+                if ("c" === event.key.toLowerCase()) {
+                    ui_2.UI.toggleStyle(!event.shiftKey);
+                }
+            });
+            ui_2.UI.hdButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                model_3.Model.togglePixelRatioMode(!event.shiftKey);
+                ui_2.UI.updateHdRoundBar();
+            });
+            document.addEventListener("keydown", function (event) {
+                if ("q" === event.key.toLowerCase()) {
+                    model_3.Model.togglePixelRatioMode(!event.shiftKey);
+                    ui_2.UI.updateHdRoundBar();
+                }
+            });
+            ui_2.UI.watchButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                ui_2.UI.toggleWatchDisplay(!event.shiftKey);
+            });
+            document.addEventListener("keydown", function (event) {
+                if ("w" === event.key.toLowerCase()) {
+                    ui_2.UI.toggleWatchDisplay(!event.shiftKey);
+                }
+            });
+            ui_2.UI.fpsButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                ui_2.UI.toggleFpsDisplay();
+            });
+            ui_2.UI.fullscreenButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                var elem = document.documentElement;
+                if (document.fullscreenEnabled) {
+                    if (!document.fullscreenElement) {
+                        elem.requestFullscreen();
+                    }
+                    else {
+                        document.exitFullscreen();
+                    }
+                }
+                else {
+                    if (document.webkitFullscreenEnabled) {
+                        if (!document.webkitFullscreenElement) {
+                            elem.webkitRequestFullscreen();
+                        }
+                        else {
+                            document.webkitExitFullscreen();
+                        }
+                    }
+                }
+            });
+            document.addEventListener("fullscreenchange", ui_2.UI.updateFullscreenState);
+            document.addEventListener("webkitfullscreenchange", ui_2.UI.updateFullscreenState);
+            ui_2.UI.jumpOutButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                window.open(window.location.href, "_blank");
+            });
+            document.addEventListener("mousemove", function (_event) { return ui_2.UI.mousemove(); });
+        };
+    })(Event || (exports.Event = Event = {}));
+});
+define("script/watch", ["require", "exports", "script/url", "script/ui", "resource/config"], function (require, exports, url_1, ui_3, config_json_4) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Watch = void 0;
+    config_json_4 = __importDefault(config_json_4);
+    var Watch;
+    (function (Watch) {
+        Watch.locale = url_1.Url.params["locale"] || navigator.language;
+        var phi = (1 + Math.sqrt(5)) / 2;
+        Watch.makeDate = function (date, locale) {
+            return date.toLocaleDateString(locale, config_json_4.default.watch.dateFormat);
+        };
+        Watch.makeTime = function (date, locale) {
+            return date.toLocaleTimeString(locale, config_json_4.default.watch.timeFormat);
+        };
+        Watch.setColor = function (color) {
+            ui_3.UI.setStyle(ui_3.UI.date, "color", color);
+            ui_3.UI.setStyle(ui_3.UI.time, "color", color);
+        };
+        Watch.update = function () {
+            if ("none" !== ui_3.UI.watchColor) {
+                var date = new Date();
+                ui_3.UI.setTextContent(ui_3.UI.time, Watch.makeTime(date, Watch.locale));
+                ui_3.UI.setAttribute(ui_3.UI.time, "datatime", Watch.makeTime(date, "ja-JP"));
+                ui_3.UI.setTextContent(ui_3.UI.date, Watch.makeDate(date, Watch.locale));
+                ui_3.UI.setAttribute(ui_3.UI.date, "datatime", date.toISOString().slice(0, 10));
+                switch (ui_3.UI.watchColor) {
+                    case "white":
+                        Watch.setColor("white");
+                        break;
+                    case "black":
+                        Watch.setColor("black");
+                        break;
+                    case "raindom":
+                        Watch.setColor("hsl(".concat((date.getTime() * 360) / (24000 * phi), ", 100%, 50%)"));
+                        break;
+                }
+            }
+            else {
+                ui_3.UI.setTextContent(ui_3.UI.time, "");
+                ui_3.UI.setAttribute(ui_3.UI.time, "datatime", undefined);
+                ui_3.UI.setTextContent(ui_3.UI.date, "");
+                ui_3.UI.setAttribute(ui_3.UI.date, "datatime", undefined);
+            }
+        };
+    })(Watch || (exports.Watch = Watch = {}));
+});
+define("script/index", ["require", "exports", "script/url", "script/model", "script/render", "script/fps", "script/ui", "script/event", "script/watch"], function (require, exports, url_2, model_4, render_1, fps_1, ui_4, event_1, watch_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    url_2.Url.initialize();
+    event_1.Event.initialize();
+    ui_4.UI.fpsDiv.style.display = "none";
+    ui_4.UI.updateStyleRoundBar();
+    ui_4.UI.updateHdRoundBar();
+    ui_4.UI.updateWatchVisibility();
+    ui_4.UI.fullscreenButton.style.display = ui_4.UI.fullscreenEnabled ? "block" : "none";
+    ui_4.UI.setAriaHidden(ui_4.UI.fullscreenButton, !ui_4.UI.fullscreenEnabled);
+    ui_4.UI.updateFullscreenState();
+    ui_4.UI.jumpOutButton.style.display = ui_4.UI.isInIframe ? "block" : "none";
+    ui_4.UI.setAriaHidden(ui_4.UI.jumpOutButton, ui_4.UI.isInIframe);
     var step = function (timestamp) {
-        model_2.Model.updateData(timestamp);
+        model_4.Model.updateData(timestamp);
         render_1.Render.draw();
-        if (fpsDiv && fpsDiv.style.display !== "none") {
+        watch_1.Watch.update();
+        if (ui_4.UI.fpsDiv.style.display !== "none") {
             fps_1.Fps.step(timestamp);
-            fpsDiv.innerText = fps_1.Fps.getText();
+            ui_4.UI.fpsDiv.innerText = fps_1.Fps.getText();
         }
         window.requestAnimationFrame(step);
     };
     window.requestAnimationFrame(step);
-    var setAriaHidden = function (element, hidden) {
-        var attributeKey = "aria-hidden";
-        if (hidden) {
-            var attribute = document.createAttribute(attributeKey);
-            attribute.value = "true";
-            element.attributes.setNamedItem(attribute);
-        }
-        else {
-            if (element.attributes.getNamedItem(attributeKey)) {
-                element.attributes.removeNamedItem(attributeKey);
-            }
-        }
-    };
-    var toggleFpsDisplay = function () {
-        if (fpsDiv) {
-            if ("none" === fpsDiv.style.display) {
-                fpsDiv.style.display = "block";
-                fpsButton === null || fpsButton === void 0 ? void 0 : fpsButton.classList.add("on");
-            }
-            else {
-                fpsDiv.style.display = "none";
-                fpsButton === null || fpsButton === void 0 ? void 0 : fpsButton.classList.remove("on");
-            }
-        }
-    };
-    if (fpsDiv) {
-        fpsDiv.style.display = "none";
-        document.addEventListener("keydown", function (event) {
-            if ("s" === event.key.toLowerCase()) {
-                toggleFpsDisplay();
-            }
-        });
-    }
-    var fullscreenEnabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
-    var toggleFullScreen = function () {
-        var elem = document.documentElement;
-        if (document.fullscreenEnabled) {
-            if (!document.fullscreenElement) {
-                elem.requestFullscreen();
-            }
-            else {
-                document.exitFullscreen();
-            }
-        }
-        else {
-            if (document.webkitFullscreenEnabled) {
-                if (!document.webkitFullscreenElement) {
-                    elem.webkitRequestFullscreen();
-                }
-                else {
-                    document.webkitExitFullscreen();
-                }
-            }
-        }
-    };
-    if (fullscreenEnabled) {
-        document.addEventListener("keydown", function (event) {
-            if ("f" === event.key.toLowerCase()) {
-                toggleFullScreen();
-            }
-        });
-    }
-    var styleRoundBarIndex = 0;
-    var updateStyleRoundBar = function () {
-        if (stylesButton) {
-            var keys = Object.keys(config_json_3.default.styles);
-            //stylesButton.style.setProperty("--low", `${styleRoundBarIndex /keys.length}`);
-            stylesButton.style.setProperty("--high", "".concat(1 / keys.length));
-            stylesButton.style.setProperty("--rotate", "".concat(styleRoundBarIndex / keys.length));
-        }
-    };
-    updateStyleRoundBar();
-    if (stylesButton) {
-        var toggleStyle_1 = function (style) {
-            var keys = Object.keys(config_json_3.default.styles);
-            if (typeof style === "boolean" || undefined === style) {
-                var currentIndex = keys.indexOf(render_1.Render.style);
-                var nextIndex = (keys.length + currentIndex + (false !== style ? 1 : -1)) % keys.length;
-                console.log({ currentIndex: currentIndex, nextIndex: nextIndex, keysLength: keys.length, style: style });
-                render_1.Render.style = keys[nextIndex];
-                styleRoundBarIndex += false !== style ? 1 : -1;
-            }
-            else {
-                if (Object.keys(config_json_3.default.styles).includes(style)) {
-                    render_1.Render.style = style;
-                    styleRoundBarIndex = keys.indexOf(style);
-                }
-            }
-            updateStyleRoundBar();
-            console.log("\uD83C\uDFA8 Style changed: ".concat(render_1.Render.style));
-        };
-        stylesButton.addEventListener("click", function (event) {
-            event.stopPropagation();
-            toggleStyle_1(!event.shiftKey);
-        });
-        document.addEventListener("keydown", function (event) {
-            if ("c" === event.key.toLowerCase()) {
-                toggleStyle_1(!event.shiftKey);
-            }
-        });
-    }
-    var updateHdRoundBar = function () {
-        if (hdButton) {
-            hdButton.style.setProperty("--high", "".concat(model_2.Model.getPixcelRatioLevel() / model_2.Model.PixelRatioModeKeys.length));
-        }
-    };
-    updateHdRoundBar();
-    if (hdButton) {
-        hdButton.addEventListener("click", function (event) {
-            event.stopPropagation();
-            model_2.Model.togglePixelRatioMode(!event.shiftKey);
-            updateHdRoundBar();
-        });
-        document.addEventListener("keydown", function (event) {
-            if ("q" === event.key.toLowerCase()) {
-                model_2.Model.togglePixelRatioMode(!event.shiftKey);
-                updateHdRoundBar();
-            }
-        });
-    }
-    if (fpsButton && fpsDiv) {
-        fpsButton.addEventListener("click", function (event) {
-            event.stopPropagation();
-            toggleFpsDisplay();
-        });
-    }
-    ;
-    if (fullscreenButton) {
-        fullscreenButton.style.display = fullscreenEnabled ? "block" : "none";
-        setAriaHidden(fullscreenButton, !fullscreenEnabled);
-        fullscreenButton.addEventListener("click", function (event) {
-            event.stopPropagation();
-            var elem = document.documentElement;
-            if (document.fullscreenEnabled) {
-                if (!document.fullscreenElement) {
-                    elem.requestFullscreen();
-                }
-                else {
-                    document.exitFullscreen();
-                }
-            }
-            else {
-                if (document.webkitFullscreenEnabled) {
-                    if (!document.webkitFullscreenElement) {
-                        elem.webkitRequestFullscreen();
-                    }
-                    else {
-                        document.webkitExitFullscreen();
-                    }
-                }
-            }
-        });
-    }
-    var updateFullscreenState = function () {
-        if (fullscreenButton) {
-            var isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
-            fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
-        }
-    };
-    document.addEventListener("fullscreenchange", updateFullscreenState);
-    document.addEventListener("webkitfullscreenchange", updateFullscreenState);
-    updateFullscreenState();
-    if (jumpOutButton) {
-        var isInIframe = window.top !== window.self;
-        jumpOutButton.style.display = isInIframe ? "block" : "none";
-        setAriaHidden(jumpOutButton, isInIframe);
-        jumpOutButton.addEventListener("click", function (event) {
-            event.stopPropagation();
-            window.open(window.location.href, "_blank");
-        });
-    }
-    var ToggleClassForWhileTimer = /** @class */ (function () {
-        function ToggleClassForWhileTimer() {
-            var _this = this;
-            this.isInTimer = function () { return undefined !== _this.timer; };
-            this.timer = undefined;
-        }
-        ToggleClassForWhileTimer.prototype.start = function (element, token, span, onEnd) {
-            var _this = this;
-            if (this.isInTimer()) {
-                clearTimeout(this.timer);
-            }
-            element.classList.toggle(token, true);
-            this.timer = setTimeout(function () {
-                // if (config.log["ToggleClassForWhileTimer.Timeout"])
-                // {
-                //     console.log("⌛️ ToggleClassForWhileTimer.Timeout", element, token, span);
-                // }
-                _this.timer = undefined;
-                element.classList.toggle(token, false);
-                onEnd === null || onEnd === void 0 ? void 0 : onEnd();
-            }, span);
-        };
-        return ToggleClassForWhileTimer;
-    }());
-    exports.ToggleClassForWhileTimer = ToggleClassForWhileTimer;
-    var mouseMoveTimer = new ToggleClassForWhileTimer();
-    var mousemove = function () {
-        return mouseMoveTimer.start(document.body, "mousemove", 3000);
-    };
-    exports.mousemove = mousemove;
-    document.addEventListener("mousemove", function (_event) {
-        (0, exports.mousemove)();
-    });
-    console.log("Canvas initialized.");
 });
 //# sourceMappingURL=script/index.js.map
 </script>

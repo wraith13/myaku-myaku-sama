@@ -218,6 +218,12 @@ export namespace Model
         };
         return result;
     };
+    const updateIris = (eye: Eye) =>
+    {
+        eye.iris.x = eye.white.x +eye.white.x *(config.eye.whiteRate -config.eye.irisRate) /(1 -config.eye.whiteRate);
+        eye.iris.y = eye.white.y +eye.white.y *(config.eye.whiteRate -config.eye.irisRate) /(1 -config.eye.whiteRate);
+        eye.iris.radius = eye.white.radius *(config.eye.irisRate /config.eye.whiteRate);
+    };
     const updateEye = (unit: Unit, step: number) =>
     {
         if (unit.eye)
@@ -233,8 +239,6 @@ export namespace Model
                 eye.white.x *= (maxDistance -config.eye.whiteRate) /distance;
                 eye.white.y *= (maxDistance -config.eye.whiteRate) /distance;
             }
-            eye.iris.x = eye.white.x +eye.white.x *(config.eye.whiteRate -config.eye.irisRate) /(1 -config.eye.whiteRate);
-            eye.iris.y = eye.white.y +eye.white.y *(config.eye.whiteRate -config.eye.irisRate) /(1 -config.eye.whiteRate);
             updateAnimations(eye.animation.moveAnimation.x, step);
             updateAnimations(eye.animation.moveAnimation.y, step);
             const transion = eye.animation.appearAnimation ?? eye.animation.vanishAnimation;
@@ -244,7 +248,6 @@ export namespace Model
                 if (eye.animation.vanishAnimation)
                 {
                     eye.white.radius = config.eye.whiteRate *(1.0 - (transion.phase /transion.period));
-                    eye.iris.radius = config.eye.irisRate *(1.0 - (transion.phase /transion.period));
                     if (transion.period <= transion.phase)
                     {
                         // eye.animation.vanishAnimation = undefined;
@@ -254,12 +257,15 @@ export namespace Model
                 else
                 {
                     eye.white.radius = config.eye.whiteRate *(transion.phase /transion.period);
-                    eye.iris.radius = config.eye.irisRate *(transion.phase /transion.period);
                     if (transion.period <= transion.phase)
                     {
                         eye.animation.appearAnimation = undefined;
                     }
                 }
+            }
+            if (undefined !== unit.eye)
+            {
+                updateIris(eye);
             }
         }
     }

@@ -1,16 +1,39 @@
 import { Model } from "./model";
+import { UI } from "./ui";
 import config from "@resource/config.json";
 export namespace Render
 {
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const context = canvas.getContext("2d") as CanvasRenderingContext2D;
+    const getStyle = (): (typeof config.styles)[keyof typeof config.styles] => config.styles[UI.style];
+    const context = UI.canvas.getContext("2d") as CanvasRenderingContext2D;
     const mappingCircle = (parent: Model.Circle, circle: Model.Circle): Model.Circle =>
     ({
         x: (circle.x * parent.radius) + parent.x,
         y: (circle.y * parent.radius) + parent.y,
         radius: circle.radius *parent.radius,
     });
-    export let style = "regular" as keyof typeof config["styles"];
+    // const remappingCircle = (parent: Model.Circle, circle: Model.Circle): Model.Circle =>
+    // ({
+    //     x: (circle.x -parent.x) /parent.radius,
+    //     y: (circle.y -parent.y) /parent.radius,
+    //     radius: circle.radius /parent.radius,
+    // });
+    // export const remappingPoint = (parent: Model.Circle, point: Model.Point): Model.Point =>
+    // ({
+    //     x: (point.x -parent.x) /parent.radius,
+    //     y: (point.y -parent.y) /parent.radius,
+    // });
+    export const getCanvasCircle = (): Model.Circle =>
+    ({
+        x: UI.canvas.width / 2,
+        y: UI.canvas.height / 2,
+        radius: Math.hypot(UI.canvas.width, UI.canvas.height) /2,
+    });
+    // export const getWindowCircle = (): Model.Circle =>
+    // ({
+    //     x: window.innerWidth / 2,
+    //     y: window.innerHeight / 2,
+    //     radius: Math.hypot(window.innerWidth, window.innerHeight) /2,
+    // });
     type FusionStatus = "none" | "near" | "overlap" | "inclusion";
     const hasFusionPath = (fusionStatus: FusionStatus) =>
         [ "none", "inclusion" ].indexOf(fusionStatus) < 0;
@@ -200,12 +223,7 @@ export namespace Render
     };
     const drawLayer = (layer: Model.Layer, color: string) =>
     {
-        const canvasCircle: Model.Circle =
-        {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            radius: Math.hypot(canvas.width, canvas.height) /2,
-        };
+        const canvasCircle = getCanvasCircle();
         const bodies = layer.units.map(u => u.body)
             .filter(c => !Model.isOutOfCanvas(c))
             .map(c => mappingCircle(canvasCircle, c));
@@ -213,23 +231,25 @@ export namespace Render
         bodies.forEach(body => drawCircle(body, color));
         if (layer === Model.Data.main)
         {
+            const style = getStyle();
             const whites = layer.units
                 .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.body))
                 .map(u => mappingCircle(mappingCircle(canvasCircle, u.body), u.eye!.white));
-            drawFusionPath(whites, config.styles[style].base);
-            whites.forEach(white => drawCircle(white, config.styles[style].base));
+            drawFusionPath(whites, style.base);
+            whites.forEach(white => drawCircle(white, style.base));
             const irises = layer.units
                 .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.body))
                 .map(u => mappingCircle(mappingCircle(canvasCircle, u.body), u.eye!.iris));
-            drawFusionPath(irises, config.styles[style].accent);
-            irises.forEach(iris => drawCircle(iris, config.styles[style].accent));
+            drawFusionPath(irises, style.accent);
+            irises.forEach(iris => drawCircle(iris, style.accent));
         }
     };
     export const draw = () =>
     {
-        context.fillStyle = config.styles[style].base;
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        drawLayer(Model.Data.accent, config.styles[style].accent);
-        drawLayer(Model.Data.main, config.styles[style].main);
+        const style = getStyle();
+        context.fillStyle = style.base;
+        context.fillRect(0, 0, UI.canvas.width, UI.canvas.height);
+        drawLayer(Model.Data.accent, style.accent);
+        drawLayer(Model.Data.main, style.main);
     };
 }

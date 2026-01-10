@@ -1,3 +1,12 @@
+declare module "script/url" {
+    export namespace Url {
+        const parseParameter: (url: string) => Record<string, string>;
+        const make: (params: Record<string, string>) => string;
+        const addParameter: (params: Record<string, string>, key: string, value: string) => Record<string, string>;
+        const initialize: () => void;
+        const params: Record<string, string>;
+    }
+}
 declare module "script/model" {
     export namespace Model {
         const pseudoGaussian: (samples?: number) => number;
@@ -87,10 +96,52 @@ declare module "script/model" {
         const updateData: (timestamp: number) => void;
     }
 }
-declare module "script/render" {
+declare module "script/ui" {
     import config from "resource/config";
-    export namespace Render {
+    export namespace UI {
+        const canvas: HTMLCanvasElement;
+        const overlayPanel: HTMLDivElement;
+        const time: HTMLTimeElement;
+        const date: HTMLTimeElement;
+        const fpsDiv: HTMLDivElement;
+        const stylesButton: HTMLButtonElement;
+        const hdButton: HTMLButtonElement;
+        const watchButton: HTMLButtonElement;
+        const fpsButton: HTMLButtonElement;
+        const fullscreenButton: HTMLButtonElement;
+        const jumpOutButton: HTMLButtonElement;
+        const fullscreenEnabled: any;
+        const isInIframe: boolean;
+        const setAriaHidden: (element: HTMLElement, hidden: boolean) => void;
+        type WatchColor = "none" | "white" | "black" | "raindom";
+        const WatchColorList: readonly ["none", "white", "black", "raindom"];
+        let watchColor: WatchColor;
+        const updateWatchVisibility: () => void;
+        const updateWatchRoundBar: () => void;
+        const toggleWatchDisplay: (value?: boolean | WatchColor) => void;
+        const toggleFpsDisplay: () => void;
+        const toggleFullScreen: () => void;
+        const updateFullscreenState: () => void;
+        const updateStyleRoundBar: () => void;
         let style: keyof (typeof config)["styles"];
+        const toggleStyle: (style?: boolean | keyof (typeof config)["styles"]) => void;
+        const updateHdRoundBar: () => void;
+        class ToggleClassForWhileTimer {
+            timer: ReturnType<typeof setTimeout> | undefined;
+            constructor();
+            start(element: HTMLElement, token: string, span: number, onEnd?: () => unknown): void;
+            isInTimer: () => boolean;
+        }
+        const mousemove: () => void;
+        const setTextContent: (element: HTMLElement, text: string) => boolean;
+        const setAttribute: (element: HTMLElement, name: string, value: string | undefined) => boolean;
+        const setStyle: (element: HTMLElement, name: string, value: string | undefined) => boolean;
+    }
+}
+declare module "script/render" {
+    import { Model } from "script/model";
+    export namespace Render {
+        const getCanvasCircle: () => Model.Circle;
         const draw: () => void;
     }
 }
@@ -125,12 +176,18 @@ declare module "script/fps" {
         export {};
     }
 }
-declare module "script/index" {
-    export class ToggleClassForWhileTimer {
-        timer: ReturnType<typeof setTimeout> | undefined;
-        constructor();
-        start(element: HTMLElement, token: string, span: number, onEnd?: () => unknown): void;
-        isInTimer: () => boolean;
+declare module "script/event" {
+    export namespace Event {
+        const initialize: () => void;
     }
-    export const mousemove: () => void;
 }
+declare module "script/watch" {
+    export namespace Watch {
+        const locale: string;
+        const makeDate: (date: Date, locale: string) => string;
+        const makeTime: (date: Date, locale: string) => string;
+        const setColor: (color: string | undefined) => void;
+        const update: () => void;
+    }
+}
+declare module "script/index" { }

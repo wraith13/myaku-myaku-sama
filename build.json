@@ -91,6 +91,13 @@
                         "text": "<svg role=\"presentation\" aria-hidden=\"true\" "
                     }
                 },
+                "__WATCH_ICON___": {
+                    "path": "./image/watch.1024.svg",
+                    "replace": {
+                        "match": "<svg ",
+                        "text": "<svg role=\"presentation\" aria-hidden=\"true\" "
+                    }
+                },
                 "__METER_ICON___": {
                     "path": "./image/meter.1024.svg",
                     "replace": {
