@@ -40,8 +40,8 @@ define("resource/config", [], {
     "eye": {
         "appearRate": 0.12,
         "vanishRate": 0.1,
-        "whiteRate": 0.4,
-        "irisRate": 0.2
+        "whiteRate": 0.3,
+        "irisRate": 0.15
     },
     "Layer": {
         "unit": {
@@ -157,15 +157,15 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
         };
         Model.isOutOfCanvas = function (circle) {
             var marginRate = config_json_1.default.rendering.marginRate;
-            var shortSide = Math.min(canvas.width, canvas.height);
+            var halfDiagonalLength = Math.hypot(canvas.width, canvas.height) / 2;
             var centerX = canvas.width / 2;
             var centerY = canvas.height / 2;
-            var x = (circle.x * marginRate * shortSide) + centerX;
-            var y = (circle.y * marginRate * shortSide) + centerY;
-            return (x + circle.radius * shortSide < 0 ||
-                y + circle.radius * shortSide < 0 ||
-                canvas.width < x - circle.radius * shortSide ||
-                canvas.height < y - circle.radius * shortSide);
+            var x = (circle.x * marginRate * halfDiagonalLength) + centerX;
+            var y = (circle.y * marginRate * halfDiagonalLength) + centerY;
+            return (x + circle.radius * halfDiagonalLength < 0 ||
+                y + circle.radius * halfDiagonalLength < 0 ||
+                canvas.width < x - circle.radius * halfDiagonalLength ||
+                canvas.height < y - circle.radius * halfDiagonalLength);
         };
         Model.sumValidAreas = function (layer) {
             return layer.units
@@ -284,8 +284,8 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
                     eye.white.x *= (maxDistance - config_json_1.default.eye.whiteRate) / distance;
                     eye.white.y *= (maxDistance - config_json_1.default.eye.whiteRate) / distance;
                 }
-                eye.iris.x = eye.white.x + eye.white.x * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate);
-                eye.iris.y = eye.white.y + eye.white.y * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate);
+                eye.iris.x = eye.white.x + eye.white.x * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate) / (1 - config_json_1.default.eye.whiteRate);
+                eye.iris.y = eye.white.y + eye.white.y * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate) / (1 - config_json_1.default.eye.whiteRate);
                 Model.updateAnimations(eye.animation.moveAnimation.x, step);
                 Model.updateAnimations(eye.animation.moveAnimation.y, step);
                 var transion = (_a = eye.animation.appearAnimation) !== null && _a !== void 0 ? _a : eye.animation.vanishAnimation;
@@ -467,6 +467,13 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
     (function (Render) {
         var canvas = document.getElementById("canvas");
         var context = canvas.getContext("2d");
+        var mappingCircle = function (parent, circle) {
+            return ({
+                x: (circle.x * parent.radius) + parent.x,
+                y: (circle.y * parent.radius) + parent.y,
+                radius: circle.radius * parent.radius,
+            });
+        };
         Render.style = "regular";
         var hasFusionPath = function (fusionStatus) {
             return ["none", "inclusion"].indexOf(fusionStatus) < 0;
@@ -617,45 +624,27 @@ define("script/render", ["require", "exports", "script/model", "resource/config"
             }
         };
         var drawLayer = function (layer, color) {
-            var shortSide = Math.min(canvas.width, canvas.height);
-            var centerX = canvas.width / 2;
-            var centerY = canvas.height / 2;
+            var canvasCircle = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                radius: Math.hypot(canvas.width, canvas.height) / 2,
+            };
             var bodies = layer.units.map(function (u) { return u.body; })
-                // .concat([ { x: 0, y: 0, radius: 0.1, } ])
                 .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
-                .map(function (c) {
-                return ({
-                    x: (c.x * shortSide) + centerX,
-                    y: (c.y * shortSide) + centerY,
-                    radius: c.radius * shortSide,
-                });
-            });
+                .map(function (c) { return mappingCircle(canvasCircle, c); });
             drawFusionPath(bodies, color);
             bodies.forEach(function (body) { return drawCircle(body, color); });
             if (layer === model_1.Model.Data.main) {
                 var whites = layer.units
-                    .filter(function (u) { return undefined !== u.eye && !model_1.Model.isOutOfCanvas(u.eye.white); })
-                    .map(function (u) {
-                    return ({
-                        x: ((u.body.x + (u.eye.white.x * u.body.radius)) * shortSide) + centerX,
-                        y: ((u.body.y + (u.eye.white.y * u.body.radius)) * shortSide) + centerY,
-                        radius: u.body.radius * u.eye.white.radius * shortSide,
-                    });
-                });
+                    .filter(function (u) { return undefined !== u.eye && !model_1.Model.isOutOfCanvas(u.body); })
+                    .map(function (u) { return mappingCircle(mappingCircle(canvasCircle, u.body), u.eye.white); });
                 drawFusionPath(whites, config_json_2.default.styles[Render.style].base);
                 whites.forEach(function (white) { return drawCircle(white, config_json_2.default.styles[Render.style].base); });
                 var irises = layer.units
-                    .filter(function (u) { return undefined !== u.eye && !model_1.Model.isOutOfCanvas(u.eye.iris); })
-                    .map(function (u) {
-                    return ({
-                        x: ((u.body.x + (u.eye.iris.x * u.body.radius)) * shortSide) + centerX,
-                        y: ((u.body.y + (u.eye.iris.y * u.body.radius)) * shortSide) + centerY,
-                        radius: u.body.radius * u.eye.iris.radius * shortSide,
-                    });
-                });
+                    .filter(function (u) { return undefined !== u.eye && !model_1.Model.isOutOfCanvas(u.body); })
+                    .map(function (u) { return mappingCircle(mappingCircle(canvasCircle, u.body), u.eye.iris); });
                 drawFusionPath(irises, config_json_2.default.styles[Render.style].accent);
                 irises.forEach(function (iris) { return drawCircle(iris, config_json_2.default.styles[Render.style].accent); });
-                console.log({ whites: whites, irises: irises });
             }
         };
         Render.draw = function () {

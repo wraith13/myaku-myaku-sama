@@ -40,8 +40,8 @@
     {
         "appearRate": 0.12,
         "vanishRate": 0.1,
-        "whiteRate": 0.4,
-        "irisRate": 0.2
+        "whiteRate": 0.3,
+        "irisRate": 0.15
     },
     "Layer":
     {

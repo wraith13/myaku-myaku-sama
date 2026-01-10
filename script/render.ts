@@ -4,6 +4,12 @@ export namespace Render
 {
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const context = canvas.getContext("2d") as CanvasRenderingContext2D;
+    const mappingCircle = (parent: Model.Circle, circle: Model.Circle): Model.Circle =>
+    ({
+        x: (circle.x * parent.radius) + parent.x,
+        y: (circle.y * parent.radius) + parent.y,
+        radius: circle.radius *parent.radius,
+    });
     export let style = "regular" as keyof typeof config["styles"];
     type FusionStatus = "none" | "near" | "overlap" | "inclusion";
     const hasFusionPath = (fusionStatus: FusionStatus) =>
@@ -194,52 +200,29 @@ export namespace Render
     };
     const drawLayer = (layer: Model.Layer, color: string) =>
     {
-        const shortSide = Math.min(canvas.width, canvas.height);
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
+        const canvasCircle: Model.Circle =
+        {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: Math.hypot(canvas.width, canvas.height) /2,
+        };
         const bodies = layer.units.map(u => u.body)
-            // .concat([ { x: 0, y: 0, radius: 0.1, } ])
             .filter(c => !Model.isOutOfCanvas(c))
-            .map
-            (
-                c =>
-                ({
-                    x: (c.x * shortSide) + centerX,
-                    y: (c.y * shortSide) + centerY,
-                    radius: c.radius *shortSide,
-                })
-            );
+            .map(c => mappingCircle(canvasCircle, c));
         drawFusionPath(bodies, color);
         bodies.forEach(body => drawCircle(body, color));
         if (layer === Model.Data.main)
         {
             const whites = layer.units
-                .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.eye.white))
-                .map
-                (
-                    u =>
-                    ({
-                        x: ((u.body.x +(u.eye!.white.x *u.body.radius)) * shortSide) + centerX,
-                        y: ((u.body.y +(u.eye!.white.y *u.body.radius)) * shortSide) + centerY,
-                        radius: u.body.radius *u.eye!.white.radius *shortSide,
-                    })
-                );
+                .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.body))
+                .map(u => mappingCircle(mappingCircle(canvasCircle, u.body), u.eye!.white));
             drawFusionPath(whites, config.styles[style].base);
             whites.forEach(white => drawCircle(white, config.styles[style].base));
             const irises = layer.units
-                .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.eye.iris))
-                .map
-                (
-                    u =>
-                    ({
-                        x: ((u.body.x +(u.eye!.iris.x *u.body.radius)) * shortSide) + centerX,
-                        y: ((u.body.y +(u.eye!.iris.y *u.body.radius)) * shortSide) + centerY,
-                        radius: u.body.radius *u.eye!.iris.radius *shortSide,
-                    })
-                );
+                .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.body))
+                .map(u => mappingCircle(mappingCircle(canvasCircle, u.body), u.eye!.iris));
             drawFusionPath(irises, config.styles[style].accent);
             irises.forEach(iris => drawCircle(iris, config.styles[style].accent));
-            console.log({ whites, irises });
         }
     };
     export const draw = () =>

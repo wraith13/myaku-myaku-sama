@@ -87,15 +87,15 @@ export namespace Model
     export const isOutOfCanvas = (circle: Circle) =>
     {
         const marginRate = config.rendering.marginRate;
-        const shortSide = Math.min(canvas.width, canvas.height);
+        const halfDiagonalLength = Math.hypot(canvas.width, canvas.height) /2;
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const x = (circle.x *marginRate *shortSide) +centerX;
-        const y = (circle.y *marginRate *shortSide) +centerY;
-        return (x +circle.radius *shortSide < 0 ||
-                y +circle.radius *shortSide < 0 ||
-                canvas.width < x -circle.radius *shortSide ||
-                canvas.height < y -circle.radius *shortSide);
+        const x = (circle.x *marginRate *halfDiagonalLength) +centerX;
+        const y = (circle.y *marginRate *halfDiagonalLength) +centerY;
+        return (x +circle.radius *halfDiagonalLength < 0 ||
+                y +circle.radius *halfDiagonalLength < 0 ||
+                canvas.width < x -circle.radius *halfDiagonalLength ||
+                canvas.height < y -circle.radius *halfDiagonalLength);
     };
     export const sumValidAreas = (layer: Layer) =>
         layer.units
@@ -233,8 +233,8 @@ export namespace Model
                 eye.white.x *= (maxDistance -config.eye.whiteRate) /distance;
                 eye.white.y *= (maxDistance -config.eye.whiteRate) /distance;
             }
-            eye.iris.x = eye.white.x +eye.white.x *(config.eye.whiteRate -config.eye.irisRate);
-            eye.iris.y = eye.white.y +eye.white.y *(config.eye.whiteRate -config.eye.irisRate);
+            eye.iris.x = eye.white.x +eye.white.x *(config.eye.whiteRate -config.eye.irisRate) /(1 -config.eye.whiteRate);
+            eye.iris.y = eye.white.y +eye.white.y *(config.eye.whiteRate -config.eye.irisRate) /(1 -config.eye.whiteRate);
             updateAnimations(eye.animation.moveAnimation.x, step);
             updateAnimations(eye.animation.moveAnimation.y, step);
             const transion = eye.animation.appearAnimation ?? eye.animation.vanishAnimation;
