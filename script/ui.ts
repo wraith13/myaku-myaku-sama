@@ -45,8 +45,8 @@ export namespace UI
             }
         }
     };
-    export type WatchColor = "none" | "white" | "black" | "raindom";
-    export const WatchColorList = [ "none", "white", "black", "raindom" ] as const;
+    export type WatchColor = "none" | "white" | "black" | "rainbow";
+    export const WatchColorList = [ "none", "white", "black", "rainbow" ] as const;
     export let watchColor: WatchColor = "none";
     export const updateWatchVisibility = () =>
     {

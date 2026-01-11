@@ -85,7 +85,8 @@ time
     line-height: 100%;
     white-space: nowrap;
 }
-.white time
+.white time,
+.rainbow time
 {
     color: white;
     text-shadow: -1px -1px 0px black, 1px -1px 0px black, -1px 1px 0px black, 1px 1px 0px black;

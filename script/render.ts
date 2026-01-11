@@ -4,6 +4,61 @@ import config from "@resource/config.json";
 export namespace Render
 {
     const getStyle = (): (typeof config.styles)[keyof typeof config.styles] => config.styles[UI.style];
+    const getColors = (): string[] =>
+    {
+        const style = getStyle();
+        return [ style.base, style.main, style.accent, ];
+    };
+    let changedStyleAt = 0;
+    let oldColors: string[] = getColors();
+    let newColors: string[] = getColors();
+    export const updateStyleColors = () =>
+    {
+        const colors = getColors();
+        if ( ! colors.every( (color, index) => color === newColors[index]))
+        {
+            oldColors = getCurrentColors();
+            newColors = colors;
+            changedStyleAt = performance.now();
+        }
+    };
+    const getCurrentColors = () =>
+    {
+        const now = performance.now();
+        const span = 500;
+        const rate = (now -changedStyleAt) /span;
+        if (1.0 <= rate)
+        {
+            return newColors;
+        }
+        else
+        {
+            return oldColors.map
+            (
+                (oldColor, index) =>
+                {
+                    const newColor = newColors[index];
+                    if (oldColor === newColor)
+                    {
+                        return oldColor;
+                    }
+                    else
+                    {
+                        const oldR = parseInt(oldColor.slice(1, 3), 16);
+                        const oldG = parseInt(oldColor.slice(3, 5), 16);
+                        const oldB = parseInt(oldColor.slice(5, 7), 16);
+                        const newR = parseInt(newColor.slice(1, 3), 16);
+                        const newG = parseInt(newColor.slice(3, 5), 16);
+                        const newB = parseInt(newColor.slice(5, 7), 16);
+                        const currR = Math.round(oldR + (newR -oldR) *rate);
+                        const currG = Math.round(oldG + (newG -oldG) *rate);
+                        const currB = Math.round(oldB + (newB -oldB) *rate);
+                        return `#${currR.toString(16).padStart(2, "0")}${currG.toString(16).padStart(2, "0")}${currB.toString(16).padStart(2, "0")}`;
+                    }
+                }
+            );
+        }
+    };
     const context = UI.canvas.getContext("2d") as CanvasRenderingContext2D;
     const mappingCircle = (parent: Model.Circle, circle: Model.Circle): Model.Circle =>
     ({
@@ -221,7 +276,7 @@ export namespace Render
             context.closePath();
         }
     };
-    const drawLayer = (layer: Model.Layer, color: string) =>
+    const drawLayer = (layer: Model.Layer, color: string, colors: string[]) =>
     {
         const canvasCircle = getCanvasCircle();
         const bodies = layer.units.map(u => u.body)
@@ -231,25 +286,29 @@ export namespace Render
         bodies.forEach(body => drawCircle(body, color));
         if (layer === Model.Data.main)
         {
-            const style = getStyle();
+            const baseColor = colors[0];
+            const accentColor = colors[2];
             const whites = layer.units
                 .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.body))
                 .map(u => mappingCircle(mappingCircle(canvasCircle, u.body), u.eye!.white));
-            drawFusionPath(whites, style.base);
-            whites.forEach(white => drawCircle(white, style.base));
+            drawFusionPath(whites, baseColor);
+            whites.forEach(white => drawCircle(white, baseColor));
             const irises = layer.units
                 .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.body))
                 .map(u => mappingCircle(mappingCircle(canvasCircle, u.body), u.eye!.iris));
-            drawFusionPath(irises, style.accent);
-            irises.forEach(iris => drawCircle(iris, style.accent));
+            drawFusionPath(irises, accentColor);
+            irises.forEach(iris => drawCircle(iris, accentColor));
         }
     };
     export const draw = () =>
     {
-        const style = getStyle();
-        context.fillStyle = style.base;
+        const colors = getCurrentColors();
+        const baseColor = colors[0];
+        const mainColor = colors[1];
+        const accentColor = colors[2];
+        context.fillStyle = baseColor;
         context.fillRect(0, 0, UI.canvas.width, UI.canvas.height);
-        drawLayer(Model.Data.accent, style.accent);
-        drawLayer(Model.Data.main, style.main);
+        drawLayer(Model.Data.accent, accentColor, colors);
+        drawLayer(Model.Data.main, mainColor, colors);
     };
 }

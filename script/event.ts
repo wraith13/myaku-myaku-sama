@@ -1,4 +1,5 @@
 import { Model } from "./model";
+import { Render } from "./render";
 import { UI } from "./ui";
 export namespace Event
 {
@@ -9,26 +10,31 @@ export namespace Event
             "keydown",
             (event) =>
             {
-                if ("s" === event.key.toLowerCase())
+                switch(event.key.toLowerCase())
                 {
+                case "c":
+                    UI.toggleStyle( ! event.shiftKey);
+                    Render.updateStyleColors();
+                    break;
+                case "q":
+                    Model.togglePixelRatioMode( ! event.shiftKey);
+                    UI.updateHdRoundBar();
+                    break;
+                case "w":
+                    UI.toggleWatchDisplay( ! event.shiftKey);
+                    break;
+                case "s":
                     UI.toggleFpsDisplay();
-                }
-            }
-        );
-        if (UI.fullscreenEnabled)
-        {
-            document.addEventListener
-            (
-                "keydown",
-                (event) =>
-                {
-                    if ("f" === event.key.toLowerCase())
+                    break;
+                case "f":
+                    if (UI.fullscreenEnabled)
                     {
                         UI.toggleFullScreen();
                     }
+                    break;
                 }
-            );
-        }
+            }
+        );
         UI.stylesButton.addEventListener
         (
             "click",
@@ -36,17 +42,7 @@ export namespace Event
             {
                 event.stopPropagation();
                 UI.toggleStyle( ! event.shiftKey);
-            }
-        );
-        document.addEventListener
-        (
-            "keydown",
-            (event) =>
-            {
-                if ("c" === event.key.toLowerCase())
-                {
-                    UI.toggleStyle( ! event.shiftKey);
-                }
+                Render.updateStyleColors();
             }
         );
         UI.hdButton.addEventListener
@@ -59,18 +55,6 @@ export namespace Event
                 UI.updateHdRoundBar();
             }
         );
-        document.addEventListener
-        (
-            "keydown",
-            (event) =>
-            {
-                if ("q" === event.key.toLowerCase())
-                {
-                    Model.togglePixelRatioMode( ! event.shiftKey);
-                    UI.updateHdRoundBar();
-                }
-            }
-        );
         UI.watchButton.addEventListener
         (
             "click",
@@ -78,17 +62,6 @@ export namespace Event
             {
                 event.stopPropagation();
                 UI.toggleWatchDisplay( ! event.shiftKey);
-            }
-        );
-        document.addEventListener
-        (
-            "keydown",
-            (event) =>
-            {
-                if ("w" === event.key.toLowerCase())
-                {
-                    UI.toggleWatchDisplay( ! event.shiftKey);
-                }
             }
         );
         UI.fpsButton.addEventListener

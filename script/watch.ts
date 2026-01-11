@@ -39,8 +39,8 @@ export namespace Watch
                 case "black":
                     setColor("black");
                     break;
-                case "raindom":
-                    setColor(`hsl(${(date.getTime() *360) / (24000 *phi)}, 100%, 50%)`);
+                case "rainbow":
+                    setColor(`hsl(${(date.getTime() *360) / (24000 *phi)}, 100%, 61%)`);
                     break;
             }
         }

@@ -113,8 +113,8 @@ declare module "script/ui" {
         const fullscreenEnabled: any;
         const isInIframe: boolean;
         const setAriaHidden: (element: HTMLElement, hidden: boolean) => void;
-        type WatchColor = "none" | "white" | "black" | "raindom";
-        const WatchColorList: readonly ["none", "white", "black", "raindom"];
+        type WatchColor = "none" | "white" | "black" | "rainbow";
+        const WatchColorList: readonly ["none", "white", "black", "rainbow"];
         let watchColor: WatchColor;
         const updateWatchVisibility: () => void;
         const updateWatchRoundBar: () => void;
@@ -141,6 +141,7 @@ declare module "script/ui" {
 declare module "script/render" {
     import { Model } from "script/model";
     export namespace Render {
+        const updateStyleColors: () => void;
         const getCanvasCircle: () => Model.Circle;
         const draw: () => void;
     }
