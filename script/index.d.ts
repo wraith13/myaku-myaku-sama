@@ -117,6 +117,11 @@ declare module "script/ui" {
         const WatchColorList: readonly ["none", "white", "black", "rainbow"];
         let watchColor: WatchColor;
         const updateWatchVisibility: () => void;
+        const updateRoundBar: (button: HTMLButtonElement, properties: {
+            low: number;
+            high: number;
+            rotate: number;
+        }) => void;
         const updateWatchRoundBar: () => void;
         const toggleWatchDisplay: (value?: boolean | WatchColor) => void;
         const toggleFpsDisplay: () => void;
@@ -133,6 +138,7 @@ declare module "script/ui" {
             isInTimer: () => boolean;
         }
         const mousemove: () => void;
+        const resize: () => boolean;
         const setTextContent: (element: HTMLElement, text: string) => boolean;
         const setAttribute: (element: HTMLElement, name: string, value: string | undefined) => boolean;
         const setStyle: (element: HTMLElement, name: string, value: string | undefined) => boolean;

@@ -113,7 +113,7 @@ time
     white-space: pre;
     backdrop-filter: blur(0.5rem);
 }
-body:not(.mousemove) #control-panel:not(:focus-within)
+body:not(.mousemove) #control-panel
 {
     opacity: 0;
     transition: opacity 1.5s ease;
@@ -151,6 +151,7 @@ button
 }
 svg
 {
+    position: relative;
     height: 2.0rem;
     width: 2.0rem;
     color: white;
@@ -172,7 +173,9 @@ button.round-bar::before
     transition: --low 0.5s ease, --high 0.5s ease, --rotate 0.5s ease;
     border-radius: 50%;
     mask-image: radial-gradient(circle at center, transparent 0%, transparent calc(70.71% - 4px), white calc(70.71% - 4px));
-    background: conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
+    background:
+        radial-gradient(circle at center, black 0%, black calc(70.71% - 4px), transparent calc(70.71% - 4px)), /* This radial-gradient is a fallback for older environments */
+        conic-gradient(black 0deg, black calc(var(--low) * 360deg),  white calc(var(--low) * 360deg),  white calc(var(--high) * 360deg), white calc(var(--high) * 360deg), black calc(var(--high) * 360deg));
     transform: rotate(calc(var(--rotate) * 360deg));
 }
 button.on

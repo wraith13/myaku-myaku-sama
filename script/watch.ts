@@ -40,7 +40,8 @@ export namespace Watch
                     setColor("black");
                     break;
                 case "rainbow":
-                    setColor(`hsl(${(date.getTime() *360) / (24000 *phi)}, 100%, 61%)`);
+                    setColor(`hsl(${((date.getTime() *360) / (24000 *phi)).toFixed(2)}deg, 100%, 61%)`);
+                    setColor(`oklch(70% 0.18 ${((date.getTime() *360) / (24000 *phi)).toFixed(2)}deg)`);
                     break;
             }
         }

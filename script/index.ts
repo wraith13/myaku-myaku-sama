@@ -16,6 +16,7 @@ UI.setAriaHidden(UI.fullscreenButton, ! UI.fullscreenEnabled);
 UI.updateFullscreenState();
 UI.jumpOutButton.style.display = UI.isInIframe ? "block" : "none";
 UI.setAriaHidden(UI.jumpOutButton, UI.isInIframe);
+UI.resize();
 const step = (timestamp: number) =>
 {
     Model.updateData(timestamp);

@@ -570,18 +570,18 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
                 UI.setAriaHidden(UI.date, true);
             }
         };
-        var watchRoundBarIndex = 0;
-        UI.updateWatchRoundBar = function () {
-            //stylesButton.style.setProperty("--low", `${watchRoundBarIndex /WatchColorList.length}`);
-            if ("none" === UI.watchColor) {
-                UI.watchButton.style.setProperty("--low", "".concat(1 / (UI.WatchColorList.length - 1)));
-            }
-            else {
-                UI.watchButton.style.setProperty("--low", "0");
-            }
-            UI.watchButton.style.setProperty("--high", "".concat(1 / (UI.WatchColorList.length - 1)));
-            UI.watchButton.style.setProperty("--rotate", "".concat((watchRoundBarIndex - Math.floor(watchRoundBarIndex / UI.WatchColorList.length) - 1) / (UI.WatchColorList.length - 1)));
+        UI.updateRoundBar = function (button, properties) {
+            /* For older environments where the 'initial-value' setting isn't supported, all values must be specified. */
+            UI.setStyle(button, "--low", properties.low.toFixed(3));
+            UI.setStyle(button, "--high", properties.high.toFixed(3));
+            UI.setStyle(button, "--rotate", properties.rotate.toFixed(3));
         };
+        var watchRoundBarIndex = 0;
+        UI.updateWatchRoundBar = function () { return UI.updateRoundBar(UI.watchButton, {
+            low: "none" === UI.watchColor ? 1 / (UI.WatchColorList.length - 1) : 0,
+            high: 1 / (UI.WatchColorList.length - 1),
+            rotate: (watchRoundBarIndex - Math.floor(watchRoundBarIndex / UI.WatchColorList.length) - 1) / (UI.WatchColorList.length - 1),
+        }); };
         UI.toggleWatchDisplay = function (value) {
             if (typeof value === "boolean" || undefined === value) {
                 var currentIndex = UI.WatchColorList.indexOf(UI.watchColor);
@@ -637,9 +637,11 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         var styleRoundBarIndex = 0;
         UI.updateStyleRoundBar = function () {
             var keys = Object.keys(config_json_2.default.styles);
-            //stylesButton.style.setProperty("--low", `${styleRoundBarIndex /keys.length}`);
-            UI.stylesButton.style.setProperty("--high", "".concat(1 / keys.length));
-            UI.stylesButton.style.setProperty("--rotate", "".concat(styleRoundBarIndex / keys.length));
+            UI.updateRoundBar(UI.stylesButton, {
+                low: 0 / keys.length,
+                high: 1 / keys.length,
+                rotate: styleRoundBarIndex / keys.length,
+            });
         };
         UI.style = "regular";
         UI.toggleStyle = function (style) {
@@ -660,9 +662,11 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
             UI.updateStyleRoundBar();
             console.log("\uD83C\uDFA8 Style changed: ".concat(UI.style));
         };
-        UI.updateHdRoundBar = function () {
-            UI.hdButton.style.setProperty("--high", "".concat(model_1.Model.getPixcelRatioLevel() / model_1.Model.PixelRatioModeKeys.length));
-        };
+        UI.updateHdRoundBar = function () { return UI.updateRoundBar(UI.hdButton, {
+            low: 0 / model_1.Model.PixelRatioModeKeys.length,
+            high: model_1.Model.getPixcelRatioLevel() / model_1.Model.PixelRatioModeKeys.length,
+            rotate: 0,
+        }); };
         var ToggleClassForWhileTimer = /** @class */ (function () {
             function ToggleClassForWhileTimer() {
                 var _this = this;
@@ -691,6 +695,10 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         var mouseMoveTimer = new ToggleClassForWhileTimer();
         UI.mousemove = function () {
             return mouseMoveTimer.start(document.body, "mousemove", 3000);
+        };
+        UI.resize = function () {
+            // Fallback for older environments
+            return UI.setStyle(document.documentElement, "--short-side", "".concat(Math.min(window.innerWidth, window.innerHeight) / 100, "px"));
         };
         UI.setTextContent = function (element, text) {
             if (element.textContent !== text) {
@@ -1107,28 +1115,34 @@ define("script/event", ["require", "exports", "script/model", "script/render", "
     var Event;
     (function (Event) {
         Event.initialize = function () {
+            document.addEventListener("fullscreenchange", ui_2.UI.updateFullscreenState);
+            document.addEventListener("webkitfullscreenchange", ui_2.UI.updateFullscreenState);
+            document.addEventListener("mousemove", ui_2.UI.mousemove);
+            document.addEventListener("resize", ui_2.UI.resize);
+            document.addEventListener("orientationchange", ui_2.UI.resize);
             document.addEventListener("keydown", function (event) {
-                switch (event.key.toLowerCase()) {
-                    case "c":
+                switch (event.key.toUpperCase()) {
+                    case "C":
                         ui_2.UI.toggleStyle(!event.shiftKey);
                         render_1.Render.updateStyleColors();
                         break;
-                    case "q":
+                    case "Q":
                         model_3.Model.togglePixelRatioMode(!event.shiftKey);
                         ui_2.UI.updateHdRoundBar();
                         break;
-                    case "w":
+                    case "W":
                         ui_2.UI.toggleWatchDisplay(!event.shiftKey);
                         break;
-                    case "s":
+                    case "S":
                         ui_2.UI.toggleFpsDisplay();
                         break;
-                    case "f":
+                    case "F":
                         if (ui_2.UI.fullscreenEnabled) {
                             ui_2.UI.toggleFullScreen();
                         }
                         break;
                 }
+                ui_2.UI.mousemove();
             });
             ui_2.UI.stylesButton.addEventListener("click", function (event) {
                 event.stopPropagation();
@@ -1170,13 +1184,10 @@ define("script/event", ["require", "exports", "script/model", "script/render", "
                     }
                 }
             });
-            document.addEventListener("fullscreenchange", ui_2.UI.updateFullscreenState);
-            document.addEventListener("webkitfullscreenchange", ui_2.UI.updateFullscreenState);
             ui_2.UI.jumpOutButton.addEventListener("click", function (event) {
                 event.stopPropagation();
                 window.open(window.location.href, "_blank");
             });
-            document.addEventListener("mousemove", function (_event) { return ui_2.UI.mousemove(); });
         };
     })(Event || (exports.Event = Event = {}));
 });
@@ -1214,7 +1225,8 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "resour
                         Watch.setColor("black");
                         break;
                     case "rainbow":
-                        Watch.setColor("hsl(".concat((date.getTime() * 360) / (24000 * phi), ", 100%, 61%)"));
+                        Watch.setColor("hsl(".concat(((date.getTime() * 360) / (24000 * phi)).toFixed(2), "deg, 100%, 61%)"));
+                        Watch.setColor("oklch(70% 0.18 ".concat(((date.getTime() * 360) / (24000 * phi)).toFixed(2), "deg)"));
                         break;
                 }
             }
@@ -1241,6 +1253,7 @@ define("script/index", ["require", "exports", "script/url", "script/model", "scr
     ui_4.UI.updateFullscreenState();
     ui_4.UI.jumpOutButton.style.display = ui_4.UI.isInIframe ? "block" : "none";
     ui_4.UI.setAriaHidden(ui_4.UI.jumpOutButton, ui_4.UI.isInIframe);
+    ui_4.UI.resize();
     var step = function (timestamp) {
         model_4.Model.updateData(timestamp);
         render_2.Render.draw();

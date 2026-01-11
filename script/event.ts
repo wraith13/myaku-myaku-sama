@@ -5,34 +5,40 @@ export namespace Event
 {
     export const initialize = () =>
     {
+        document.addEventListener("fullscreenchange", UI.updateFullscreenState);
+        document.addEventListener("webkitfullscreenchange", UI.updateFullscreenState);
+        document.addEventListener("mousemove", UI.mousemove);
+        document.addEventListener("resize", UI.resize);
+        document.addEventListener("orientationchange", UI.resize);
         document.addEventListener
         (
             "keydown",
             (event) =>
             {
-                switch(event.key.toLowerCase())
+                switch(event.key.toUpperCase())
                 {
-                case "c":
+                case "C":
                     UI.toggleStyle( ! event.shiftKey);
                     Render.updateStyleColors();
                     break;
-                case "q":
+                case "Q":
                     Model.togglePixelRatioMode( ! event.shiftKey);
                     UI.updateHdRoundBar();
                     break;
-                case "w":
+                case "W":
                     UI.toggleWatchDisplay( ! event.shiftKey);
                     break;
-                case "s":
+                case "S":
                     UI.toggleFpsDisplay();
                     break;
-                case "f":
+                case "F":
                     if (UI.fullscreenEnabled)
                     {
                         UI.toggleFullScreen();
                     }
                     break;
                 }
+                UI.mousemove();
             }
         );
         UI.stylesButton.addEventListener
@@ -107,8 +113,6 @@ export namespace Event
                 }
             }
         );
-        document.addEventListener("fullscreenchange", UI.updateFullscreenState);
-        document.addEventListener("webkitfullscreenchange", UI.updateFullscreenState);
         UI.jumpOutButton.addEventListener
         (
             "click",
@@ -117,11 +121,6 @@ export namespace Event
                 event.stopPropagation();
                 window.open(window.location.href, "_blank");
             }
-        );
-        document.addEventListener
-        (
-            "mousemove",
-            _event => UI.mousemove()
         );
     };
 }

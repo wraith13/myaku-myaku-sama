@@ -69,21 +69,23 @@ export namespace UI
             setAriaHidden(date, true);
         }
     };
-    let watchRoundBarIndex = 0;
-    export const updateWatchRoundBar = () =>
+    export const updateRoundBar = (button: HTMLButtonElement, properties: { low: number, high: number, rotate: number, }) =>
     {
-        //stylesButton.style.setProperty("--low", `${watchRoundBarIndex /WatchColorList.length}`);
-        if ("none" === watchColor)
-        {
-            watchButton.style.setProperty("--low", `${1 /(WatchColorList.length -1)}`);
-        }
-        else
-        {
-            watchButton.style.setProperty("--low", "0");
-        }
-        watchButton.style.setProperty("--high", `${1 /(WatchColorList.length -1)}`);
-        watchButton.style.setProperty("--rotate", `${(watchRoundBarIndex -Math.floor(watchRoundBarIndex /WatchColorList.length) -1) /(WatchColorList.length -1)}`);
+        /* For older environments where the 'initial-value' setting isn't supported, all values must be specified. */
+        setStyle(button, "--low", properties.low.toFixed(3));
+        setStyle(button, "--high", properties.high.toFixed(3));
+        setStyle(button, "--rotate", properties.rotate.toFixed(3));
     };
+    let watchRoundBarIndex = 0;
+    export const updateWatchRoundBar = () => updateRoundBar
+    (
+        watchButton,
+        {
+            low: "none" === watchColor ? 1 /(WatchColorList.length -1) : 0,
+            high: 1 /(WatchColorList.length -1),
+            rotate: (watchRoundBarIndex -Math.floor(watchRoundBarIndex /WatchColorList.length) -1) /(WatchColorList.length -1),
+        }
+    );
     export const toggleWatchDisplay = (value?: boolean | WatchColor) =>
     {
         if (typeof value === "boolean" || undefined === value)
@@ -156,9 +158,15 @@ export namespace UI
     export const updateStyleRoundBar = () =>
     {
         const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
-        //stylesButton.style.setProperty("--low", `${styleRoundBarIndex /keys.length}`);
-        stylesButton.style.setProperty("--high", `${1 /keys.length}`);
-        stylesButton.style.setProperty("--rotate", `${styleRoundBarIndex /keys.length}`);
+        updateRoundBar
+        (
+            stylesButton,
+            {
+                low: 0 /keys.length,
+                high: 1 /keys.length,
+                rotate: styleRoundBarIndex /keys.length,
+            }
+        );
     };
     export let style = "regular" as keyof typeof config["styles"];
     export const toggleStyle = (style?: boolean | keyof typeof config["styles"]) =>
@@ -183,10 +191,15 @@ export namespace UI
         updateStyleRoundBar();
         console.log(`🎨 Style changed: ${UI.style}`);
     };
-    export const updateHdRoundBar = () =>
-    {
-        hdButton.style.setProperty("--high", `${Model.getPixcelRatioLevel() /Model.PixelRatioModeKeys.length}`);
-    };
+    export const updateHdRoundBar = () => updateRoundBar
+    (
+        hdButton,
+        {
+            low: 0 /Model.PixelRatioModeKeys.length,
+            high: Model.getPixcelRatioLevel() /Model.PixelRatioModeKeys.length,
+            rotate: 0,
+        }
+    );
     export class ToggleClassForWhileTimer
     {
         timer: ReturnType<typeof setTimeout> | undefined;
@@ -221,6 +234,9 @@ export namespace UI
     const mouseMoveTimer = new ToggleClassForWhileTimer();
     export const mousemove = () =>
         mouseMoveTimer.start(document.body, "mousemove", 3000);
+    export const resize = () =>
+        // Fallback for older environments
+        setStyle(document.documentElement, "--short-side", `${Math.min(window.innerWidth, window.innerHeight) /100}px`);
     export const setTextContent = (element: HTMLElement, text: string) =>
     {
         if (element.textContent !== text)
