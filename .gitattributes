@@ -2,3 +2,4 @@ index.html linguist-generated=true
 **/*.d.ts linguist-generated=true
 **/*.js linguist-generated=true
 **/*.map linguist-generated=true
+web.manifest.json linguist-generated=true

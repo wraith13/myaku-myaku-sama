@@ -1,0 +1,20 @@
+{
+    "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+    "name": "Myaku-Myaku Sama",
+    "short_name": "Myaku-Myaku Sama",
+    "start_url": "https://wraith13.github.io/myaku-myaku-sama/",
+    "display": "standalone",
+    "background_color": "white",
+    "theme_color": "#E50012",
+    "description": "Myaku-Myaku Sama's pattern animation ( this web app is for study )",
+    "icons": [{
+        "src": "https://wraith13.github.io/myaku-myaku-sama/image/appicon.png",
+        "sizes": "1024x1024",
+        "type": "image/png"
+    }],
+    "lang": "en",
+    "prefer_related_applications": false,
+    "related_applications": [],
+    "scope": "https://wraith13.github.io/myaku-myaku-sama/",
+    "offline_access": true
+}

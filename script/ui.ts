@@ -153,6 +153,7 @@ export namespace UI
     {
         const isFullscreen = document.fullscreenElement || (<any>document).webkitFullscreenElement;
         fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
+        resize();
     };
     let styleRoundBarIndex = 0;
     export const updateStyleRoundBar = () =>
@@ -235,8 +236,11 @@ export namespace UI
     export const mousemove = () =>
         mouseMoveTimer.start(document.body, "mousemove", 3000);
     export const resize = () =>
+    {
         // Fallback for older environments
         setStyle(document.documentElement, "--short-side", `${Math.min(window.innerWidth, window.innerHeight) /100}px`);
+        console.log(`🔄 Resize: ${window.innerWidth}x${window.innerHeight}`);
+    };
     export const setTextContent = (element: HTMLElement, text: string) =>
     {
         if (element.textContent !== text)

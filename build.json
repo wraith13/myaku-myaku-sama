@@ -126,10 +126,49 @@
                 "npm run-script \"build script\""
             ]
         },
+        "web.manifest": {
+            "template": {
+                "path": "./web.manifest.template.json"
+            },
+            "output": {
+                "path": "./web.manifest.json"
+            },
+            "parameters": {
+                "__BACKGROUND_COLOR__": "white",
+                "__THEME_COLOR__": "#E50012",
+                "__DESCRIPTION__": {
+                    "json": "./resource/config.json",
+                    "value": "description"
+                },
+                "__LANG__": "en"
+            }
+        },
+        "service-worker": {
+            "template": {
+                "path": "./sw.js.template"
+            },
+            "output": {
+                "path": "./sw.js"
+            },
+            "parameters": {
+                "__BUILD_TIMESTAMP_YYYYMMDDHHMMSS__": {
+                    "call": "timestamp_yyyymmddhhmmss"
+                },
+                "__ASSETS__": {
+                    "path": "./resource/assets.json"
+                }
+            }
+        },
         "all": {
             "steps": [
                 {
                     "references": "script"
+                },
+                {
+                    "references": "web.manifest"
+                },
+                {
+                    "references": "service-worker"
                 },
                 {
                     "references": "html"

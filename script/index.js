@@ -52,20 +52,50 @@ define("resource/config", [], {
             "main": "#000000",
             "accent": "#72716F"
         },
-        "splatoon": {
-            "base": "#000000",
-            "main": "#FD5900",
-            "accent": "#0020FE"
+        "silver-snow": {
+            "base": "#FFFFFF",
+            "main": "#C0C0C0",
+            "accent": "#808080"
         },
-        "splatoon2": {
-            "base": "#000000",
-            "main": "#1AD71A",
-            "accent": "#F32C7F"
+        "cherry": {
+            "base": "#FFFFFF",
+            "main": "#FF69B4",
+            "accent": "#FF1493"
         },
-        "splatoon3": {
-            "base": "#000000",
-            "main": "#5F3BFE",
-            "accent": "#EBFF37"
+        "orchid-purple": {
+            "base": "#FFFFFF",
+            "main": "#800080",
+            "accent": "#DA70D6"
+        },
+        "deep-sky": {
+            "base": "#FFFFFF",
+            "main": "#1E90FF",
+            "accent": "#00BFFF"
+        },
+        "summer-sea": {
+            "base": "#FFFFFF",
+            "main": "#00CED1",
+            "accent": "#20B2AA"
+        },
+        "lime-grass": {
+            "base": "#FFFFFF",
+            "main": "#32CD32",
+            "accent": "#7CFC00"
+        },
+        "shining-sun": {
+            "base": "#FFFFFF",
+            "main": "#FFD700",
+            "accent": "#FFA500"
+        },
+        "autumn-leaf": {
+            "base": "#FFFFFF",
+            "main": "#FF8C00",
+            "accent": "#FF4500"
+        },
+        "crimzon-rose": {
+            "base": "#FFFFFF",
+            "main": "#DC143C",
+            "accent": "#B22222"
         }
     },
     "eye": {
@@ -633,6 +663,7 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         UI.updateFullscreenState = function () {
             var isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
             UI.fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
+            UI.resize();
         };
         var styleRoundBarIndex = 0;
         UI.updateStyleRoundBar = function () {
@@ -698,7 +729,8 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         };
         UI.resize = function () {
             // Fallback for older environments
-            return UI.setStyle(document.documentElement, "--short-side", "".concat(Math.min(window.innerWidth, window.innerHeight) / 100, "px"));
+            UI.setStyle(document.documentElement, "--short-side", "".concat(Math.min(window.innerWidth, window.innerHeight) / 100, "px"));
+            console.log("\uD83D\uDD04 Resize: ".concat(window.innerWidth, "x").concat(window.innerHeight));
         };
         UI.setTextContent = function (element, text) {
             if (element.textContent !== text) {
@@ -1115,78 +1147,65 @@ define("script/event", ["require", "exports", "script/model", "script/render", "
     var Event;
     (function (Event) {
         Event.initialize = function () {
+            window.addEventListener("resize", ui_2.UI.resize);
+            window.addEventListener("orientationchange", ui_2.UI.resize);
             document.addEventListener("fullscreenchange", ui_2.UI.updateFullscreenState);
             document.addEventListener("webkitfullscreenchange", ui_2.UI.updateFullscreenState);
             document.addEventListener("mousemove", ui_2.UI.mousemove);
-            document.addEventListener("resize", ui_2.UI.resize);
-            document.addEventListener("orientationchange", ui_2.UI.resize);
-            document.addEventListener("keydown", function (event) {
-                switch (event.key.toUpperCase()) {
-                    case "C":
+            var commandList = [
+                {
+                    key: "C",
+                    button: ui_2.UI.stylesButton,
+                    command: function (event) {
                         ui_2.UI.toggleStyle(!event.shiftKey);
                         render_1.Render.updateStyleColors();
-                        break;
-                    case "Q":
+                    }
+                },
+                {
+                    key: "Q",
+                    button: ui_2.UI.hdButton,
+                    command: function (event) {
                         model_3.Model.togglePixelRatioMode(!event.shiftKey);
                         ui_2.UI.updateHdRoundBar();
-                        break;
-                    case "W":
-                        ui_2.UI.toggleWatchDisplay(!event.shiftKey);
-                        break;
-                    case "S":
-                        ui_2.UI.toggleFpsDisplay();
-                        break;
-                    case "F":
-                        if (ui_2.UI.fullscreenEnabled) {
-                            ui_2.UI.toggleFullScreen();
-                        }
-                        break;
+                    }
+                },
+                {
+                    key: "W",
+                    button: ui_2.UI.watchButton,
+                    command: function (event) { return ui_2.UI.toggleWatchDisplay(!event.shiftKey); }
+                },
+                {
+                    key: "S",
+                    button: ui_2.UI.fpsButton,
+                    command: function () { return ui_2.UI.toggleFpsDisplay(); }
+                },
+                {
+                    key: "F",
+                    button: ui_2.UI.fullscreenButton,
+                    command: function () { return ui_2.UI.toggleFullScreen(); }
+                },
+                {
+                    button: ui_2.UI.jumpOutButton,
+                    command: function () { return window.open(window.location.href, "_blank"); }
+                }
+            ];
+            document.addEventListener("keydown", function (event) {
+                if (!(event.metaKey || event.ctrlKey || event.altKey)) {
+                    var command = commandList.find(function (cmd) { return cmd.key === event.key.toUpperCase(); });
+                    if (command) {
+                        event.preventDefault();
+                        command.command(event);
+                    }
                 }
                 ui_2.UI.mousemove();
             });
-            ui_2.UI.stylesButton.addEventListener("click", function (event) {
-                event.stopPropagation();
-                ui_2.UI.toggleStyle(!event.shiftKey);
-                render_1.Render.updateStyleColors();
-            });
-            ui_2.UI.hdButton.addEventListener("click", function (event) {
-                event.stopPropagation();
-                model_3.Model.togglePixelRatioMode(!event.shiftKey);
-                ui_2.UI.updateHdRoundBar();
-            });
-            ui_2.UI.watchButton.addEventListener("click", function (event) {
-                event.stopPropagation();
-                ui_2.UI.toggleWatchDisplay(!event.shiftKey);
-            });
-            ui_2.UI.fpsButton.addEventListener("click", function (event) {
-                event.stopPropagation();
-                ui_2.UI.toggleFpsDisplay();
-            });
-            ui_2.UI.fullscreenButton.addEventListener("click", function (event) {
-                event.stopPropagation();
-                var elem = document.documentElement;
-                if (document.fullscreenEnabled) {
-                    if (!document.fullscreenElement) {
-                        elem.requestFullscreen();
-                    }
-                    else {
-                        document.exitFullscreen();
-                    }
-                }
-                else {
-                    if (document.webkitFullscreenEnabled) {
-                        if (!document.webkitFullscreenElement) {
-                            elem.webkitRequestFullscreen();
-                        }
-                        else {
-                            document.webkitExitFullscreen();
-                        }
-                    }
-                }
-            });
-            ui_2.UI.jumpOutButton.addEventListener("click", function (event) {
-                event.stopPropagation();
-                window.open(window.location.href, "_blank");
+            commandList.forEach(function (command) {
+                command.button.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    command.command(event);
+                    ui_2.UI.mousemove();
+                });
             });
         };
     })(Event || (exports.Event = Event = {}));

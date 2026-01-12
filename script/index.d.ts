@@ -138,7 +138,7 @@ declare module "script/ui" {
             isInTimer: () => boolean;
         }
         const mousemove: () => void;
-        const resize: () => boolean;
+        const resize: () => void;
         const setTextContent: (element: HTMLElement, text: string) => boolean;
         const setAttribute: (element: HTMLElement, name: string, value: string | undefined) => boolean;
         const setStyle: (element: HTMLElement, name: string, value: string | undefined) => boolean;
