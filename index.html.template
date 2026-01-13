@@ -61,7 +61,7 @@ __STYLE__
 </div>
 <div id="fps" aria-hidden="true"></div>
 <div id="control-panel" aria-label="Control Panel" title="Control Panel">
-    <button id="styles-button" class="round-bar" aria-label="Change Style" title="Change Style(C)" aria-keyshortcuts="C">__PALETTE_ICON___</button>
+    <button id="coloring-button" class="round-bar" aria-label="Change Coloring" title="Change Coloring(C)" aria-keyshortcuts="C">__PALETTE_ICON___</button>
     <button id="hd-button" class="round-bar" aria-label="Change Quality" title="Change Quality(Q)" aria-keyshortcuts="Q">__HD_ICON___</button>
     <button id="watch-button" class="round-bar" aria-label="Show Watch" title="Show Watch(W)" aria-keyshortcuts="W">__WATCH_ICON___</button>
     <button id="fps-button" aria-label="Show FPS" title="Show FPS(S)" aria-keyshortcuts="S">__METER_ICON___</button>

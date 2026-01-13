@@ -8,7 +8,7 @@
     {
         "marginRate": 0.9
     },
-    "styles":
+    "coloring":
     {
         "regular": {
             "base": "#FFFFFF",
@@ -35,10 +35,15 @@
             "main": "#800080",
             "accent": "#DA70D6"
         },
-        "deep-sky": {
+        "violet-night": {
             "base": "#FFFFFF",
-            "main": "#1E90FF",
-            "accent": "#00BFFF"
+            "main": "#4B0082",
+            "accent": "#8A2BE2"
+        },
+        "sapphire-blue": {
+            "base": "#FFFFFF",
+            "main": "#0000FF",
+            "accent": "#1E90FF"
         },
         "summer-sea": {
             "base": "#FFFFFF",
@@ -54,6 +59,11 @@
             "base": "#FFFFFF",
             "main": "#FFD700",
             "accent": "#FFA500"
+        },
+        "milk-chocolate": {
+            "base": "#FFFFFF",
+            "main": "#D2691E",
+            "accent": "#8B4513"
         },
         "autumn-leaf": {
             "base": "#FFFFFF",

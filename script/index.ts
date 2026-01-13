@@ -8,7 +8,7 @@ import { Watch } from "./watch";
 Url.initialize();
 Event.initialize();
 UI.fpsDiv.style.display = "none";
-UI.updateStyleRoundBar();
+UI.updateColoringRoundBar();
 UI.updateHdRoundBar();
 UI.updateWatchVisibility();
 UI.fullscreenButton.style.display = UI.fullscreenEnabled ? "block" : "none";

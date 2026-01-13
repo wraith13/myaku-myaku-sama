@@ -14,11 +14,11 @@ export namespace Event
         [
             {
                 key: "C",
-                button: UI.stylesButton,
+                button: UI.coloringButton,
                 command: event =>
                 {
-                    UI.toggleStyle( ! event.shiftKey);
-                    Render.updateStyleColors();
+                    UI.toggleColoring( ! event.shiftKey);
+                    Render.updateColoring();
                 }
             },
             {

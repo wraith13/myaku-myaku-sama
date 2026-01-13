@@ -3,60 +3,101 @@ import { UI } from "./ui";
 import config from "@resource/config.json";
 export namespace Render
 {
-    const getStyle = (): (typeof config.styles)[keyof typeof config.styles] => config.styles[UI.style];
-    const getColors = (): string[] =>
+    type Coloring = (typeof config.coloring)[keyof typeof config.coloring];
+    const isRandomColoring = (): boolean =>
+        undefined === config.coloring[UI.coloring as keyof typeof config.coloring];
+    const getColoring = (): Coloring =>
     {
-        const style = getStyle();
-        return [ style.base, style.main, style.accent, ];
+        if (isRandomColoring())
+        {
+            let index = Math.floor(Math.random() * Object.keys(config.coloring).length);
+            let key = Object.keys(config.coloring)[index] as keyof typeof config.coloring;
+            let result = config.coloring[key];
+            if (isSameColoring(newColors, result))
+            {
+                index = (index + 1) % Object.keys(config.coloring).length;
+                key = Object.keys(config.coloring)[index] as keyof typeof config.coloring;
+                result = config.coloring[key];
+            }
+            return result;
+        }
+        else
+        {
+            return config.coloring[UI.coloring as keyof typeof config.coloring];
+        }
     };
-    let changedStyleAt = 0;
-    let oldColors: string[] = getColors();
-    let newColors: string[] = getColors();
-    export const updateStyleColors = () =>
+    const getColors = (): Coloring =>
+    {
+        const coloring = getColoring();
+        return { base: coloring.base, main: coloring.main, accent: coloring.accent, };
+    };
+    let changedColoringAt = 0;
+    let oldColors: Coloring = getColors();
+    let newColors: Coloring = getColors();
+    const isSameColoring = (a: Coloring, b: Coloring): boolean =>
+        a.base === b.base && a.main === b.main && a.accent === b.accent;
+    export const updateColoring = () =>
     {
         const colors = getColors();
-        if ( ! colors.every( (color, index) => color === newColors[index]))
+        if ( ! isSameColoring(newColors, colors))
         {
             oldColors = getCurrentColors();
             newColors = colors;
-            changedStyleAt = performance.now();
+            changedColoringAt = performance.now();
         }
     };
+    const mixColor = (oldColor: string, newColor: string, rate: number): string =>
+    {
+        const boost = 1.0 +0.4 * Math.sin(Math.PI * rate); // Adjustment to reduce dullness of intermediate colors
+        const oldR = parseInt(oldColor.slice(1, 3), 16);
+        const oldG = parseInt(oldColor.slice(3, 5), 16);
+        const oldB = parseInt(oldColor.slice(5, 7), 16);
+        const newR = parseInt(newColor.slice(1, 3), 16);
+        const newG = parseInt(newColor.slice(3, 5), 16);
+        const newB = parseInt(newColor.slice(5, 7), 16);
+        const currR = Math.round(Math.min((oldR + (newR -oldR) *rate) *boost, 255));
+        const currG = Math.round(Math.min((oldG + (newG -oldG) *rate) *boost, 255));
+        const currB = Math.round(Math.min((oldB + (newB -oldB) *rate) *boost, 255));
+        return `#${currR.toString(16).padStart(2, "0")}${currG.toString(16).padStart(2, "0")}${currB.toString(16).padStart(2, "0")}`;
+    };
+    const mixColors = (oldColors: Coloring, newColors: Coloring, rate: number): Coloring =>
+    ({
+        base: mixColor(oldColors.base, newColors.base, rate),
+        main: mixColor(oldColors.main, newColors.main, rate),
+        accent: mixColor(oldColors.accent, newColors.accent, rate),
+    });
     const getCurrentColors = () =>
     {
         const now = performance.now();
-        const span = 500;
-        const rate = (now -changedStyleAt) /span;
+        const span = isRandomColoring() ? 5000: 500;
+        const rate = (now -changedColoringAt) /span;
+        const randomColoringUnitSpan = 60000;
+        if (isRandomColoring() && randomColoringUnitSpan < (now -changedColoringAt))
+        {
+            setTimeout
+            (
+                () =>
+                {
+                    if (isRandomColoring() && randomColoringUnitSpan < (now -changedColoringAt))
+                    {
+                        updateColoring();
+                    }
+                },
+                0
+            );
+        }
         if (1.0 <= rate)
         {
             return newColors;
         }
         else
+        if (rate <= 0.0)
         {
-            return oldColors.map
-            (
-                (oldColor, index) =>
-                {
-                    const newColor = newColors[index];
-                    if (oldColor === newColor)
-                    {
-                        return oldColor;
-                    }
-                    else
-                    {
-                        const oldR = parseInt(oldColor.slice(1, 3), 16);
-                        const oldG = parseInt(oldColor.slice(3, 5), 16);
-                        const oldB = parseInt(oldColor.slice(5, 7), 16);
-                        const newR = parseInt(newColor.slice(1, 3), 16);
-                        const newG = parseInt(newColor.slice(3, 5), 16);
-                        const newB = parseInt(newColor.slice(5, 7), 16);
-                        const currR = Math.round(oldR + (newR -oldR) *rate);
-                        const currG = Math.round(oldG + (newG -oldG) *rate);
-                        const currB = Math.round(oldB + (newB -oldB) *rate);
-                        return `#${currR.toString(16).padStart(2, "0")}${currG.toString(16).padStart(2, "0")}${currB.toString(16).padStart(2, "0")}`;
-                    }
-                }
-            );
+            return oldColors;
+        }
+        else
+        {
+            return mixColors(oldColors, newColors, rate);
         }
     };
     const context = UI.canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -276,7 +317,7 @@ export namespace Render
             context.closePath();
         }
     };
-    const drawLayer = (layer: Model.Layer, color: string, colors: string[]) =>
+    const drawLayer = (layer: Model.Layer, color: string, coloring: Coloring) =>
     {
         const canvasCircle = getCanvasCircle();
         const bodies = layer.units.map(u => u.body)
@@ -286,29 +327,24 @@ export namespace Render
         bodies.forEach(body => drawCircle(body, color));
         if (layer === Model.Data.main)
         {
-            const baseColor = colors[0];
-            const accentColor = colors[2];
             const whites = layer.units
                 .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.body))
                 .map(u => mappingCircle(mappingCircle(canvasCircle, u.body), u.eye!.white));
-            drawFusionPath(whites, baseColor);
-            whites.forEach(white => drawCircle(white, baseColor));
+            drawFusionPath(whites, coloring.base);
+            whites.forEach(white => drawCircle(white, coloring.base));
             const irises = layer.units
                 .filter(u => undefined !== u.eye && ! Model.isOutOfCanvas(u.body))
                 .map(u => mappingCircle(mappingCircle(canvasCircle, u.body), u.eye!.iris));
-            drawFusionPath(irises, accentColor);
-            irises.forEach(iris => drawCircle(iris, accentColor));
+            drawFusionPath(irises, coloring.accent);
+            irises.forEach(iris => drawCircle(iris, coloring.accent));
         }
     };
     export const draw = () =>
     {
-        const colors = getCurrentColors();
-        const baseColor = colors[0];
-        const mainColor = colors[1];
-        const accentColor = colors[2];
-        context.fillStyle = baseColor;
+        const coloring = getCurrentColors();
+        context.fillStyle = coloring.base;
         context.fillRect(0, 0, UI.canvas.width, UI.canvas.height);
-        drawLayer(Model.Data.accent, accentColor, colors);
-        drawLayer(Model.Data.main, mainColor, colors);
+        drawLayer(Model.Data.accent, coloring.accent, coloring);
+        drawLayer(Model.Data.main, coloring.main, coloring);
     };
 }

@@ -41,7 +41,7 @@ define("resource/config", [], {
     "rendering": {
         "marginRate": 0.9
     },
-    "styles": {
+    "coloring": {
         "regular": {
             "base": "#FFFFFF",
             "main": "#E50012",
@@ -67,10 +67,15 @@ define("resource/config", [], {
             "main": "#800080",
             "accent": "#DA70D6"
         },
-        "deep-sky": {
+        "violet-night": {
             "base": "#FFFFFF",
-            "main": "#1E90FF",
-            "accent": "#00BFFF"
+            "main": "#4B0082",
+            "accent": "#8A2BE2"
+        },
+        "sapphire-blue": {
+            "base": "#FFFFFF",
+            "main": "#0000FF",
+            "accent": "#1E90FF"
         },
         "summer-sea": {
             "base": "#FFFFFF",
@@ -86,6 +91,11 @@ define("resource/config", [], {
             "base": "#FFFFFF",
             "main": "#FFD700",
             "accent": "#FFA500"
+        },
+        "milk-chocolate": {
+            "base": "#FFFFFF",
+            "main": "#D2691E",
+            "accent": "#8B4513"
         },
         "autumn-leaf": {
             "base": "#FFFFFF",
@@ -562,7 +572,7 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         UI.time = getElementById("time", "time");
         UI.date = getElementById("time", "date");
         UI.fpsDiv = getElementById("div", "fps");
-        UI.stylesButton = getElementById("button", "styles-button");
+        UI.coloringButton = getElementById("button", "coloring-button");
         UI.hdButton = getElementById("button", "hd-button");
         UI.watchButton = getElementById("button", "watch-button");
         UI.fpsButton = getElementById("button", "fps-button");
@@ -601,6 +611,7 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
             }
         };
         UI.updateRoundBar = function (button, properties) {
+            console.log("updateRoundBar", button, properties);
             /* For older environments where the 'initial-value' setting isn't supported, all values must be specified. */
             UI.setStyle(button, "--low", properties.low.toFixed(3));
             UI.setStyle(button, "--high", properties.high.toFixed(3));
@@ -665,33 +676,41 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
             UI.fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
             UI.resize();
         };
-        var styleRoundBarIndex = 0;
-        UI.updateStyleRoundBar = function () {
-            var keys = Object.keys(config_json_2.default.styles);
-            UI.updateRoundBar(UI.stylesButton, {
-                low: 0 / keys.length,
-                high: 1 / keys.length,
-                rotate: styleRoundBarIndex / keys.length,
-            });
+        var coloringRoundBarIndex = 0;
+        var mod = function (n, m) { return ((n % m) + m) % m; };
+        UI.updateColoringRoundBar = function () {
+            var keys = Object.keys(config_json_2.default.coloring).concat("random");
+            var max = keys.length - 1;
+            UI.updateRoundBar(UI.coloringButton, max <= mod(coloringRoundBarIndex, keys.length) ?
+                {
+                    low: 0,
+                    high: 1,
+                    rotate: (coloringRoundBarIndex - Math.floor(coloringRoundBarIndex / keys.length)) / max,
+                } :
+                {
+                    low: 0 / max,
+                    high: 1 / max,
+                    rotate: (coloringRoundBarIndex - Math.floor(coloringRoundBarIndex / keys.length)) / max,
+                });
         };
-        UI.style = "regular";
-        UI.toggleStyle = function (style) {
-            var keys = Object.keys(config_json_2.default.styles);
+        UI.coloring = "regular";
+        UI.toggleColoring = function (style) {
+            var keys = Object.keys(config_json_2.default.coloring).concat("random");
             if (typeof style === "boolean" || undefined === style) {
-                var currentIndex = keys.indexOf(UI.style);
+                var currentIndex = keys.indexOf(UI.coloring);
                 var nextIndex = (keys.length + currentIndex + (false !== style ? 1 : -1)) % keys.length;
                 console.log({ currentIndex: currentIndex, nextIndex: nextIndex, keysLength: keys.length, style: style });
-                UI.style = keys[nextIndex];
-                styleRoundBarIndex += false !== style ? 1 : -1;
+                UI.coloring = keys[nextIndex];
+                coloringRoundBarIndex += false !== style ? 1 : -1;
             }
             else {
                 if (keys.includes(style)) {
-                    UI.style = style;
-                    styleRoundBarIndex = keys.indexOf(style);
+                    UI.coloring = style;
+                    coloringRoundBarIndex = keys.indexOf(style);
                 }
             }
-            UI.updateStyleRoundBar();
-            console.log("\uD83C\uDFA8 Style changed: ".concat(UI.style));
+            UI.updateColoringRoundBar();
+            console.log("\uD83C\uDFA8 Coloring changed: ".concat(UI.coloring));
         };
         UI.updateHdRoundBar = function () { return UI.updateRoundBar(UI.hdButton, {
             low: 0 / model_1.Model.PixelRatioModeKeys.length,
@@ -774,48 +793,83 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
     config_json_3 = __importDefault(config_json_3);
     var Render;
     (function (Render) {
-        var getStyle = function () { return config_json_3.default.styles[ui_1.UI.style]; };
-        var getColors = function () {
-            var style = getStyle();
-            return [style.base, style.main, style.accent,];
+        var isRandomColoring = function () {
+            return undefined === config_json_3.default.coloring[ui_1.UI.coloring];
         };
-        var changedStyleAt = 0;
+        var getColoring = function () {
+            if (isRandomColoring()) {
+                var index = Math.floor(Math.random() * Object.keys(config_json_3.default.coloring).length);
+                var key = Object.keys(config_json_3.default.coloring)[index];
+                var result = config_json_3.default.coloring[key];
+                if (isSameColoring(newColors, result)) {
+                    index = (index + 1) % Object.keys(config_json_3.default.coloring).length;
+                    key = Object.keys(config_json_3.default.coloring)[index];
+                    result = config_json_3.default.coloring[key];
+                }
+                return result;
+            }
+            else {
+                return config_json_3.default.coloring[ui_1.UI.coloring];
+            }
+        };
+        var getColors = function () {
+            var coloring = getColoring();
+            return { base: coloring.base, main: coloring.main, accent: coloring.accent, };
+        };
+        var changedColoringAt = 0;
         var oldColors = getColors();
         var newColors = getColors();
-        Render.updateStyleColors = function () {
+        var isSameColoring = function (a, b) {
+            return a.base === b.base && a.main === b.main && a.accent === b.accent;
+        };
+        Render.updateColoring = function () {
             var colors = getColors();
-            if (!colors.every(function (color, index) { return color === newColors[index]; })) {
+            if (!isSameColoring(newColors, colors)) {
                 oldColors = getCurrentColors();
                 newColors = colors;
-                changedStyleAt = performance.now();
+                changedColoringAt = performance.now();
             }
+        };
+        var mixColor = function (oldColor, newColor, rate) {
+            var boost = 1.0 + 0.4 * Math.sin(Math.PI * rate); // Adjustment to reduce dullness of intermediate colors
+            var oldR = parseInt(oldColor.slice(1, 3), 16);
+            var oldG = parseInt(oldColor.slice(3, 5), 16);
+            var oldB = parseInt(oldColor.slice(5, 7), 16);
+            var newR = parseInt(newColor.slice(1, 3), 16);
+            var newG = parseInt(newColor.slice(3, 5), 16);
+            var newB = parseInt(newColor.slice(5, 7), 16);
+            var currR = Math.round(Math.min((oldR + (newR - oldR) * rate) * boost, 255));
+            var currG = Math.round(Math.min((oldG + (newG - oldG) * rate) * boost, 255));
+            var currB = Math.round(Math.min((oldB + (newB - oldB) * rate) * boost, 255));
+            return "#".concat(currR.toString(16).padStart(2, "0")).concat(currG.toString(16).padStart(2, "0")).concat(currB.toString(16).padStart(2, "0"));
+        };
+        var mixColors = function (oldColors, newColors, rate) {
+            return ({
+                base: mixColor(oldColors.base, newColors.base, rate),
+                main: mixColor(oldColors.main, newColors.main, rate),
+                accent: mixColor(oldColors.accent, newColors.accent, rate),
+            });
         };
         var getCurrentColors = function () {
             var now = performance.now();
-            var span = 500;
-            var rate = (now - changedStyleAt) / span;
+            var span = isRandomColoring() ? 5000 : 500;
+            var rate = (now - changedColoringAt) / span;
+            var randomColoringUnitSpan = 60000;
+            if (isRandomColoring() && randomColoringUnitSpan < (now - changedColoringAt)) {
+                setTimeout(function () {
+                    if (isRandomColoring() && randomColoringUnitSpan < (now - changedColoringAt)) {
+                        Render.updateColoring();
+                    }
+                }, 0);
+            }
             if (1.0 <= rate) {
                 return newColors;
             }
+            else if (rate <= 0.0) {
+                return oldColors;
+            }
             else {
-                return oldColors.map(function (oldColor, index) {
-                    var newColor = newColors[index];
-                    if (oldColor === newColor) {
-                        return oldColor;
-                    }
-                    else {
-                        var oldR = parseInt(oldColor.slice(1, 3), 16);
-                        var oldG = parseInt(oldColor.slice(3, 5), 16);
-                        var oldB = parseInt(oldColor.slice(5, 7), 16);
-                        var newR = parseInt(newColor.slice(1, 3), 16);
-                        var newG = parseInt(newColor.slice(3, 5), 16);
-                        var newB = parseInt(newColor.slice(5, 7), 16);
-                        var currR = Math.round(oldR + (newR - oldR) * rate);
-                        var currG = Math.round(oldG + (newG - oldG) * rate);
-                        var currB = Math.round(oldB + (newB - oldB) * rate);
-                        return "#".concat(currR.toString(16).padStart(2, "0")).concat(currG.toString(16).padStart(2, "0")).concat(currB.toString(16).padStart(2, "0"));
-                    }
-                });
+                return mixColors(oldColors, newColors, rate);
             }
         };
         var context = ui_1.UI.canvas.getContext("2d");
@@ -992,7 +1046,7 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
                 context.closePath();
             }
         };
-        var drawLayer = function (layer, color, colors) {
+        var drawLayer = function (layer, color, coloring) {
             var canvasCircle = Render.getCanvasCircle();
             var bodies = layer.units.map(function (u) { return u.body; })
                 .filter(function (c) { return !model_2.Model.isOutOfCanvas(c); })
@@ -1000,29 +1054,24 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
             drawFusionPath(bodies, color);
             bodies.forEach(function (body) { return drawCircle(body, color); });
             if (layer === model_2.Model.Data.main) {
-                var baseColor_1 = colors[0];
-                var accentColor_1 = colors[2];
                 var whites = layer.units
                     .filter(function (u) { return undefined !== u.eye && !model_2.Model.isOutOfCanvas(u.body); })
                     .map(function (u) { return mappingCircle(mappingCircle(canvasCircle, u.body), u.eye.white); });
-                drawFusionPath(whites, baseColor_1);
-                whites.forEach(function (white) { return drawCircle(white, baseColor_1); });
+                drawFusionPath(whites, coloring.base);
+                whites.forEach(function (white) { return drawCircle(white, coloring.base); });
                 var irises = layer.units
                     .filter(function (u) { return undefined !== u.eye && !model_2.Model.isOutOfCanvas(u.body); })
                     .map(function (u) { return mappingCircle(mappingCircle(canvasCircle, u.body), u.eye.iris); });
-                drawFusionPath(irises, accentColor_1);
-                irises.forEach(function (iris) { return drawCircle(iris, accentColor_1); });
+                drawFusionPath(irises, coloring.accent);
+                irises.forEach(function (iris) { return drawCircle(iris, coloring.accent); });
             }
         };
         Render.draw = function () {
-            var colors = getCurrentColors();
-            var baseColor = colors[0];
-            var mainColor = colors[1];
-            var accentColor = colors[2];
-            context.fillStyle = baseColor;
+            var coloring = getCurrentColors();
+            context.fillStyle = coloring.base;
             context.fillRect(0, 0, ui_1.UI.canvas.width, ui_1.UI.canvas.height);
-            drawLayer(model_2.Model.Data.accent, accentColor, colors);
-            drawLayer(model_2.Model.Data.main, mainColor, colors);
+            drawLayer(model_2.Model.Data.accent, coloring.accent, coloring);
+            drawLayer(model_2.Model.Data.main, coloring.main, coloring);
         };
     })(Render || (exports.Render = Render = {}));
 });
@@ -1155,10 +1204,10 @@ define("script/event", ["require", "exports", "script/model", "script/render", "
             var commandList = [
                 {
                     key: "C",
-                    button: ui_2.UI.stylesButton,
+                    button: ui_2.UI.coloringButton,
                     command: function (event) {
-                        ui_2.UI.toggleStyle(!event.shiftKey);
-                        render_1.Render.updateStyleColors();
+                        ui_2.UI.toggleColoring(!event.shiftKey);
+                        render_1.Render.updateColoring();
                     }
                 },
                 {
@@ -1264,7 +1313,7 @@ define("script/index", ["require", "exports", "script/url", "script/model", "scr
     url_2.Url.initialize();
     event_1.Event.initialize();
     ui_4.UI.fpsDiv.style.display = "none";
-    ui_4.UI.updateStyleRoundBar();
+    ui_4.UI.updateColoringRoundBar();
     ui_4.UI.updateHdRoundBar();
     ui_4.UI.updateWatchVisibility();
     ui_4.UI.fullscreenButton.style.display = ui_4.UI.fullscreenEnabled ? "block" : "none";

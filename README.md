@@ -17,9 +17,6 @@ https://wraith13.github.io/myaku-myaku-sama/
 > [!NOTE]
 > This project is for study.
 
-> [!WARNING]
-> 🚧 UNDERCONSTRUCTION 🚧
-
 ## 💬 About Myaku-Myaku Sama
 
 See wikipedia: https://en.wikipedia.org/wiki/Myaku-Myaku
@@ -32,7 +29,7 @@ Against that cultural background, Japanese internet users commonly refer to Myak
 
 ## ⌨️ Keyboard Shortcuts
 
-- <kbd>C</kbd>: Change Style ( +<kbd>Shift</kbd> Reverse )
+- <kbd>C</kbd>: Change Coloring ( +<kbd>Shift</kbd> Reverse )
 - <kbd>Q</kbd>: Change Quality ( +<kbd>Shift</kbd> Reverse )
 - <kbd>W</kbd>: Show Watch ( +<kbd>Shift</kbd> Reverse )
 - <kbd>S</kbd>: Show FPS

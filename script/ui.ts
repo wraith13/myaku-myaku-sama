@@ -20,7 +20,7 @@ export namespace UI
     export const time = getElementById("time", "time");
     export const date = getElementById("time", "date");
     export const fpsDiv = getElementById("div", "fps");
-    export const stylesButton = getElementById("button", "styles-button");
+    export const coloringButton = getElementById("button", "coloring-button");
     export const hdButton = getElementById("button", "hd-button");
     export const watchButton = getElementById("button", "watch-button");
     export const fpsButton = getElementById("button", "fps-button");
@@ -71,6 +71,7 @@ export namespace UI
     };
     export const updateRoundBar = (button: HTMLButtonElement, properties: { low: number, high: number, rotate: number, }) =>
     {
+        console.log("updateRoundBar", button, properties);
         /* For older environments where the 'initial-value' setting isn't supported, all values must be specified. */
         setStyle(button, "--low", properties.low.toFixed(3));
         setStyle(button, "--high", properties.high.toFixed(3));
@@ -155,42 +156,51 @@ export namespace UI
         fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
         resize();
     };
-    let styleRoundBarIndex = 0;
-    export const updateStyleRoundBar = () =>
+    let coloringRoundBarIndex = 0;
+    const mod = (n: number, m: number): number => ((n % m) + m) % m;
+    export const updateColoringRoundBar = () =>
     {
-        const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
+        const keys = Object.keys(config.coloring).concat("random") as ColoringType[];
+        const max = keys.length -1;
         updateRoundBar
         (
-            stylesButton,
+            coloringButton,
+            max <= mod(coloringRoundBarIndex, keys.length) ?
             {
-                low: 0 /keys.length,
-                high: 1 /keys.length,
-                rotate: styleRoundBarIndex /keys.length,
+                low: 0,
+                high: 1,
+                rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
+            }:
+            {
+                low: 0 /max,
+                high: 1 /max,
+                rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
             }
         );
     };
-    export let style = "regular" as keyof typeof config["styles"];
-    export const toggleStyle = (style?: boolean | keyof typeof config["styles"]) =>
+    export type ColoringType = keyof typeof config["coloring"] | "random";
+    export let coloring = "regular" as ColoringType;
+    export const toggleColoring = (style?: boolean | keyof typeof config["coloring"]) =>
     {
-        const keys = Object.keys(config.styles) as (keyof typeof config["styles"])[];
+        const keys = Object.keys(config.coloring).concat("random") as ColoringType[];
         if (typeof style === "boolean" || undefined === style)
         {
-            const currentIndex = keys.indexOf(UI.style);
+            const currentIndex = keys.indexOf(UI.coloring);
             const nextIndex = (keys.length +currentIndex + (false !== style ? 1: -1)) %keys.length;
             console.log({currentIndex, nextIndex, keysLength: keys.length, style});
-            UI.style = keys[nextIndex];
-            styleRoundBarIndex += false !== style ? 1: -1;
+            UI.coloring = keys[nextIndex];
+            coloringRoundBarIndex += false !== style ? 1: -1;
         }
         else
         {
             if (keys.includes(style))
             {
-                UI.style = style;
-                styleRoundBarIndex = keys.indexOf(style);
+                UI.coloring = style;
+                coloringRoundBarIndex = keys.indexOf(style);
             }
         }
-        updateStyleRoundBar();
-        console.log(`🎨 Style changed: ${UI.style}`);
+        updateColoringRoundBar();
+        console.log(`🎨 Coloring changed: ${UI.coloring}`);
     };
     export const updateHdRoundBar = () => updateRoundBar
     (

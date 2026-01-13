@@ -104,7 +104,7 @@ declare module "script/ui" {
         const time: HTMLTimeElement;
         const date: HTMLTimeElement;
         const fpsDiv: HTMLDivElement;
-        const stylesButton: HTMLButtonElement;
+        const coloringButton: HTMLButtonElement;
         const hdButton: HTMLButtonElement;
         const watchButton: HTMLButtonElement;
         const fpsButton: HTMLButtonElement;
@@ -127,9 +127,10 @@ declare module "script/ui" {
         const toggleFpsDisplay: () => void;
         const toggleFullScreen: () => void;
         const updateFullscreenState: () => void;
-        const updateStyleRoundBar: () => void;
-        let style: keyof (typeof config)["styles"];
-        const toggleStyle: (style?: boolean | keyof (typeof config)["styles"]) => void;
+        const updateColoringRoundBar: () => void;
+        type ColoringType = keyof typeof config["coloring"] | "random";
+        let coloring: ColoringType;
+        const toggleColoring: (style?: boolean | keyof (typeof config)["coloring"]) => void;
         const updateHdRoundBar: () => void;
         class ToggleClassForWhileTimer {
             timer: ReturnType<typeof setTimeout> | undefined;
@@ -147,7 +148,7 @@ declare module "script/ui" {
 declare module "script/render" {
     import { Model } from "script/model";
     export namespace Render {
-        const updateStyleColors: () => void;
+        const updateColoring: () => void;
         const getCanvasCircle: () => Model.Circle;
         const draw: () => void;
     }
