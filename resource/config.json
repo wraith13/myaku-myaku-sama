@@ -6,7 +6,11 @@
     "noscriptMessage": "JavaScript is disabled. Please enable JavaScript.",
     "rendering":
     {
-        "marginRate": 0.9
+        "marginRate": 0.9,
+        "coloringRegularFadeDuration": 500,
+        "coloringRandomFadeDuration": 3000,
+        "randomColoringUnitDuration": 60000,
+        "antiDullnessBoost": 0.3
     },
     "coloring":
     {

@@ -39,7 +39,11 @@ define("resource/config", [], {
     "description": "Myaku-Myaku Sama's pattern animation ( this web app is for study )",
     "noscriptMessage": "JavaScript is disabled. Please enable JavaScript.",
     "rendering": {
-        "marginRate": 0.9
+        "marginRate": 0.9,
+        "coloringRegularFadeDuration": 500,
+        "coloringRandomFadeDuration": 3000,
+        "randomColoringUnitDuration": 60000,
+        "antiDullnessBoost": 0.3
     },
     "coloring": {
         "regular": {
@@ -831,7 +835,7 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
             }
         };
         var mixColor = function (oldColor, newColor, rate) {
-            var boost = 1.0 + 0.4 * Math.sin(Math.PI * rate); // Adjustment to reduce dullness of intermediate colors
+            var boost = 1.0 + (config_json_3.default.rendering.antiDullnessBoost * Math.sin(Math.PI * rate)); // Adjustment to reduce dullness of intermediate colors
             var oldR = parseInt(oldColor.slice(1, 3), 16);
             var oldG = parseInt(oldColor.slice(3, 5), 16);
             var oldB = parseInt(oldColor.slice(5, 7), 16);
@@ -852,16 +856,10 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
         };
         var getCurrentColors = function () {
             var now = performance.now();
-            var span = isRandomColoring() ? 5000 : 500;
+            var span = isRandomColoring() ?
+                config_json_3.default.rendering.coloringRandomFadeDuration :
+                config_json_3.default.rendering.coloringRegularFadeDuration;
             var rate = (now - changedColoringAt) / span;
-            var randomColoringUnitSpan = 60000;
-            if (isRandomColoring() && randomColoringUnitSpan < (now - changedColoringAt)) {
-                setTimeout(function () {
-                    if (isRandomColoring() && randomColoringUnitSpan < (now - changedColoringAt)) {
-                        Render.updateColoring();
-                    }
-                }, 0);
-            }
             if (1.0 <= rate) {
                 return newColors;
             }
@@ -1067,6 +1065,9 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
             }
         };
         Render.draw = function () {
+            if (isRandomColoring() && config_json_3.default.rendering.randomColoringUnitDuration < (performance.now() - changedColoringAt)) {
+                Render.updateColoring();
+            }
             var coloring = getCurrentColors();
             context.fillStyle = coloring.base;
             context.fillRect(0, 0, ui_1.UI.canvas.width, ui_1.UI.canvas.height);

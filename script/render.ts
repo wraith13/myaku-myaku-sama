@@ -48,7 +48,7 @@ export namespace Render
     };
     const mixColor = (oldColor: string, newColor: string, rate: number): string =>
     {
-        const boost = 1.0 +0.4 * Math.sin(Math.PI * rate); // Adjustment to reduce dullness of intermediate colors
+        const boost = 1.0 +(config.rendering.antiDullnessBoost * Math.sin(Math.PI * rate)); // Adjustment to reduce dullness of intermediate colors
         const oldR = parseInt(oldColor.slice(1, 3), 16);
         const oldG = parseInt(oldColor.slice(3, 5), 16);
         const oldB = parseInt(oldColor.slice(5, 7), 16);
@@ -69,23 +69,10 @@ export namespace Render
     const getCurrentColors = () =>
     {
         const now = performance.now();
-        const span = isRandomColoring() ? 5000: 500;
+        const span = isRandomColoring() ?
+            config.rendering.coloringRandomFadeDuration:
+            config.rendering.coloringRegularFadeDuration;
         const rate = (now -changedColoringAt) /span;
-        const randomColoringUnitSpan = 60000;
-        if (isRandomColoring() && randomColoringUnitSpan < (now -changedColoringAt))
-        {
-            setTimeout
-            (
-                () =>
-                {
-                    if (isRandomColoring() && randomColoringUnitSpan < (now -changedColoringAt))
-                    {
-                        updateColoring();
-                    }
-                },
-                0
-            );
-        }
         if (1.0 <= rate)
         {
             return newColors;
@@ -341,6 +328,10 @@ export namespace Render
     };
     export const draw = () =>
     {
+        if (isRandomColoring() && config.rendering.randomColoringUnitDuration < (performance.now() -changedColoringAt))
+        {
+            updateColoring();
+        }
         const coloring = getCurrentColors();
         context.fillStyle = coloring.base;
         context.fillRect(0, 0, UI.canvas.width, UI.canvas.height);
