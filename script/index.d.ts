@@ -60,11 +60,14 @@ declare module "script/model" {
         }
         const Data: {
             previousTimestamp: number;
+            previousPitchedTimestamp: number;
+            pitch: number;
             width: number;
             height: number;
             accent: Layer;
             main: Layer;
         };
+        const setPitch: (value: number) => void;
         const isOutOfCanvas: (circle: Circle) => boolean;
         const sumValidAreas: (layer: Layer) => number;
         const sumAllAreas: (layer: Layer) => number;
@@ -97,7 +100,7 @@ declare module "script/model" {
         const getPixcelRatioLevel: () => number;
         const getPixcelRatio: () => number;
         const updateStretch: () => void;
-        const updateData: (timestamp: number) => void;
+        const updateData: (rawTimestamp: number) => void;
     }
 }
 declare module "script/ui" {
@@ -110,6 +113,7 @@ declare module "script/ui" {
         const fpsDiv: HTMLDivElement;
         const coloringButton: HTMLButtonElement;
         const hdButton: HTMLButtonElement;
+        const pitchButton: HTMLButtonElement;
         const watchButton: HTMLButtonElement;
         const fpsButton: HTMLButtonElement;
         const fullscreenButton: HTMLButtonElement;
@@ -126,16 +130,18 @@ declare module "script/ui" {
             high: number;
             rotate: number;
         }) => void;
-        const updateWatchRoundBar: () => void;
-        const toggleWatchDisplay: (value?: boolean | WatchColor) => void;
-        const toggleFpsDisplay: () => void;
-        const toggleFullScreen: () => void;
-        const updateFullscreenState: () => void;
         const updateColoringRoundBar: () => void;
         type ColoringType = keyof typeof config["coloring"] | "random";
         let coloring: ColoringType;
         const toggleColoring: (style?: boolean | keyof (typeof config)["coloring"]) => void;
         const updateHdRoundBar: () => void;
+        const updatePitchRoundBar: () => void;
+        const togglePitch: (value?: boolean | (typeof config.pitch.presets)[number]) => void;
+        const updateWatchRoundBar: () => void;
+        const toggleWatchDisplay: (value?: boolean | WatchColor) => void;
+        const toggleFpsDisplay: () => void;
+        const toggleFullScreen: () => void;
+        const updateFullscreenState: () => void;
         class ToggleClassForWhileTimer {
             timer: ReturnType<typeof setTimeout> | undefined;
             constructor();

@@ -10,6 +10,7 @@ Event.initialize();
 UI.fpsDiv.style.display = "none";
 UI.updateColoringRoundBar();
 UI.updateHdRoundBar();
+UI.updatePitchRoundBar();
 UI.updateWatchVisibility();
 UI.fullscreenButton.style.display = UI.fullscreenEnabled ? "block" : "none";
 UI.setAriaHidden(UI.fullscreenButton, ! UI.fullscreenEnabled);

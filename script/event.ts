@@ -31,6 +31,11 @@ export namespace Event
                 }
             },
             {
+                key: "P",
+                button: UI.pitchButton,
+                command: event => UI.togglePitch( ! event.shiftKey),
+            },
+            {
                 key: "W",
                 button: UI.watchButton,
                 command: event => UI.toggleWatchDisplay( ! event.shiftKey)

@@ -22,6 +22,7 @@ export namespace UI
     export const fpsDiv = getElementById("div", "fps");
     export const coloringButton = getElementById("button", "coloring-button");
     export const hdButton = getElementById("button", "hd-button");
+    export const pitchButton = getElementById("button", "pitch-button");
     export const watchButton = getElementById("button", "watch-button");
     export const fpsButton = getElementById("button", "fps-button");
     export const fullscreenButton = getElementById("button", "fullscreen-button");
@@ -77,6 +78,89 @@ export namespace UI
         setStyle(button, "--high", properties.high.toFixed(3));
         setStyle(button, "--rotate", properties.rotate.toFixed(3));
     };
+    let coloringRoundBarIndex = 0;
+    const mod = (n: number, m: number): number => ((n % m) + m) % m;
+    export const updateColoringRoundBar = () =>
+    {
+        const keys = Object.keys(config.coloring).concat("random") as ColoringType[];
+        const max = keys.length -1;
+        updateRoundBar
+        (
+            coloringButton,
+            max <= mod(coloringRoundBarIndex, keys.length) ?
+            {
+                low: 0,
+                high: 1,
+                rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
+            }:
+            {
+                low: 0 /max,
+                high: 1 /max,
+                rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
+            }
+        );
+    };
+    export type ColoringType = keyof typeof config["coloring"] | "random";
+    export let coloring = "regular" as ColoringType;
+    export const toggleColoring = (style?: boolean | keyof typeof config["coloring"]) =>
+    {
+        const keys = Object.keys(config.coloring).concat("random") as ColoringType[];
+        if (typeof style === "boolean" || undefined === style)
+        {
+            const currentIndex = keys.indexOf(UI.coloring);
+            const nextIndex = (keys.length +currentIndex + (false !== style ? 1: -1)) %keys.length;
+            console.log({currentIndex, nextIndex, keysLength: keys.length, style});
+            UI.coloring = keys[nextIndex];
+            coloringRoundBarIndex += false !== style ? 1: -1;
+        }
+        else
+        {
+            if (keys.includes(style))
+            {
+                UI.coloring = style;
+                coloringRoundBarIndex = keys.indexOf(style);
+            }
+        }
+        updateColoringRoundBar();
+        console.log(`🎨 Coloring changed: ${UI.coloring}`);
+    };
+    export const updateHdRoundBar = () => updateRoundBar
+    (
+        hdButton,
+        {
+            low: 0 /Model.PixelRatioModeKeys.length,
+            high: Model.getPixcelRatioLevel() /Model.PixelRatioModeKeys.length,
+            rotate: 0,
+        }
+    );
+    export const updatePitchRoundBar = () => updateRoundBar
+    (
+        pitchButton,
+        {
+            low: 0 /config.pitch.presets.length,
+            high: config.pitch.presets.indexOf(Model.Data.pitch) /(config.pitch.presets.length -1),
+            rotate: 0,
+        }
+    );
+    export const togglePitch = (value?: boolean | typeof config.pitch.presets[number]) =>
+    {
+        const presets = config.pitch.presets;
+        if (typeof value === "boolean" || undefined === value)
+        {
+            const currentIndex = presets.indexOf(Model.Data.pitch);
+            const nextIndex = (presets.length +currentIndex + (false !== value ? 1: -1)) %presets.length;
+            Model.setPitch(presets[nextIndex]);
+        }
+        else
+        {
+            if (presets.includes(value))
+            {
+                Model.setPitch(value);
+            }
+        }
+        updatePitchRoundBar();
+        console.log(`🎵 Pitch changed: ${Model.Data.pitch}`);
+    }
     let watchRoundBarIndex = 0;
     export const updateWatchRoundBar = () => updateRoundBar
     (
@@ -156,61 +240,6 @@ export namespace UI
         fullscreenButton.classList.toggle("on", Boolean(isFullscreen));
         resize();
     };
-    let coloringRoundBarIndex = 0;
-    const mod = (n: number, m: number): number => ((n % m) + m) % m;
-    export const updateColoringRoundBar = () =>
-    {
-        const keys = Object.keys(config.coloring).concat("random") as ColoringType[];
-        const max = keys.length -1;
-        updateRoundBar
-        (
-            coloringButton,
-            max <= mod(coloringRoundBarIndex, keys.length) ?
-            {
-                low: 0,
-                high: 1,
-                rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
-            }:
-            {
-                low: 0 /max,
-                high: 1 /max,
-                rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
-            }
-        );
-    };
-    export type ColoringType = keyof typeof config["coloring"] | "random";
-    export let coloring = "regular" as ColoringType;
-    export const toggleColoring = (style?: boolean | keyof typeof config["coloring"]) =>
-    {
-        const keys = Object.keys(config.coloring).concat("random") as ColoringType[];
-        if (typeof style === "boolean" || undefined === style)
-        {
-            const currentIndex = keys.indexOf(UI.coloring);
-            const nextIndex = (keys.length +currentIndex + (false !== style ? 1: -1)) %keys.length;
-            console.log({currentIndex, nextIndex, keysLength: keys.length, style});
-            UI.coloring = keys[nextIndex];
-            coloringRoundBarIndex += false !== style ? 1: -1;
-        }
-        else
-        {
-            if (keys.includes(style))
-            {
-                UI.coloring = style;
-                coloringRoundBarIndex = keys.indexOf(style);
-            }
-        }
-        updateColoringRoundBar();
-        console.log(`🎨 Coloring changed: ${UI.coloring}`);
-    };
-    export const updateHdRoundBar = () => updateRoundBar
-    (
-        hdButton,
-        {
-            low: 0 /Model.PixelRatioModeKeys.length,
-            high: Model.getPixcelRatioLevel() /Model.PixelRatioModeKeys.length,
-            rotate: 0,
-        }
-    );
     export class ToggleClassForWhileTimer
     {
         timer: ReturnType<typeof setTimeout> | undefined;

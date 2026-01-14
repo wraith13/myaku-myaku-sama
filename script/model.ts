@@ -91,10 +91,16 @@ export namespace Model
     export const Data =
     {
         previousTimestamp: 0,
+        previousPitchedTimestamp: 0,
+        pitch: config.pitch.default,
         width: 0,
         height: 0,
         accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, } as Layer,
         main: { units: [], lastMadeAt: 0, lastRemovedAt: 0, } as Layer,
+    };
+    export const setPitch = (value: number) =>
+    {
+        Data.pitch = value;
     };
     export const isOutOfCanvas = (circle: Circle) =>
     {
@@ -447,16 +453,21 @@ export namespace Model
         canvas.width = Data.width = window.innerWidth *devicePixelRatio;
         canvas.height = Data.height = window.innerHeight *devicePixelRatio;
     };
-    export const updateData = (timestamp: number) =>
+    export const updateData = (rawTimestamp: number) =>
     {
         const devicePixelRatio = getPixcelRatio();
-        const step = 0 < Data.previousTimestamp ? Math.min(timestamp - Data.previousTimestamp, 500): 0;
         if (window.innerWidth *devicePixelRatio !== Data.width || window.innerHeight *devicePixelRatio !== Data.height)
         {
             updateStretch();
         }
-        updateLayer(Data.accent, timestamp, step);
-        updateLayer(Data.main, timestamp, step);
-        Data.previousTimestamp = timestamp;
+        const rawStep = 0 < Data.previousTimestamp ? Math.min(rawTimestamp - Data.previousTimestamp, 500): 0;
+        const step = rawStep *Data.pitch;
+        if (0 < step)
+        {
+            Data.previousPitchedTimestamp += step;
+            updateLayer(Data.accent, Data.previousPitchedTimestamp, step);
+            updateLayer(Data.main, Data.previousPitchedTimestamp, step);
+        }
+        Data.previousTimestamp = rawTimestamp;
     };
 }

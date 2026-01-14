@@ -151,7 +151,7 @@ export namespace Render
         }
         return "inclusion";
     };
-    const fusionLimitRate = 3.5;
+    const fusionLimitRate = 1.0;
     const wireLimitRate = 0.7;
     const minCurveAngleRate = 1.0;
     const drawFusionPath = (circles: Model.Circle[], color: string) =>
@@ -164,8 +164,8 @@ export namespace Render
                 const b = circles[j];
                 const sumRadius = a.radius +b.radius;
                 const minRadius = Math.min(a.radius, b.radius);
-                const maxRadius = Math.min(a.radius, b.radius);
-                const fusionLimit = sumRadius +Math.min(minRadius *fusionLimitRate, maxRadius);
+                //const maxRadius = Math.max(a.radius, b.radius);
+                const fusionLimit = sumRadius +(minRadius *fusionLimitRate);
                 const wireLimit = sumRadius +(fusionLimit -sumRadius) *wireLimitRate;
                 const dx = b.x - a.x;
                 const dy = b.y - a.y;
@@ -277,9 +277,12 @@ export namespace Render
                     const wireLength = distance -wireLimit;
                     if (0 < wireLength) // == "wired" === fusionStatus
                     {
-                        const wireLengthRate = wireLength / Math.hypot(tp1.x -tp4.x, tp1.y -tp4.y);
+                        const wireWidthAdjustRate = 1.2; // This adjustment is probably necessary because something is wrong somewhere, but I won't actively investigate the cause this time. (This isn't the only place where the animation isn't smooth.)
                         const wireWidthRate = 1 - (wireLength /(fusionLimit -wireLimit));
-                        const mp0a: Model.Point = Model.averagePoints([Model.mulPoint(Model.averagePoints([tp1, tp4]), wireWidthRate), Model.mulPoint(cp0, 2 -wireWidthRate)]);
+                        const spikeMinHight = (Math.hypot(tp1.x -tp2.x, tp1.y -tp2.y) +Math.hypot(tp3.x -tp4.x, tp3.y -tp4.y)) /8;
+                        const fusionLength = Math.hypot(tp1.x -tp4.x, tp1.y -tp4.y);
+                        const wireLengthRate = ((fusionLength - spikeMinHight *2) *(1 - wireWidthRate)) /fusionLength;
+                        const mp0a: Model.Point = Model.averagePoints([Model.mulPoint(Model.averagePoints([tp1, tp4]), wireWidthRate *wireWidthAdjustRate), Model.mulPoint(cp1, 2 -(wireWidthRate *wireWidthAdjustRate))]);
                         const mp1: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp1, tp4), wireLengthRate *0.5));
                         const cxp1: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp1, tp4), (2 -wireWidthRate) /4));
                         const cxp2: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp4, tp1), (2 -wireWidthRate) /4));
@@ -291,7 +294,7 @@ export namespace Render
                         context.lineTo(tp3.x, tp3.y);
 
                         //const wireRate = wireLength / Math.hypot(tp3.x -tp2.x, tp3.y -tp2.y);
-                        const mp0b: Model.Point = Model.averagePoints([Model.mulPoint(Model.averagePoints([tp3, tp2]), wireWidthRate), Model.mulPoint(cp0, 2 -wireWidthRate)]);
+                        const mp0b: Model.Point = Model.averagePoints([Model.mulPoint(Model.averagePoints([tp3, tp2]), wireWidthRate *wireWidthAdjustRate), Model.mulPoint(cp2, 2 -(wireWidthRate *wireWidthAdjustRate))]);
                         const mp3: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp3, tp2), wireLengthRate *0.5));
                         const cxp3: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp3, tp2), (2 -wireWidthRate) /4));
                         const cxp4: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp2, tp3), (2 -wireWidthRate) /4));
@@ -314,17 +317,6 @@ export namespace Render
                     // connection.fillStyle = "#00000088";
                     context.fill();
                     context.closePath();
-
-
-            // connection.beginPath();
-            // connection.arc(tangents.tp1.x, tangents.tp1.y, 4, 0, Math.PI * 2);
-            // connection.arc(tangents.tp2.x, tangents.tp2.y, 4, 0, Math.PI * 2);
-            // connection.arc(tangents.tp3.x, tangents.tp3.y, 4, 0, Math.PI * 2);
-            // connection.arc(tangents.tp4.x, tangents.tp4.y, 4, 0, Math.PI * 2);
-            // connection.fillStyle = "#00000088";
-            // connection.fill();
-            // connection.closePath();
-
                 }
             }
         }

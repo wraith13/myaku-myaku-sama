@@ -10,7 +10,7 @@
         "coloringRegularFadeDuration": 500,
         "coloringRandomFadeDuration": 3000,
         "randomColoringUnitDuration": 60000,
-        "antiDullnessBoost": 0.3
+        "antiDullnessBoost": 0.2
     },
     "coloring":
     {
@@ -79,6 +79,20 @@
             "main": "#DC143C",
             "accent": "#B22222"
         }
+    },
+    "pitch":
+    {
+        "presets": [
+            0,
+            0.125,
+            0.25,
+            0.5,
+            1.0,
+            2.0,
+            4.0,
+            8.0
+        ],
+        "default": 1.0
     },
     "eye":
     {
