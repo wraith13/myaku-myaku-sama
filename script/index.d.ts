@@ -14,6 +14,10 @@ declare module "script/model" {
             x: number;
             y: number;
         }
+        const addPoints: (a: Point, b: Point) => Point;
+        const subPoints: (a: Point, b: Point) => Point;
+        const mulPoint: (a: Point, b: number) => Point;
+        const averagePoints: (points: Point[]) => Point;
         interface Animation {
             period: number;
             phase: number;

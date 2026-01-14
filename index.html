@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Tue Jan 13 2026 20:47:00 GMT+0900 (日本標準時)
+    build at: Wed Jan 14 2026 10:20:20 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -329,8 +329,8 @@ button:focus
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Tue Jan 13 2026 20:47:00 GMT+0900 (日本標準時)",
-    tick: 1768304820505
+    at: "Wed Jan 14 2026 10:20:20 GMT+0900 (日本標準時)",
+    tick: 1768353620084
 };
 const evilCommonjsConfig = {
     "log": {
@@ -2118,6 +2118,27 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
             return total / samples;
         };
         ;
+        Model.addPoints = function (a, b) {
+            return ({
+                x: a.x + b.x,
+                y: a.y + b.y,
+            });
+        };
+        Model.subPoints = function (a, b) {
+            return ({
+                x: a.x - b.x,
+                y: a.y - b.y,
+            });
+        };
+        Model.mulPoint = function (a, b) {
+            return ({
+                x: a.x * b,
+                y: a.y * b,
+            });
+        };
+        Model.averagePoints = function (points) {
+            return Model.mulPoint(points.reduce(Model.addPoints, { x: 0, y: 0, }), 1 / points.length);
+        };
         ;
         ;
         ;
@@ -2798,6 +2819,9 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
             if (data.fusionLimit < data.distance) {
                 return "none";
             }
+            if (data.wireLimit < data.distance) {
+                return "wired";
+            }
             if (data.sumRadius < data.distance) {
                 return "near";
             }
@@ -2806,7 +2830,8 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
             }
             return "inclusion";
         };
-        var fusionLimitRate = 3;
+        var fusionLimitRate = 3.5;
+        var wireLimitRate = 0.7;
         var minCurveAngleRate = 1.0;
         var drawFusionPath = function (circles, color) {
             for (var i = 0; i < circles.length; i++) {
@@ -2817,11 +2842,12 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
                     var minRadius = Math.min(a.radius, b.radius);
                     var maxRadius = Math.min(a.radius, b.radius);
                     var fusionLimit = sumRadius + Math.min(minRadius * fusionLimitRate, maxRadius);
+                    var wireLimit = sumRadius + (fusionLimit - sumRadius) * wireLimitRate;
                     var dx = b.x - a.x;
                     var dy = b.y - a.y;
                     var angle = Math.atan2(dy, dx);
                     var distance = Math.hypot(dx, dy);
-                    var fusionStatus = getFusionStatus({ sumRadius: sumRadius, minRadius: minRadius, fusionLimit: fusionLimit, distance: distance, });
+                    var fusionStatus = getFusionStatus({ sumRadius: sumRadius, minRadius: minRadius, wireLimit: wireLimit, fusionLimit: fusionLimit, distance: distance, });
                     if (hasFusionPath(fusionStatus)) {
                         var contactAngle = isContacted(fusionStatus) ? Math.acos(distance / sumRadius) : null;
                         var curveAngleRate = minCurveAngleRate *
@@ -2906,10 +2932,36 @@ define("script/render", ["require", "exports", "script/model", "script/ui", "res
                         context.beginPath();
                         // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
                         context.moveTo(tp1.x, tp1.y);
-                        context.quadraticCurveTo(cp1.x, cp1.y, tp4.x, tp4.y); // またはbezierCurveToでcubic
-                        // 下側ベジェ: tp2 -> cp -> tp4
-                        context.lineTo(tp3.x, tp3.y);
-                        context.quadraticCurveTo(cp2.x, cp2.y, tp2.x, tp2.y);
+                        var wireLength = distance - wireLimit;
+                        if (0 < wireLength) // == "wired" === fusionStatus
+                         {
+                            var wireLengthRate = wireLength / Math.hypot(tp1.x - tp4.x, tp1.y - tp4.y);
+                            var wireWidthRate = 1 - (wireLength / (fusionLimit - wireLimit));
+                            var mp0a = model_2.Model.averagePoints([model_2.Model.mulPoint(model_2.Model.averagePoints([tp1, tp4]), wireWidthRate), model_2.Model.mulPoint(cp0, 2 - wireWidthRate)]);
+                            var mp1 = model_2.Model.addPoints(mp0a, model_2.Model.mulPoint(model_2.Model.subPoints(tp1, tp4), wireLengthRate * 0.5));
+                            var cxp1 = model_2.Model.addPoints(mp0a, model_2.Model.mulPoint(model_2.Model.subPoints(tp1, tp4), (2 - wireWidthRate) / 4));
+                            var cxp2 = model_2.Model.addPoints(mp0a, model_2.Model.mulPoint(model_2.Model.subPoints(tp4, tp1), (2 - wireWidthRate) / 4));
+                            var mp2 = model_2.Model.addPoints(mp0a, model_2.Model.mulPoint(model_2.Model.subPoints(tp4, tp1), wireLengthRate * 0.5));
+                            context.quadraticCurveTo(cxp1.x, cxp1.y, mp1.x, mp1.y);
+                            context.lineTo(mp2.x, mp2.y);
+                            context.quadraticCurveTo(cxp2.x, cxp2.y, tp4.x, tp4.y);
+                            context.lineTo(tp3.x, tp3.y);
+                            //const wireRate = wireLength / Math.hypot(tp3.x -tp2.x, tp3.y -tp2.y);
+                            var mp0b = model_2.Model.averagePoints([model_2.Model.mulPoint(model_2.Model.averagePoints([tp3, tp2]), wireWidthRate), model_2.Model.mulPoint(cp0, 2 - wireWidthRate)]);
+                            var mp3 = model_2.Model.addPoints(mp0b, model_2.Model.mulPoint(model_2.Model.subPoints(tp3, tp2), wireLengthRate * 0.5));
+                            var cxp3 = model_2.Model.addPoints(mp0b, model_2.Model.mulPoint(model_2.Model.subPoints(tp3, tp2), (2 - wireWidthRate) / 4));
+                            var cxp4 = model_2.Model.addPoints(mp0b, model_2.Model.mulPoint(model_2.Model.subPoints(tp2, tp3), (2 - wireWidthRate) / 4));
+                            var mp4 = model_2.Model.addPoints(mp0b, model_2.Model.mulPoint(model_2.Model.subPoints(tp2, tp3), wireLengthRate * 0.5));
+                            context.quadraticCurveTo(cxp3.x, cxp3.y, mp3.x, mp3.y);
+                            context.lineTo(mp4.x, mp4.y);
+                            context.quadraticCurveTo(cxp4.x, cxp4.y, tp2.x, tp2.y);
+                            //console.log({ wireRate, wireLength, distance, mp0a, mp1, cxp1, cxp2, mp2, mp0b, mp3, cxp3, cxp4, mp4, });
+                        }
+                        else {
+                            context.quadraticCurveTo(cp1.x, cp1.y, tp4.x, tp4.y);
+                            context.lineTo(tp3.x, tp3.y);
+                            context.quadraticCurveTo(cp2.x, cp2.y, tp2.x, tp2.y);
+                        }
                         context.lineTo(tp1.x, tp1.y);
                         context.fillStyle = color;
                         // connection.fillStyle = "#00000088";

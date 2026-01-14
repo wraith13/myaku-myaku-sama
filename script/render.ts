@@ -117,7 +117,7 @@ export namespace Render
     //     y: window.innerHeight / 2,
     //     radius: Math.hypot(window.innerWidth, window.innerHeight) /2,
     // });
-    type FusionStatus = "none" | "near" | "overlap" | "inclusion";
+    type FusionStatus = "none" | "wired" | "near" | "overlap" | "inclusion";
     const hasFusionPath = (fusionStatus: FusionStatus) =>
         [ "none", "inclusion" ].indexOf(fusionStatus) < 0;
     const isContacted = (fusionStatus: FusionStatus) =>
@@ -126,6 +126,7 @@ export namespace Render
     {
         sumRadius: number;
         minRadius: number;
+        wireLimit: number;
         fusionLimit: number;
         //angle: number;
         distance: number;
@@ -135,6 +136,10 @@ export namespace Render
         if (data.fusionLimit < data.distance)
         {
             return "none";
+        }
+        if (data.wireLimit < data.distance)
+        {
+            return "wired";
         }
         if (data.sumRadius < data.distance)
         {
@@ -146,7 +151,8 @@ export namespace Render
         }
         return "inclusion";
     };
-    const fusionLimitRate = 3;
+    const fusionLimitRate = 3.5;
+    const wireLimitRate = 0.7;
     const minCurveAngleRate = 1.0;
     const drawFusionPath = (circles: Model.Circle[], color: string) =>
     {
@@ -160,11 +166,12 @@ export namespace Render
                 const minRadius = Math.min(a.radius, b.radius);
                 const maxRadius = Math.min(a.radius, b.radius);
                 const fusionLimit = sumRadius +Math.min(minRadius *fusionLimitRate, maxRadius);
+                const wireLimit = sumRadius +(fusionLimit -sumRadius) *wireLimitRate;
                 const dx = b.x - a.x;
                 const dy = b.y - a.y;
                 const angle = Math.atan2(dy, dx);
                 const distance = Math.hypot(dx, dy);
-                const fusionStatus = getFusionStatus({ sumRadius, minRadius, fusionLimit, distance, });
+                const fusionStatus = getFusionStatus({ sumRadius, minRadius, wireLimit, fusionLimit, distance, });
                 if (hasFusionPath(fusionStatus))
                 {
                     const contactAngle: number | null = isContacted(fusionStatus) ? Math.acos(distance / sumRadius): null;
@@ -236,7 +243,7 @@ export namespace Render
                     switch(fusionStatus)
                     {
                     case "near":
-                        cpRate = sumRadius +minRadius <= distance  ?
+                        cpRate = sumRadius +minRadius <= distance ?
                             -Math.min(1, (distance -(sumRadius +minRadius)) / (fusionLimit - (sumRadius +minRadius))):
                             Math.min(1, (sumRadius +minRadius -distance) / (minRadius *2));
                         break;
@@ -267,11 +274,40 @@ export namespace Render
 
                     // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
                     context.moveTo(tp1.x, tp1.y);
-                    context.quadraticCurveTo(cp1.x, cp1.y, tp4.x, tp4.y);  // またはbezierCurveToでcubic
+                    const wireLength = distance -wireLimit;
+                    if (0 < wireLength) // == "wired" === fusionStatus
+                    {
+                        const wireLengthRate = wireLength / Math.hypot(tp1.x -tp4.x, tp1.y -tp4.y);
+                        const wireWidthRate = 1 - (wireLength /(fusionLimit -wireLimit));
+                        const mp0a: Model.Point = Model.averagePoints([Model.mulPoint(Model.averagePoints([tp1, tp4]), wireWidthRate), Model.mulPoint(cp0, 2 -wireWidthRate)]);
+                        const mp1: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp1, tp4), wireLengthRate *0.5));
+                        const cxp1: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp1, tp4), (2 -wireWidthRate) /4));
+                        const cxp2: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp4, tp1), (2 -wireWidthRate) /4));
+                        const mp2: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp4, tp1), wireLengthRate *0.5));
+                        context.quadraticCurveTo(cxp1.x, cxp1.y, mp1.x, mp1.y);
+                        context.lineTo(mp2.x, mp2.y);
+                        context.quadraticCurveTo(cxp2.x, cxp2.y, tp4.x, tp4.y);
 
-                    // 下側ベジェ: tp2 -> cp -> tp4
-                    context.lineTo(tp3.x, tp3.y);
-                    context.quadraticCurveTo(cp2.x, cp2.y, tp2.x, tp2.y);
+                        context.lineTo(tp3.x, tp3.y);
+
+                        //const wireRate = wireLength / Math.hypot(tp3.x -tp2.x, tp3.y -tp2.y);
+                        const mp0b: Model.Point = Model.averagePoints([Model.mulPoint(Model.averagePoints([tp3, tp2]), wireWidthRate), Model.mulPoint(cp0, 2 -wireWidthRate)]);
+                        const mp3: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp3, tp2), wireLengthRate *0.5));
+                        const cxp3: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp3, tp2), (2 -wireWidthRate) /4));
+                        const cxp4: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp2, tp3), (2 -wireWidthRate) /4));
+                        const mp4: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp2, tp3), wireLengthRate *0.5));
+                        context.quadraticCurveTo(cxp3.x, cxp3.y, mp3.x, mp3.y);
+                        context.lineTo(mp4.x, mp4.y);
+                        context.quadraticCurveTo(cxp4.x, cxp4.y, tp2.x, tp2.y);
+                        //console.log({ wireRate, wireLength, distance, mp0a, mp1, cxp1, cxp2, mp2, mp0b, mp3, cxp3, cxp4, mp4, });
+                    }
+                    else
+                    {
+                        context.quadraticCurveTo(cp1.x, cp1.y, tp4.x, tp4.y);
+                        context.lineTo(tp3.x, tp3.y);
+                        context.quadraticCurveTo(cp2.x, cp2.y, tp2.x, tp2.y);
+                    }
+
                     context.lineTo(tp1.x, tp1.y);
 
                     context.fillStyle = color;
