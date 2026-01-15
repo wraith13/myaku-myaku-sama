@@ -61,6 +61,13 @@
                         "text": "sourceMappingURL=evil-timer.js/index.js.map"
                     }
                 },
+                "__FLOUNDER_STYLE__": {
+                    "path": "./flounder.style.js/index.js",
+                    "replace": {
+                        "match": "sourceMappingURL=index.js.map",
+                        "text": "sourceMappingURL=flounder.style.js/index.js.map"
+                    }
+                },
                 "__STYLE__": {
                     "path": "./index.css"
                 },

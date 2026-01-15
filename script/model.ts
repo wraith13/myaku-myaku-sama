@@ -365,8 +365,8 @@ export namespace Model
             }
         );
     };
-    export type PixelRatioMode = "thirty-second" | "sixteenth" | "eighth" | "quarter" | "half" | "regular" | "full";
-    export const PixelRatioModeKeys = [ "thirty-second", "sixteenth", "eighth", "quarter","half", "regular", "full", ] as const;
+    export const PixelRatioModeKeys = [ "thirty-second", "sixteenth", "eighth", "quarter", "half", "regular", "full", ] as const;
+    export type PixelRatioMode = typeof PixelRatioModeKeys[number];
     let pixelRatioMode: PixelRatioMode = "regular";
     export const togglePixelRatioMode = (value?: boolean | PixelRatioMode) =>
     {

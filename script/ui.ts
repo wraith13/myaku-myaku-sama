@@ -19,6 +19,7 @@ export namespace UI
     export const overlayPanel = getElementById("div", "overlay-panel");
     export const time = getElementById("time", "time");
     export const date = getElementById("time", "date");
+    export const pattern = getElementById("div", "pattern");
     export const fpsDiv = getElementById("div", "fps");
     export const coloringButton = getElementById("button", "coloring-button");
     export const hdButton = getElementById("button", "hd-button");
@@ -46,8 +47,8 @@ export namespace UI
             }
         }
     };
-    export type WatchColor = "none" | "white" | "black" | "rainbow";
-    export const WatchColorList = [ "none", "white", "black", "rainbow" ] as const;
+    export const WatchColorList = [ "none", "white", "black", "zebra", "rainbow" ] as const;
+    export type WatchColor = typeof WatchColorList[number];
     export let watchColor: WatchColor = "none";
     export const updateWatchVisibility = () =>
     {

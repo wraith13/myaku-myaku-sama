@@ -1,5 +1,7 @@
 import { Url } from "./url";
 import { UI } from "./ui";
+import { Random } from "./random";
+import { FlounderStyle } from "flounder.style.js";
 import config from "@resource/config.json";
 export namespace Watch
 {
@@ -17,6 +19,57 @@ export namespace Watch
             locale,
             config.watch.timeFormat as Intl.DateTimeFormatOptions
         );
+    const patternSpan = 3 *1000;
+    let patternCount = 0;
+    let currentPatternStartAt = 0;
+    let currentPattern: FlounderStyle.Type.Arguments | null = null;
+    export const makePattern = (date: Date) =>
+    {
+        const now = date.getTime();
+        if (null === currentPattern || patternSpan <= now -currentPatternStartAt)
+        {
+            const type = "stripe";
+            const foregroundColor = "white";
+            const diagonal = Math.hypot(window.innerWidth, window.innerHeight) /100;
+            const intervalSize = diagonal *(3 +Random.makeInteger(30));
+            currentPattern =
+            {
+                type,
+                layoutAngle: Math.random(),
+                foregroundColor,
+                intervalSize,
+                depth: 0.0,
+                maxPatternSize: Random.select([ undefined, intervalSize /(2 +Random.makeInteger(9)), ]),
+                anglePerDepth: Random.select([ undefined, "auto", "-auto", ]),
+                //maximumFractionDigits: getEnoughPatternFractionDigits(),
+            };
+            ++patternCount;
+            currentPatternStartAt = now;
+        }
+        const step = (now -currentPatternStartAt) /patternSpan;
+        // In flounder.style.js, when depth is 0 or 1 only the background-color is produced and no pattern is generated, so avoid 0.
+        currentPattern.depth = Math.min
+        (
+            1 -config.rendering.minPatternDepth,
+            Math.max
+            (
+                config.rendering.minPatternDepth,
+                1 === (patternCount % 2) ? step : 1 -step
+            )
+        );
+        return currentPattern;
+    };
+    export const backgroundToMask = (backgroundStyle: FlounderStyle.Style): FlounderStyle.Style =>
+    {
+        const maskStyle: FlounderStyle.Style =
+        {
+            //"mask-color": backgroundStyle["background-color"],
+            "mask-image": backgroundStyle["background-image"],
+            "mask-size": backgroundStyle["background-size"],
+            "mask-position": backgroundStyle["background-position"],
+        };
+        return maskStyle;
+    };
     export const setColor = (color: string | undefined): void =>
     {
         UI.setStyle(UI.date, "color", color);
@@ -38,6 +91,14 @@ export namespace Watch
                     break;
                 case "black":
                     setColor("black");
+                    break;
+                case "zebra":
+                    setColor("white");
+                    FlounderStyle.setStyle
+                    (
+                        UI.pattern,
+                        backgroundToMask(FlounderStyle.makeStyle(makePattern(date)))
+                    );
                     break;
                 case "rainbow":
                     setColor(`hsl(${((date.getTime() *360) / (24000 *phi)).toFixed(2)}deg, 100%, 61%)`);

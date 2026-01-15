@@ -58,6 +58,7 @@ __STYLE__
 <div id="overlay-panel" role="presentation" class="black">
     <time id="time" role="timer" aria-live="polite" aria-atomic="true"></time>
     <time id="date" aria-live="polite" aria-atomic="true"></time>
+    <div id="pattern" role="presentation"></div>
 </div>
 <div id="fps" aria-hidden="true"></div>
 <div id="control-panel" aria-label="Control Panel" title="Control Panel">
@@ -78,6 +79,7 @@ const evilCommonjsConfig = __EVIL_COMMONJS_CONFIG__; // "./resource/evil-commonj
 const evilTimerConfig = __EVIL_TIMER_CONFIG__; // "./resource/evil-timer.js.config.json"
 __EVIL_COMMONJS__
 __EVIL_TIMER__
+__FLOUNDER_STYLE__
 __SCRIPT__
 if ("serviceWorker" in navigator)
 {

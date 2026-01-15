@@ -33,6 +33,7 @@
         "outFile": "index.js",
         "paths": {
             "@resource/*": [ "../resource/*" ],
+            "flounder.style.js": [ "../flounder.style.js" ]
         }
     },
     "files": [

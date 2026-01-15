@@ -64,16 +64,23 @@ body:not(.mousemove)
     left: 50%;
     transform: translate(-50%, -50%);
     border-radius: calc(2 * var(--short-side));
-    backdrop-filter: blur(calc(1 * var(--short-side)));
+    /*backdrop-filter: blur(calc(1 * var(--short-side)));*/
 }
-#overlay-panel.zebra::after
+#overlay-panel.zebra
 {
-    content: "";
+    backdrop-filter: blur(0);
+}
+#overlay-panel.zebra #pattern
+{
     position: absolute;
     inset: 0;
     pointer-events: none;
     backdrop-filter: invert(1);
     mask-image: linear-gradient(var(--angle, 45deg), transparent 50%, white 50%);
+}
+#overlay-panel:not(.zebra) #pattern
+{
+    display: none;;
 }
 time
 {

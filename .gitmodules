@@ -7,3 +7,6 @@
 [submodule "evil-timer.js"]
 	path = evil-timer.js
 	url = https://github.com/wraith13/evil-timer.js
+[submodule "flounder.style.js"]
+	path = flounder.style.js
+	url = https://github.com/wraith13/flounder.style.js

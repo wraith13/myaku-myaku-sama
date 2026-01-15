@@ -10,7 +10,8 @@
         "coloringRegularFadeDuration": 500,
         "coloringRandomFadeDuration": 3000,
         "randomColoringUnitDuration": 60000,
-        "antiDullnessBoost": 0.2
+        "antiDullnessBoost": 0.2,
+        "minPatternDepth": 0.000000001
     },
     "coloring":
     {
