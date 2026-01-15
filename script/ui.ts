@@ -72,7 +72,7 @@ export namespace UI
     };
     export const updateRoundBar = (button: HTMLButtonElement, properties: { low: number, high: number, rotate: number, }) =>
     {
-        console.log("updateRoundBar", button, properties);
+        // console.log("updateRoundBar", button, properties);
         /* For older environments where the 'initial-value' setting isn't supported, all values must be specified. */
         setStyle(button, "--low", properties.low.toFixed(3));
         setStyle(button, "--high", properties.high.toFixed(3));

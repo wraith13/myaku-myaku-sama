@@ -1,3 +1,4 @@
+import { Geometry } from "./geometry.js";
 import config from "@resource/config.json";
 export namespace Model
 {
@@ -11,28 +12,6 @@ export namespace Model
         }
         return total / samples;
     };
-    export interface Point
-    {
-        x: number;
-        y: number;
-    };
-    export const addPoints = (a: Point, b: Point): Point =>
-    ({
-        x: a.x + b.x,
-        y: a.y + b.y,
-    });
-    export const subPoints = (a: Point, b: Point): Point =>
-    ({
-        x: a.x - b.x,
-        y: a.y - b.y,
-    });
-    export const mulPoint = (a: Point, b: number): Point =>
-    ({
-        x: a.x *b,
-        y: a.y *b,
-    });
-    export const averagePoints = (points: Point[]): Point =>
-        mulPoint(points.reduce(addPoints, { x: 0, y: 0, }), 1 / points.length);
     export interface Animation
     {
         period: number;
@@ -59,11 +38,11 @@ export namespace Model
         appearAnimation?: Animation;
         vanishAnimation?: Animation;
     };
-    export interface Circle extends Point
+    export interface Circle extends Geometry.Point
     {
         radius: number;
     };
-    export const makeCircle = (point: Point, radius: number): Circle =>
+    export const makeCircle = (point: Geometry.Point, radius: number): Circle =>
     ({
         x: point.x,
         y: point.y,
@@ -190,7 +169,7 @@ export namespace Model
         };
         return result;
     };
-    export const makeUnit = (point: Point): Unit =>
+    export const makeUnit = (point: Geometry.Point): Unit =>
     {
         const body = makeCircle(point, (Math.pow(pseudoGaussian(4), 2) *0.19) +0.01);
         const result =
@@ -210,7 +189,7 @@ export namespace Model
     };
     export const makeEye = (): Eye =>
     {
-        const point: Point = { x: 0, y: 0,};
+        const point: Geometry.Point = { x: 0, y: 0,};
         const xRatio = 1.0;
         const yRatio = 1.0;
         const white = makeCircle(point, config.eye.whiteRate);
@@ -455,10 +434,12 @@ export namespace Model
     };
     export const updateData = (rawTimestamp: number) =>
     {
+        let result = false;
         const devicePixelRatio = getPixcelRatio();
         if (window.innerWidth *devicePixelRatio !== Data.width || window.innerHeight *devicePixelRatio !== Data.height)
         {
             updateStretch();
+            result = true;
         }
         const rawStep = 0 < Data.previousTimestamp ? Math.min(rawTimestamp - Data.previousTimestamp, 500): 0;
         const step = rawStep *Data.pitch;
@@ -467,7 +448,9 @@ export namespace Model
             Data.previousPitchedTimestamp += step;
             updateLayer(Data.accent, Data.previousPitchedTimestamp, step);
             updateLayer(Data.main, Data.previousPitchedTimestamp, step);
+            result = true;
         }
         Data.previousTimestamp = rawTimestamp;
+        return result;
     };
 }

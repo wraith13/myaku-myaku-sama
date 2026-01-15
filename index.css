@@ -66,6 +66,15 @@ body:not(.mousemove)
     border-radius: calc(2 * var(--short-side));
     backdrop-filter: blur(calc(1 * var(--short-side)));
 }
+#overlay-panel.zebra::after
+{
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    backdrop-filter: invert(1);
+    mask-image: linear-gradient(var(--angle, 45deg), transparent 50%, white 50%);
+}
 time
 {
     display: block;
@@ -86,7 +95,8 @@ time
     white-space: nowrap;
 }
 .white time,
-.rainbow time
+.rainbow time,
+.zebra time
 {
     color: white;
     text-shadow: -1px -1px 0px black, 1px -1px 0px black, -1px 1px 0px black, 1px 1px 0px black;

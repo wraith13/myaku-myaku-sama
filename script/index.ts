@@ -20,8 +20,7 @@ UI.setAriaHidden(UI.jumpOutButton, UI.isInIframe);
 UI.resize();
 const step = (timestamp: number) =>
 {
-    Model.updateData(timestamp);
-    Render.draw();
+    Render.draw(Model.updateData(timestamp));
     Watch.update();
     if (UI.fpsDiv.style.display !== "none")
     {

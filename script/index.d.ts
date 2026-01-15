@@ -7,9 +7,8 @@ declare module "script/url" {
         const params: Record<string, string>;
     }
 }
-declare module "script/model" {
-    export namespace Model {
-        const pseudoGaussian: (samples?: number) => number;
+declare module "script/geometry" {
+    export namespace Geometry {
         interface Point {
             x: number;
             y: number;
@@ -18,6 +17,12 @@ declare module "script/model" {
         const subPoints: (a: Point, b: Point) => Point;
         const mulPoint: (a: Point, b: number) => Point;
         const averagePoints: (points: Point[]) => Point;
+    }
+}
+declare module "script/model" {
+    import { Geometry } from "script/geometry";
+    export namespace Model {
+        const pseudoGaussian: (samples?: number) => number;
         interface Animation {
             period: number;
             phase: number;
@@ -38,10 +43,10 @@ declare module "script/model" {
             appearAnimation?: Animation;
             vanishAnimation?: Animation;
         }
-        interface Circle extends Point {
+        interface Circle extends Geometry.Point {
             radius: number;
         }
-        const makeCircle: (point: Point, radius: number) => Circle;
+        const makeCircle: (point: Geometry.Point, radius: number) => Circle;
         interface Eye {
             white: Circle;
             iris: Circle;
@@ -90,7 +95,7 @@ declare module "script/model" {
             };
         }, scaleRate: number) => Animation;
         const makeUnitAnimation: () => UnitAnimation;
-        const makeUnit: (point: Point) => Unit;
+        const makeUnit: (point: Geometry.Point) => Unit;
         const makeEye: () => Eye;
         const updateUnit: (layer: Layer, unit: Unit, step: number) => void;
         const updateLayer: (layer: Layer, timestamp: number, step: number) => void;
@@ -100,7 +105,7 @@ declare module "script/model" {
         const getPixcelRatioLevel: () => number;
         const getPixcelRatio: () => number;
         const updateStretch: () => void;
-        const updateData: (rawTimestamp: number) => void;
+        const updateData: (rawTimestamp: number) => boolean;
     }
 }
 declare module "script/ui" {
@@ -160,7 +165,7 @@ declare module "script/render" {
     export namespace Render {
         const updateColoring: () => void;
         const getCanvasCircle: () => Model.Circle;
-        const draw: () => void;
+        const draw: (isUpdatedModel: boolean) => void;
     }
 }
 declare module "script/fps" {

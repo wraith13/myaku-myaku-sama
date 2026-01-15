@@ -1,3 +1,4 @@
+import { Geometry } from "./geometry.js";
 import { Model } from "./model";
 import { UI } from "./ui";
 import config from "@resource/config.json";
@@ -34,6 +35,7 @@ export namespace Render
     let changedColoringAt = 0;
     let oldColors: Coloring = getColors();
     let newColors: Coloring = getColors();
+    let previousColors: Coloring = getColors();
     const isSameColoring = (a: Coloring, b: Coloring): boolean =>
         a.base === b.base && a.main === b.main && a.accent === b.accent;
     export const updateColoring = () =>
@@ -100,7 +102,7 @@ export namespace Render
     //     y: (circle.y -parent.y) /parent.radius,
     //     radius: circle.radius /parent.radius,
     // });
-    // export const remappingPoint = (parent: Model.Circle, point: Model.Point): Model.Point =>
+    // export const remappingPoint = (parent: Model.Circle, point: Geometry.Point): Geometry.Point =>
     // ({
     //     x: (point.x -parent.x) /parent.radius,
     //     y: (point.y -parent.y) /parent.radius,
@@ -186,57 +188,33 @@ export namespace Render
                     const theta2 = Math.min((contactAngle ?? 0) +minCurveAngle2, Math.PI -minCurveAngle2);
 
                     // 左タンジェント (tp1 on c1, tp3 on c2)
-                    const tp1: Model.Point =
+                    const tp1: Geometry.Point =
                     {
                         x: a.x + a.radius * Math.cos(angle + theta1),
                         y: a.y + a.radius * Math.sin(angle + theta1)
                     };
-                    const tp3: Model.Point =
+                    const tp3: Geometry.Point =
                     {
                         x: b.x + b.radius * Math.cos(angle + (Math.PI +theta2)),
                         y: b.y + b.radius * Math.sin(angle + (Math.PI +theta2))
                     };
 
                     // 右タンジェント (tp2 on c1, tp4 on c2)
-                    const tp2: Model.Point =
+                    const tp2: Geometry.Point =
                     {
                         x: a.x + a.radius * Math.cos(angle -theta1),
                         y: a.y + a.radius * Math.sin(angle -theta1)
                     };
-                    const tp4: Model.Point =
+                    const tp4: Geometry.Point =
                     {
                         x: b.x + b.radius * Math.cos(angle +(Math.PI -theta2)),
                         y: b.y + b.radius * Math.sin(angle +(Math.PI -theta2))
                     };
-                    const cp0: Model.Point =
+                    const cp0: Geometry.Point =
                     {
                         x: (tp1.x +tp2.x + tp3.x + tp4.x) /4,
                         y: (tp1.y +tp2.y + tp3.y + tp4.y) /4,
                     };
-
-                    // const cpRate = sumRadius +minRadius <= distance ? 0:
-                    //     Math.min(1, (sumRadius +minRadius -distance) / (minRadius *2));
-                    // const cp1: Model.Point =
-                    // {
-                    //     x: cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate,
-                    //     y: cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate,
-                    // };
-                    // const cp2: Model.Point =
-                    // {
-                    //     x: cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate,
-                    //     y: cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate,
-                    // };
-
-
-                    // // const contactDist = fusionLimit; //sumRadius +minRadius;
-                    // // const surfaceDist = distance -sumRadius;
-                    // // const fusionSurfaceLimit = fusionLimit -sumRadius;
-                    
-                    // // const cpRate = contactDist <= distance ? 1:
-                    // //     //Math.min(1, (contactDist -distance) / (minRadius *2));
-                    // //     fusionSurfaceLimit /2 <= surfaceDist ?
-                    // //         Math.min(1, (surfaceDist -(fusionSurfaceLimit /2)) / (fusionSurfaceLimit /2)):
-                    // //         0;
                     let cpRate: number = 0;;
                     //const surfaceDist = distance -sumRadius;
                     //const fusionSurfaceLimit = fusionLimit -sumRadius;
@@ -251,7 +229,7 @@ export namespace Render
                         cpRate = Math.min(1, (sumRadius +minRadius -distance) / (minRadius *2));
                         break;
                     }
-                    const cp1: Model.Point =
+                    const cp1: Geometry.Point =
                     {
                         x: 0 <= cpRate ?
                             cp0.x *(1 -cpRate) + ((tp1.x +tp4.x) /2) *cpRate:
@@ -260,7 +238,7 @@ export namespace Render
                             cp0.y *(1 -cpRate) + ((tp1.y +tp4.y) /2) *cpRate:
                             cp0.y *(1 +cpRate) + ((tp2.y +tp3.y) /2) *-cpRate,
                     };
-                    const cp2: Model.Point =
+                    const cp2: Geometry.Point =
                     {
                         x: 0 <= cpRate ?
                             cp0.x *(1 -cpRate) + ((tp2.x +tp3.x) /2) *cpRate:
@@ -277,16 +255,19 @@ export namespace Render
                     const wireLength = distance -wireLimit;
                     if (0 < wireLength) // == "wired" === fusionStatus
                     {
-                        const wireWidthAdjustRate = 1.2; // This adjustment is probably necessary because something is wrong somewhere, but I won't actively investigate the cause this time. (This isn't the only place where the animation isn't smooth.)
+                        const wireWidthAdjustRate = 1.15;   // This adjustment is probably necessary because something is wrong somewhere,
+                                                            // but I won't actively investigate the cause this time. (This isn't the only place where the animation isn't smooth.)
+                                                            // If you want to smooth out this and other parts, first implement a verification mode
+                                                            // that renders only two Units whose distance can be adjusted by the user.
                         const wireWidthRate = 1 - (wireLength /(fusionLimit -wireLimit));
                         const spikeMinHight = (Math.hypot(tp1.x -tp2.x, tp1.y -tp2.y) +Math.hypot(tp3.x -tp4.x, tp3.y -tp4.y)) /8;
                         const fusionLength = Math.hypot(tp1.x -tp4.x, tp1.y -tp4.y);
                         const wireLengthRate = ((fusionLength - spikeMinHight *2) *(1 - wireWidthRate)) /fusionLength;
-                        const mp0a: Model.Point = Model.averagePoints([Model.mulPoint(Model.averagePoints([tp1, tp4]), wireWidthRate *wireWidthAdjustRate), Model.mulPoint(cp1, 2 -(wireWidthRate *wireWidthAdjustRate))]);
-                        const mp1: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp1, tp4), wireLengthRate *0.5));
-                        const cxp1: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp1, tp4), (2 -wireWidthRate) /4));
-                        const cxp2: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp4, tp1), (2 -wireWidthRate) /4));
-                        const mp2: Model.Point = Model.addPoints(mp0a, Model.mulPoint(Model.subPoints(tp4, tp1), wireLengthRate *0.5));
+                        const mp0a: Geometry.Point = Geometry.averagePoints([Geometry.mulPoint(Geometry.averagePoints([tp1, tp4]), wireWidthRate *wireWidthAdjustRate), Geometry.mulPoint(cp1, 2 -(wireWidthRate *wireWidthAdjustRate))]);
+                        const mp1: Geometry.Point = Geometry.addPoints(mp0a, Geometry.mulPoint(Geometry.subPoints(tp1, tp4), wireLengthRate *0.5));
+                        const cxp1: Geometry.Point = Geometry.addPoints(mp0a, Geometry.mulPoint(Geometry.subPoints(tp1, tp4), (2 -wireWidthRate) /4));
+                        const cxp2: Geometry.Point = Geometry.addPoints(mp0a, Geometry.mulPoint(Geometry.subPoints(tp4, tp1), (2 -wireWidthRate) /4));
+                        const mp2: Geometry.Point = Geometry.addPoints(mp0a, Geometry.mulPoint(Geometry.subPoints(tp4, tp1), wireLengthRate *0.5));
                         context.quadraticCurveTo(cxp1.x, cxp1.y, mp1.x, mp1.y);
                         context.lineTo(mp2.x, mp2.y);
                         context.quadraticCurveTo(cxp2.x, cxp2.y, tp4.x, tp4.y);
@@ -294,11 +275,11 @@ export namespace Render
                         context.lineTo(tp3.x, tp3.y);
 
                         //const wireRate = wireLength / Math.hypot(tp3.x -tp2.x, tp3.y -tp2.y);
-                        const mp0b: Model.Point = Model.averagePoints([Model.mulPoint(Model.averagePoints([tp3, tp2]), wireWidthRate *wireWidthAdjustRate), Model.mulPoint(cp2, 2 -(wireWidthRate *wireWidthAdjustRate))]);
-                        const mp3: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp3, tp2), wireLengthRate *0.5));
-                        const cxp3: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp3, tp2), (2 -wireWidthRate) /4));
-                        const cxp4: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp2, tp3), (2 -wireWidthRate) /4));
-                        const mp4: Model.Point = Model.addPoints(mp0b, Model.mulPoint(Model.subPoints(tp2, tp3), wireLengthRate *0.5));
+                        const mp0b: Geometry.Point = Geometry.averagePoints([Geometry.mulPoint(Geometry.averagePoints([tp3, tp2]), wireWidthRate *wireWidthAdjustRate), Geometry.mulPoint(cp2, 2 -(wireWidthRate *wireWidthAdjustRate))]);
+                        const mp3: Geometry.Point = Geometry.addPoints(mp0b, Geometry.mulPoint(Geometry.subPoints(tp3, tp2), wireLengthRate *0.5));
+                        const cxp3: Geometry.Point = Geometry.addPoints(mp0b, Geometry.mulPoint(Geometry.subPoints(tp3, tp2), (2 -wireWidthRate) /4));
+                        const cxp4: Geometry.Point = Geometry.addPoints(mp0b, Geometry.mulPoint(Geometry.subPoints(tp2, tp3), (2 -wireWidthRate) /4));
+                        const mp4: Geometry.Point = Geometry.addPoints(mp0b, Geometry.mulPoint(Geometry.subPoints(tp2, tp3), wireLengthRate *0.5));
                         context.quadraticCurveTo(cxp3.x, cxp3.y, mp3.x, mp3.y);
                         context.lineTo(mp4.x, mp4.y);
                         context.quadraticCurveTo(cxp4.x, cxp4.y, tp2.x, tp2.y);
@@ -354,16 +335,21 @@ export namespace Render
             irises.forEach(iris => drawCircle(iris, coloring.accent));
         }
     };
-    export const draw = () =>
+    export const draw = (isUpdatedModel: boolean) =>
     {
         if (isRandomColoring() && config.rendering.randomColoringUnitDuration < (performance.now() -changedColoringAt))
         {
             updateColoring();
         }
         const coloring = getCurrentColors();
-        context.fillStyle = coloring.base;
-        context.fillRect(0, 0, UI.canvas.width, UI.canvas.height);
-        drawLayer(Model.Data.accent, coloring.accent, coloring);
-        drawLayer(Model.Data.main, coloring.main, coloring);
+        const isColoringChanged = ! isSameColoring(previousColors, coloring);
+        if (isUpdatedModel || isColoringChanged)
+        {
+            previousColors = coloring;
+            context.fillStyle = coloring.base;
+            context.fillRect(0, 0, UI.canvas.width, UI.canvas.height);
+            drawLayer(Model.Data.accent, coloring.accent, coloring);
+            drawLayer(Model.Data.main, coloring.main, coloring);
+        }
     };
 }
