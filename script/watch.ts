@@ -19,14 +19,13 @@ export namespace Watch
             locale,
             config.watch.timeFormat as Intl.DateTimeFormatOptions
         );
-    const patternSpan = 3 *1000;
     let patternCount = 0;
     let currentPatternStartAt = 0;
     let currentPattern: FlounderStyle.Type.Arguments | null = null;
     export const makePattern = (date: Date) =>
     {
         const now = date.getTime();
-        if (null === currentPattern || patternSpan <= now -currentPatternStartAt)
+        if (null === currentPattern || config.watch.patternSpan <= now -currentPatternStartAt)
         {
             const type = "stripe";
             const foregroundColor = "white";
@@ -46,14 +45,14 @@ export namespace Watch
             ++patternCount;
             currentPatternStartAt = now;
         }
-        const step = (now -currentPatternStartAt) /patternSpan;
+        const step = (now -currentPatternStartAt) /config.watch.patternSpan;
         // In flounder.style.js, when depth is 0 or 1 only the background-color is produced and no pattern is generated, so avoid 0.
         currentPattern.depth = Math.min
         (
-            1 -config.rendering.minPatternDepth,
+            1 -config.watch.minPatternDepth,
             Math.max
             (
-                config.rendering.minPatternDepth,
+                config.watch.minPatternDepth,
                 1 === (patternCount % 2) ? step : 1 -step
             )
         );

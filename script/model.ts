@@ -1,17 +1,9 @@
 import { Geometry } from "./geometry.js";
+import { Random } from "./random.js";
 import config from "@resource/config.json";
 export namespace Model
 {
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    export const pseudoGaussian = (samples: number = 6): number =>
-    {
-        let total = 0;
-        for (let i = 0; i < samples; i++)
-        {
-            total += Math.random();
-        }
-        return total / samples;
-    };
     export interface Animation
     {
         period: number;
@@ -145,9 +137,9 @@ export namespace Model
     };
     export const makeAnimation = (specific: { period: { base: number, pseudoGaussian: number, range: number }, scale: { base: number, pseudoGaussian: number, range: number } }, scaleRate: number): Animation =>
     {
-        const period = specific.period.base +(pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
+        const period = specific.period.base +(Random.pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
         const phase = period *Math.random();
-        const scale = (specific.scale.base +(pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) *scaleRate;
+        const scale = (specific.scale.base +(Random.pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) *scaleRate;
         return { phase, period, scale, };
     };
     export const makeUnitAnimation = (): UnitAnimation =>
@@ -171,7 +163,7 @@ export namespace Model
     };
     export const makeUnit = (point: Geometry.Point): Unit =>
     {
-        const body = makeCircle(point, (Math.pow(pseudoGaussian(4), 2) *0.19) +0.01);
+        const body = makeCircle(point, (Math.pow(Random.pseudoGaussian(4), 2) *0.19) +0.01);
         const result =
         {
             body,
@@ -328,7 +320,7 @@ export namespace Model
             const makeUnitCooldown = 1000 *validAreaRatio;
             if (makeUnitCooldown <= timestamp -layer.lastMadeAt)
             {
-                layer.units.push(makeUnit({ x: (pseudoGaussian(1) -0.5) *window.innerWidth/ shortSide, y: (pseudoGaussian(1) -0.5) *window.innerHeight /shortSide, }));
+                layer.units.push(makeUnit({ x: (Random.pseudoGaussian(1) -0.5) *window.innerWidth/ shortSide, y: (Random.pseudoGaussian(1) -0.5) *window.innerHeight /shortSide, }));
                 layer.lastMadeAt = timestamp;
             }
         }

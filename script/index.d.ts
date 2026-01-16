@@ -19,10 +19,17 @@ declare module "script/geometry" {
         const averagePoints: (points: Point[]) => Point;
     }
 }
+declare module "script/random" {
+    export namespace Random {
+        type Function = (index?: number, prime?: number) => number;
+        const makeInteger: (size: number, random?: Function, index?: number, prime?: number) => number;
+        const select: <T>(list: T[], random?: Function, index?: number, prime?: number) => T;
+        const pseudoGaussian: (samples?: number, random?: Function, index?: number, prime?: number) => number;
+    }
+}
 declare module "script/model" {
     import { Geometry } from "script/geometry";
     export namespace Model {
-        const pseudoGaussian: (samples?: number) => number;
         interface Animation {
             period: number;
             phase: number;
@@ -203,13 +210,6 @@ declare module "script/fps" {
 declare module "script/event" {
     export namespace Event {
         const initialize: () => void;
-    }
-}
-declare module "script/random" {
-    export namespace Random {
-        type Function = (index?: number, prime?: number) => number;
-        const makeInteger: (size: number, random?: Function, index?: number, prime?: number) => number;
-        const select: <T>(list: T[], random?: Function, index?: number, prime?: number) => T;
     }
 }
 declare module "flounder.style.js/evil-type.ts/common/evil-type" {

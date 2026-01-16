@@ -71,6 +71,31 @@ define("script/geometry", ["require", "exports"], function (require, exports) {
         };
     })(Geometry || (exports.Geometry = Geometry = {}));
 });
+define("script/random", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Random = void 0;
+    var Random;
+    (function (Random) {
+        Random.makeInteger = function (size, random, index, prime) {
+            if (random === void 0) { random = function () { return Math.random(); }; }
+            return Math.floor(random(index, prime) * size);
+        };
+        Random.select = function (list, random, index, prime) {
+            if (random === void 0) { random = Math.random; }
+            return list[Random.makeInteger(list.length, random, index, prime)];
+        };
+        Random.pseudoGaussian = function (samples, random, index, prime) {
+            if (samples === void 0) { samples = 6; }
+            if (random === void 0) { random = Math.random; }
+            var total = 0;
+            for (var i = 0; i < samples; i++) {
+                total += random(undefined === index ? index : (index + i), prime);
+            }
+            return total / samples;
+        };
+    })(Random || (exports.Random = Random = {}));
+});
 define("resource/config", [], {
     "applicationTitle": "Myaku-Myaku Sama",
     "repositoryUrl": "https://github.com/wraith13/myaku-myaku-sama/",
@@ -82,8 +107,7 @@ define("resource/config", [], {
         "coloringRegularFadeDuration": 500,
         "coloringRandomFadeDuration": 3000,
         "randomColoringUnitDuration": 60000,
-        "antiDullnessBoost": 0.2,
-        "minPatternDepth": 0.000000001
+        "antiDullnessBoost": 0.2
     },
     "coloring": {
         "regular": {
@@ -259,10 +283,12 @@ define("resource/config", [], {
             "minute": "2-digit",
             "second": "2-digit"
         },
-        "firstDayOfWeek": 0
+        "firstDayOfWeek": 0,
+        "patternSpan": 43000,
+        "minPatternDepth": 0.000000001
     }
 });
-define("script/model", ["require", "exports", "resource/config"], function (require, exports, config_json_1) {
+define("script/model", ["require", "exports", "script/random", "resource/config"], function (require, exports, random_js_1, config_json_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Model = void 0;
@@ -270,14 +296,6 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
     var Model;
     (function (Model) {
         var canvas = document.getElementById("canvas");
-        Model.pseudoGaussian = function (samples) {
-            if (samples === void 0) { samples = 6; }
-            var total = 0;
-            for (var i = 0; i < samples; i++) {
-                total += Math.random();
-            }
-            return total / samples;
-        };
         ;
         ;
         ;
@@ -360,9 +378,9 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
             Model.updateAnimations(floatAnimation.y, step);
         };
         Model.makeAnimation = function (specific, scaleRate) {
-            var period = specific.period.base + (Model.pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
+            var period = specific.period.base + (random_js_1.Random.pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
             var phase = period * Math.random();
-            var scale = (specific.scale.base + (Model.pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) * scaleRate;
+            var scale = (specific.scale.base + (random_js_1.Random.pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) * scaleRate;
             return { phase: phase, period: period, scale: scale, };
         };
         Model.makeUnitAnimation = function () {
@@ -381,7 +399,7 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
             return result;
         };
         Model.makeUnit = function (point) {
-            var body = Model.makeCircle(point, (Math.pow(Model.pseudoGaussian(4), 2) * 0.19) + 0.01);
+            var body = Model.makeCircle(point, (Math.pow(random_js_1.Random.pseudoGaussian(4), 2) * 0.19) + 0.01);
             var result = {
                 body: body,
                 scale: body.radius,
@@ -513,7 +531,7 @@ define("script/model", ["require", "exports", "resource/config"], function (requ
             if (validAreaRatio < 0.5) {
                 var makeUnitCooldown = 1000 * validAreaRatio;
                 if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
-                    layer.units.push(Model.makeUnit({ x: (Model.pseudoGaussian(1) - 0.5) * window.innerWidth / shortSide, y: (Model.pseudoGaussian(1) - 0.5) * window.innerHeight / shortSide, }));
+                    layer.units.push(Model.makeUnit({ x: (random_js_1.Random.pseudoGaussian(1) - 0.5) * window.innerWidth / shortSide, y: (random_js_1.Random.pseudoGaussian(1) - 0.5) * window.innerHeight / shortSide, }));
                     layer.lastMadeAt = timestamp;
                 }
             }
@@ -1365,22 +1383,6 @@ define("script/event", ["require", "exports", "script/model", "script/render", "
             });
         };
     })(Event || (exports.Event = Event = {}));
-});
-define("script/random", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Random = void 0;
-    var Random;
-    (function (Random) {
-        Random.makeInteger = function (size, random, index, prime) {
-            if (random === void 0) { random = function () { return Math.random(); }; }
-            return Math.floor(random(index, prime) * size);
-        };
-        Random.select = function (list, random, index, prime) {
-            if (random === void 0) { random = Math.random; }
-            return list[Random.makeInteger(list.length, random, index, prime)];
-        };
-    })(Random || (exports.Random = Random = {}));
 });
 define("flounder.style.js/evil-type.ts/common/evil-type", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -2576,13 +2578,12 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
         Watch.makeTime = function (date, locale) {
             return date.toLocaleTimeString(locale, config_json_5.default.watch.timeFormat);
         };
-        var patternSpan = 3 * 1000;
         var patternCount = 0;
         var currentPatternStartAt = 0;
         var currentPattern = null;
         Watch.makePattern = function (date) {
             var now = date.getTime();
-            if (null === currentPattern || patternSpan <= now - currentPatternStartAt) {
+            if (null === currentPattern || config_json_5.default.watch.patternSpan <= now - currentPatternStartAt) {
                 var type = "stripe";
                 var foregroundColor = "white";
                 var diagonal = Math.hypot(window.innerWidth, window.innerHeight) / 100;
@@ -2601,9 +2602,9 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
                 ++patternCount;
                 currentPatternStartAt = now;
             }
-            var step = (now - currentPatternStartAt) / patternSpan;
+            var step = (now - currentPatternStartAt) / config_json_5.default.watch.patternSpan;
             // In flounder.style.js, when depth is 0 or 1 only the background-color is produced and no pattern is generated, so avoid 0.
-            currentPattern.depth = Math.min(1 - config_json_5.default.rendering.minPatternDepth, Math.max(config_json_5.default.rendering.minPatternDepth, 1 === (patternCount % 2) ? step : 1 - step));
+            currentPattern.depth = Math.min(1 - config_json_5.default.watch.minPatternDepth, Math.max(config_json_5.default.watch.minPatternDepth, 1 === (patternCount % 2) ? step : 1 - step));
             return currentPattern;
         };
         Watch.backgroundToMask = function (backgroundStyle) {

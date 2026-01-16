@@ -10,8 +10,7 @@
         "coloringRegularFadeDuration": 500,
         "coloringRandomFadeDuration": 3000,
         "randomColoringUnitDuration": 60000,
-        "antiDullnessBoost": 0.2,
-        "minPatternDepth": 0.000000001
+        "antiDullnessBoost": 0.2
     },
     "coloring":
     {
@@ -200,6 +199,8 @@
             "minute": "2-digit",
             "second": "2-digit"
         },
-        "firstDayOfWeek": 0
+        "firstDayOfWeek": 0,
+        "patternSpan": 43000,
+        "minPatternDepth": 0.000000001
     }
 }

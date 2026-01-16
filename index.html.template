@@ -22,15 +22,19 @@ __LICENSE__-->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="twitter:card" content="player">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@wraith13">
 <!-- meta name="twitter:creator" content="@wraith13" -->
 <meta name="twitter:title" content="__APPLICATION_TITLE__">
 <meta name="twitter:description" lang="en" content="__DESCRIPTION__">
 <meta name="twitter:image" content="https://wraith13.github.io/myaku-myaku-sama/image/twitter-card.png">
-<meta name="twitter:player" content="__CANONICAL_URL__#twitter-card-player">
-<meta name="twitter:player:width" content="600">
-<meta name="twitter:player:height" content="600">
+<!--
+    Player Card support has been removed because enabling Twitter's Player Card for a static SPA like this web app causes URLs posted on Twitter with query parameters to be overwritten by the Player Card URL.
+    <meta name="twitter:card" content="player">
+    <meta name="twitter:player" content="__CANONICAL_URL__#twitter-card-player">
+    <meta name="twitter:player:width" content="600">
+    <meta name="twitter:player:height" content="600">
+-->
 <meta property="og:title" content="__APPLICATION_TITLE__" />
 <meta property="og:description" content="__DESCRIPTION__" />
 <meta property="og:type" content="website" />

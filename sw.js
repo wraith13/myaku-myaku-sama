@@ -1,4 +1,4 @@
-const CACHE_NAME = "web-media-player-20260116000546";
+const CACHE_NAME = "web-media-player-20260116092439";
 const ASSETS = // embeded from ./resouce/assets.json
 [
     "./",
