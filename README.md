@@ -78,6 +78,7 @@ Detailed file reference: [FILES.md](./FILES.md)
 - [build.js](https://github.com/wraith13/build.js)
 - [evil-commonjs](https://github.com/wraith13/evil-commonjs)
 - [evil-timer.js](https://github.com/wraith13/evil-timer.js)
+- [flounder.style.js](https://github.com/wraith13/flounder.style.js)
 
 ## ⚖️ License
 

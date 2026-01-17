@@ -11,29 +11,12 @@ export namespace Render
         y: (circle.y * parent.radius) + parent.y,
         radius: circle.radius *parent.radius,
     });
-    // const remappingCircle = (parent: Model.Circle, circle: Model.Circle): Model.Circle =>
-    // ({
-    //     x: (circle.x -parent.x) /parent.radius,
-    //     y: (circle.y -parent.y) /parent.radius,
-    //     radius: circle.radius /parent.radius,
-    // });
-    // export const remappingPoint = (parent: Model.Circle, point: Geometry.Point): Geometry.Point =>
-    // ({
-    //     x: (point.x -parent.x) /parent.radius,
-    //     y: (point.y -parent.y) /parent.radius,
-    // });
     export const getCanvasCircle = (): Model.Circle =>
     ({
         x: UI.canvas.width / 2,
         y: UI.canvas.height / 2,
         radius: Math.hypot(UI.canvas.width, UI.canvas.height) /2,
     });
-    // export const getWindowCircle = (): Model.Circle =>
-    // ({
-    //     x: window.innerWidth / 2,
-    //     y: window.innerHeight / 2,
-    //     radius: Math.hypot(window.innerWidth, window.innerHeight) /2,
-    // });
     type FusionStatus = "none" | "wired" | "near" | "overlap" | "inclusion";
     const hasFusionPath = (fusionStatus: FusionStatus) =>
         [ "none", "inclusion" ].indexOf(fusionStatus) < 0;
@@ -45,7 +28,6 @@ export namespace Render
         minRadius: number;
         wireLimit: number;
         fusionLimit: number;
-        //angle: number;
         distance: number;
     }
     const getFusionStatus = (data: CirclesConnection): FusionStatus =>
@@ -81,7 +63,6 @@ export namespace Render
                 const b = circles[j];
                 const sumRadius = a.radius +b.radius;
                 const minRadius = Math.min(a.radius, b.radius);
-                //const maxRadius = Math.max(a.radius, b.radius);
                 const fusionLimit = sumRadius +(minRadius *fusionLimitRate);
                 const wireLimit = sumRadius +(fusionLimit -sumRadius) *wireLimitRate;
                 const dx = b.x - a.x;
@@ -101,8 +82,6 @@ export namespace Render
                     const minCurveAngle2 = curveAngleRate * minRadius /b.radius;
                     const theta1 = Math.min((contactAngle ?? 0) +minCurveAngle1, Math.PI -minCurveAngle1);
                     const theta2 = Math.min((contactAngle ?? 0) +minCurveAngle2, Math.PI -minCurveAngle2);
-
-                    // 左タンジェント (tp1 on c1, tp3 on c2)
                     const tp1: Geometry.Point =
                     {
                         x: a.x + a.radius * Math.cos(angle + theta1),
@@ -113,8 +92,6 @@ export namespace Render
                         x: b.x + b.radius * Math.cos(angle + (Math.PI +theta2)),
                         y: b.y + b.radius * Math.sin(angle + (Math.PI +theta2))
                     };
-
-                    // 右タンジェント (tp2 on c1, tp4 on c2)
                     const tp2: Geometry.Point =
                     {
                         x: a.x + a.radius * Math.cos(angle -theta1),
@@ -131,8 +108,6 @@ export namespace Render
                         y: (tp1.y +tp2.y + tp3.y + tp4.y) /4,
                     };
                     let cpRate: number = 0;;
-                    //const surfaceDist = distance -sumRadius;
-                    //const fusionSurfaceLimit = fusionLimit -sumRadius;
                     switch(fusionStatus)
                     {
                     case "near":
@@ -162,10 +137,7 @@ export namespace Render
                             cp0.y *(1 -cpRate) + ((tp2.y +tp3.y) /2) *cpRate:
                             cp0.y *(1 +cpRate) + ((tp1.y +tp4.y) /2) *-cpRate,
                     };
-
                     context.beginPath();
-
-                    // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
                     context.moveTo(tp1.x, tp1.y);
                     const wireLength = distance -wireLimit;
                     if (0 < wireLength) // == "wired" === fusionStatus
@@ -186,10 +158,7 @@ export namespace Render
                         context.quadraticCurveTo(cxp1.x, cxp1.y, mp1.x, mp1.y);
                         context.lineTo(mp2.x, mp2.y);
                         context.quadraticCurveTo(cxp2.x, cxp2.y, tp4.x, tp4.y);
-
                         context.lineTo(tp3.x, tp3.y);
-
-                        //const wireRate = wireLength / Math.hypot(tp3.x -tp2.x, tp3.y -tp2.y);
                         const mp0b: Geometry.Point = Geometry.averagePoints([Geometry.mulPoint(Geometry.averagePoints([tp3, tp2]), wireWidthRate *wireWidthAdjustRate), Geometry.mulPoint(cp2, 2 -(wireWidthRate *wireWidthAdjustRate))]);
                         const mp3: Geometry.Point = Geometry.addPoints(mp0b, Geometry.mulPoint(Geometry.subPoints(tp3, tp2), wireLengthRate *0.5));
                         const cxp3: Geometry.Point = Geometry.addPoints(mp0b, Geometry.mulPoint(Geometry.subPoints(tp3, tp2), (2 -wireWidthRate) /4));
@@ -206,11 +175,8 @@ export namespace Render
                         context.lineTo(tp3.x, tp3.y);
                         context.quadraticCurveTo(cp2.x, cp2.y, tp2.x, tp2.y);
                     }
-
                     context.lineTo(tp1.x, tp1.y);
-
                     context.fillStyle = color;
-                    // connection.fillStyle = "#00000088";
                     context.fill();
                     context.closePath();
                 }

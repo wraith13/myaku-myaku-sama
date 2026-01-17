@@ -12,7 +12,7 @@ export namespace Url
         );
         return result;
     };
-    export const make = (params: Record<string, string>) =>
+    export const make = () =>
     {
         const url = new URL(window.location.href.replace(/#/g, "?"));
         for (const [ key, value ] of Object.entries(params))
@@ -21,11 +21,14 @@ export namespace Url
         }
         return url.toString().replace(/\?/g, "#");
     };
-    export const addParameter = (params: Record<string, string>, key: string, value: string): Record<string, string> =>
+    export const addParameter = (key: string, value: string): Record<string, string> =>
     {
         params[key] = value;
+        pushUrl();
         return params;
     };
+    const pushUrl = () =>
+        window.history.replaceState({}, "", Url.make());
     export const initialize = () =>
     {
     };

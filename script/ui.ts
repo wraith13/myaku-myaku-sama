@@ -1,4 +1,5 @@
-import { Model } from "./model";
+import { Url } from "./url";
+// import { Model } from "./model";
 import config from "@resource/config.json";
 export namespace UI
 {
@@ -22,7 +23,7 @@ export namespace UI
     export const pattern = getElementById("div", "pattern");
     export const fpsDiv = getElementById("div", "fps");
     export const coloringButton = getElementById("button", "coloring-button");
-    export const hdButton = getElementById("button", "hd-button");
+    export const qualityButton = getElementById("button", "quality-button");
     export const pitchButton = getElementById("button", "pitch-button");
     export const watchButton = getElementById("button", "watch-button");
     export const fpsButton = getElementById("button", "fps-button");
@@ -123,23 +124,63 @@ export namespace UI
             }
         }
         updateColoringRoundBar();
+        Url.addParameter("coloring", UI.coloring);
         console.log(`🎨 Coloring changed: ${UI.coloring}`);
     };
-    export const updateHdRoundBar = () => updateRoundBar
+    export type PixelRatioMode = keyof typeof config.quality.presets;
+    export const PixelRatioModeKeys = Object.keys(config.quality.presets) as PixelRatioMode[];
+    let pixelRatioMode: PixelRatioMode = config.quality.default as PixelRatioMode;
+    export const updateQualityRoundBar = () => updateRoundBar
     (
-        hdButton,
+        qualityButton,
         {
-            low: 0 /Model.PixelRatioModeKeys.length,
-            high: Model.getPixcelRatioLevel() /Model.PixelRatioModeKeys.length,
+            low: 0 /PixelRatioModeKeys.length,
+            high: (getPixcelRatioLevel() +1) /PixelRatioModeKeys.length,
             rotate: 0,
         }
     );
+    export const toggleQuality = (value?: boolean | PixelRatioMode) =>
+    {
+        if (typeof value === "boolean" || undefined === value)
+        {
+            const currentIndex = PixelRatioModeKeys.indexOf(pixelRatioMode);
+            const nextIndex = (PixelRatioModeKeys.length +currentIndex +(false !== value ? 1: -1)) %PixelRatioModeKeys.length;
+            pixelRatioMode = PixelRatioModeKeys[nextIndex];
+        }
+        else
+        {
+            if (PixelRatioModeKeys.includes(value))
+            {
+                pixelRatioMode = value;
+            }
+        }
+        updateQualityRoundBar();
+        Url.addParameter("quality", pixelRatioMode);
+        console.log(`🖥️ Quality changed: ${pixelRatioMode}`);
+    };
+    export const getPixcelRatioLevel = (): number =>
+        PixelRatioModeKeys.indexOf(pixelRatioMode);
+    export const getPixcelRatio = (): number =>
+    {
+        const value = config.quality.presets[pixelRatioMode] as number | "devicePixelRatio";
+        if ("devicePixelRatio" === value)
+        {
+            return window.devicePixelRatio ?? 1;
+        }
+        else
+        {
+            return value;
+        }
+    };
+    let pitch = config.pitch.default;
+    export const getPitch = (): number =>
+        pitch;
     export const updatePitchRoundBar = () => updateRoundBar
     (
         pitchButton,
         {
             low: 0 /config.pitch.presets.length,
-            high: config.pitch.presets.indexOf(Model.Data.pitch) /(config.pitch.presets.length -1),
+            high: config.pitch.presets.indexOf(pitch) /(config.pitch.presets.length -1),
             rotate: 0,
         }
     );
@@ -148,19 +189,21 @@ export namespace UI
         const presets = config.pitch.presets;
         if (typeof value === "boolean" || undefined === value)
         {
-            const currentIndex = presets.indexOf(Model.Data.pitch);
+            const currentIndex = presets.indexOf(pitch);
             const nextIndex = (presets.length +currentIndex + (false !== value ? 1: -1)) %presets.length;
-            Model.setPitch(presets[nextIndex]);
+            pitch = presets[nextIndex];
+            // Model.setPitch(presets[nextIndex]);
         }
         else
         {
-            if (presets.includes(value))
-            {
-                Model.setPitch(value);
-            }
+            // if (presets.includes(value))
+            // {
+                pitch = value;
+            // }
         }
         updatePitchRoundBar();
-        console.log(`🎵 Pitch changed: ${Model.Data.pitch}`);
+        Url.addParameter("pitch", pitch.toString());
+        console.log(`🎵 Pitch changed: ${pitch}`);
     }
     let watchRoundBarIndex = 0;
     export const updateWatchRoundBar = () => updateRoundBar
@@ -191,11 +234,12 @@ export namespace UI
         }
         updateWatchVisibility();
         updateWatchRoundBar();
+        Url.addParameter("watch", UI.watchColor);
         console.log(`🕰️ Watch changed: ${UI.watchColor}`);
     };
-    export const toggleFpsDisplay = () =>
+    export const toggleFpsDisplay = (value?: boolean | undefined) =>
     {
-        if ("none" === fpsDiv.style.display)
+        if ("none" === fpsDiv.style.display || true === value)
         {
             fpsDiv.style.display = "block";
             fpsButton.classList.add("on");
@@ -205,6 +249,9 @@ export namespace UI
             fpsDiv.style.display = "none";
             fpsButton.classList.remove("on");
         }
+        const showFps = "none" !== fpsDiv.style.display ? "true": "false";
+        Url.addParameter("fps", showFps);
+        console.log(`📊 FPS display toggled: ${showFps}`);
     }
     export const toggleFullScreen = () =>
     {
@@ -279,7 +326,7 @@ export namespace UI
     {
         // Fallback for older environments
         setStyle(document.documentElement, "--short-side", `${Math.min(window.innerWidth, window.innerHeight) /100}px`);
-        console.log(`🔄 Resize: ${window.innerWidth}x${window.innerHeight}`);
+        //console.log(`🔄 Resize: ${window.innerWidth}x${window.innerHeight}`);
     };
     export const setTextContent = (element: HTMLElement, text: string) =>
     {

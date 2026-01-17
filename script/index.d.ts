@@ -1,8 +1,8 @@
 declare module "script/url" {
     export namespace Url {
         const parseParameter: (url: string) => Record<string, string>;
-        const make: (params: Record<string, string>) => string;
-        const addParameter: (params: Record<string, string>, key: string, value: string) => Record<string, string>;
+        const make: () => string;
+        const addParameter: (key: string, value: string) => Record<string, string>;
         const initialize: () => void;
         const params: Record<string, string>;
     }
@@ -25,6 +25,65 @@ declare module "script/random" {
         const makeInteger: (size: number, random?: Function, index?: number, prime?: number) => number;
         const select: <T>(list: T[], random?: Function, index?: number, prime?: number) => T;
         const pseudoGaussian: (samples?: number, random?: Function, index?: number, prime?: number) => number;
+    }
+}
+declare module "script/ui" {
+    import config from "resource/config";
+    export namespace UI {
+        const canvas: HTMLCanvasElement;
+        const overlayPanel: HTMLDivElement;
+        const time: HTMLTimeElement;
+        const date: HTMLTimeElement;
+        const pattern: HTMLDivElement;
+        const fpsDiv: HTMLDivElement;
+        const coloringButton: HTMLButtonElement;
+        const qualityButton: HTMLButtonElement;
+        const pitchButton: HTMLButtonElement;
+        const watchButton: HTMLButtonElement;
+        const fpsButton: HTMLButtonElement;
+        const fullscreenButton: HTMLButtonElement;
+        const jumpOutButton: HTMLButtonElement;
+        const fullscreenEnabled: any;
+        const isInIframe: boolean;
+        const setAriaHidden: (element: HTMLElement, hidden: boolean) => void;
+        const WatchColorList: readonly ["none", "white", "black", "zebra", "rainbow"];
+        type WatchColor = typeof WatchColorList[number];
+        let watchColor: WatchColor;
+        const updateWatchVisibility: () => void;
+        const updateRoundBar: (button: HTMLButtonElement, properties: {
+            low: number;
+            high: number;
+            rotate: number;
+        }) => void;
+        const updateColoringRoundBar: () => void;
+        type ColoringType = keyof typeof config["coloring"] | "random";
+        let coloring: ColoringType;
+        const toggleColoring: (style?: boolean | keyof (typeof config)["coloring"]) => void;
+        type PixelRatioMode = keyof typeof config.quality.presets;
+        const PixelRatioModeKeys: PixelRatioMode[];
+        const updateQualityRoundBar: () => void;
+        const toggleQuality: (value?: boolean | PixelRatioMode) => void;
+        const getPixcelRatioLevel: () => number;
+        const getPixcelRatio: () => number;
+        const getPitch: () => number;
+        const updatePitchRoundBar: () => void;
+        const togglePitch: (value?: boolean | (typeof config.pitch.presets)[number]) => void;
+        const updateWatchRoundBar: () => void;
+        const toggleWatchDisplay: (value?: boolean | WatchColor) => void;
+        const toggleFpsDisplay: (value?: boolean | undefined) => void;
+        const toggleFullScreen: () => void;
+        const updateFullscreenState: () => void;
+        class ToggleClassForWhileTimer {
+            timer: ReturnType<typeof setTimeout> | undefined;
+            constructor();
+            start(element: HTMLElement, token: string, span: number, onEnd?: () => unknown): void;
+            isInTimer: () => boolean;
+        }
+        const mousemove: () => void;
+        const resize: () => void;
+        const setTextContent: (element: HTMLElement, text: string) => boolean;
+        const setAttribute: (element: HTMLElement, name: string, value: string | undefined) => boolean;
+        const setStyle: (element: HTMLElement, name: string, value: string | undefined) => boolean;
     }
 }
 declare module "script/model" {
@@ -106,66 +165,8 @@ declare module "script/model" {
         const makeEye: () => Eye;
         const updateUnit: (layer: Layer, unit: Unit, step: number) => void;
         const updateLayer: (layer: Layer, timestamp: number, step: number) => void;
-        const PixelRatioModeKeys: readonly ["thirty-second", "sixteenth", "eighth", "quarter", "half", "regular", "full"];
-        type PixelRatioMode = typeof PixelRatioModeKeys[number];
-        const togglePixelRatioMode: (value?: boolean | PixelRatioMode) => void;
-        const getPixcelRatioLevel: () => number;
-        const getPixcelRatio: () => number;
         const updateStretch: () => void;
         const updateData: (rawTimestamp: number) => boolean;
-    }
-}
-declare module "script/ui" {
-    import config from "resource/config";
-    export namespace UI {
-        const canvas: HTMLCanvasElement;
-        const overlayPanel: HTMLDivElement;
-        const time: HTMLTimeElement;
-        const date: HTMLTimeElement;
-        const pattern: HTMLDivElement;
-        const fpsDiv: HTMLDivElement;
-        const coloringButton: HTMLButtonElement;
-        const hdButton: HTMLButtonElement;
-        const pitchButton: HTMLButtonElement;
-        const watchButton: HTMLButtonElement;
-        const fpsButton: HTMLButtonElement;
-        const fullscreenButton: HTMLButtonElement;
-        const jumpOutButton: HTMLButtonElement;
-        const fullscreenEnabled: any;
-        const isInIframe: boolean;
-        const setAriaHidden: (element: HTMLElement, hidden: boolean) => void;
-        const WatchColorList: readonly ["none", "white", "black", "zebra", "rainbow"];
-        type WatchColor = typeof WatchColorList[number];
-        let watchColor: WatchColor;
-        const updateWatchVisibility: () => void;
-        const updateRoundBar: (button: HTMLButtonElement, properties: {
-            low: number;
-            high: number;
-            rotate: number;
-        }) => void;
-        const updateColoringRoundBar: () => void;
-        type ColoringType = keyof typeof config["coloring"] | "random";
-        let coloring: ColoringType;
-        const toggleColoring: (style?: boolean | keyof (typeof config)["coloring"]) => void;
-        const updateHdRoundBar: () => void;
-        const updatePitchRoundBar: () => void;
-        const togglePitch: (value?: boolean | (typeof config.pitch.presets)[number]) => void;
-        const updateWatchRoundBar: () => void;
-        const toggleWatchDisplay: (value?: boolean | WatchColor) => void;
-        const toggleFpsDisplay: () => void;
-        const toggleFullScreen: () => void;
-        const updateFullscreenState: () => void;
-        class ToggleClassForWhileTimer {
-            timer: ReturnType<typeof setTimeout> | undefined;
-            constructor();
-            start(element: HTMLElement, token: string, span: number, onEnd?: () => unknown): void;
-            isInTimer: () => boolean;
-        }
-        const mousemove: () => void;
-        const resize: () => void;
-        const setTextContent: (element: HTMLElement, text: string) => boolean;
-        const setAttribute: (element: HTMLElement, name: string, value: string | undefined) => boolean;
-        const setStyle: (element: HTMLElement, name: string, value: string | undefined) => boolean;
     }
 }
 declare module "script/color" {

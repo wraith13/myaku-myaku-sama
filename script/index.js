@@ -24,17 +24,21 @@ define("script/url", ["require", "exports"], function (require, exports) {
             params.forEach(function (value, key) { return result[key] = value; });
             return result;
         };
-        Url.make = function (params) {
+        Url.make = function () {
             var url = new URL(window.location.href.replace(/#/g, "?"));
-            for (var _i = 0, _a = Object.entries(params); _i < _a.length; _i++) {
+            for (var _i = 0, _a = Object.entries(Url.params); _i < _a.length; _i++) {
                 var _b = _a[_i], key = _b[0], value = _b[1];
                 url.searchParams.set(key, value);
             }
             return url.toString().replace(/\?/g, "#");
         };
-        Url.addParameter = function (params, key, value) {
-            params[key] = value;
-            return params;
+        Url.addParameter = function (key, value) {
+            Url.params[key] = value;
+            pushUrl();
+            return Url.params;
+        };
+        var pushUrl = function () {
+            return window.history.replaceState({}, "", Url.make());
         };
         Url.initialize = function () {
         };
@@ -176,6 +180,18 @@ define("resource/config", [], {
             "accent": "#B22222"
         }
     },
+    "quality": {
+        "presets": {
+            "thirty-second": 0.03125,
+            "sixteenth": 0.0625,
+            "eighth": 0.125,
+            "quarter": 0.25,
+            "half": 0.5,
+            "regular": 1.0,
+            "full": "devicePixelRatio"
+        },
+        "default": "regular"
+    },
     "pitch": {
         "presets": [
             0,
@@ -288,360 +304,11 @@ define("resource/config", [], {
         "minPatternDepth": 0.000000001
     }
 });
-define("script/model", ["require", "exports", "script/random", "resource/config"], function (require, exports, random_js_1, config_json_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Model = void 0;
-    config_json_1 = __importDefault(config_json_1);
-    var Model;
-    (function (Model) {
-        var canvas = document.getElementById("canvas");
-        ;
-        ;
-        ;
-        ;
-        Model.makeCircle = function (point, radius) {
-            return ({
-                x: point.x,
-                y: point.y,
-                radius: radius,
-            });
-        };
-        ;
-        ;
-        ;
-        Model.Data = {
-            previousTimestamp: 0,
-            previousPitchedTimestamp: 0,
-            pitch: config_json_1.default.pitch.default,
-            width: 0,
-            height: 0,
-            accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
-            main: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
-        };
-        Model.setPitch = function (value) {
-            Model.Data.pitch = value;
-        };
-        Model.isOutOfCanvas = function (circle) {
-            var marginRate = config_json_1.default.rendering.marginRate;
-            var halfDiagonalLength = Math.hypot(canvas.width, canvas.height) / 2;
-            var centerX = canvas.width / 2;
-            var centerY = canvas.height / 2;
-            var x = (circle.x * marginRate * halfDiagonalLength) + centerX;
-            var y = (circle.y * marginRate * halfDiagonalLength) + centerY;
-            return (x + circle.radius * halfDiagonalLength < 0 ||
-                y + circle.radius * halfDiagonalLength < 0 ||
-                canvas.width < x - circle.radius * halfDiagonalLength ||
-                canvas.height < y - circle.radius * halfDiagonalLength);
-        };
-        Model.sumValidAreas = function (layer) {
-            return layer.units
-                .filter(function (unit) { return !Model.isOutOfCanvas(unit.body); })
-                .reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
-        };
-        Model.sumAllAreas = function (layer) {
-            return layer.units
-                .reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
-        };
-        Model.calculateAnimationSineIntegral = function (animation, step) {
-            // return stepで積分(Math.sin((animation.phase / animation.period) * Math.PI * 2));
-            if (animation.period <= 0 || 0 === step) {
-                return 0;
-            }
-            else {
-                var omega = (2 * Math.PI) / animation.period;
-                // ∫0^step sin(omega*(phase + τ)) dτ = (cos(omega*phase) - cos(omega*(phase + step))) / omega
-                var integral = (Math.cos(omega * animation.phase) - Math.cos(omega * (animation.phase + step))) / omega;
-                return integral * animation.scale;
-            }
-        };
-        Model.accumulateAnimationSineIntegral = function (animations, step) {
-            return animations.reduce(function (sum, animation) { return sum + Model.calculateAnimationSineIntegral(animation, step); }, 0);
-        };
-        Model.accumulateAnimationSize = function (animations, step) {
-            return animations.reduce(function (product, animation) {
-                var phase = animation.phase + step;
-                return product + Math.pow(Math.sin((phase / animation.period) * Math.PI), 2) * 0.5 * animation.scale;
-            }, 0.0);
-        };
-        Model.updateAnimation = function (animation, step) {
-            animation.phase += step;
-            while (animation.period <= animation.phase) {
-                animation.phase -= animation.period;
-            }
-        };
-        Model.updateAnimations = function (animations, step) {
-            return animations.forEach(function (animation) { return Model.updateAnimation(animation, step); });
-        };
-        Model.updateFloatAnimation = function (floatAnimation, step) {
-            Model.updateAnimations(floatAnimation.x, step);
-            Model.updateAnimations(floatAnimation.y, step);
-        };
-        Model.makeAnimation = function (specific, scaleRate) {
-            var period = specific.period.base + (random_js_1.Random.pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
-            var phase = period * Math.random();
-            var scale = (specific.scale.base + (random_js_1.Random.pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) * scaleRate;
-            return { phase: phase, period: period, scale: scale, };
-        };
-        Model.makeUnitAnimation = function () {
-            // const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
-            // const xRatio = window.innerWidth / shortSide;
-            // const yRatio = window.innerHeight / shortSide;
-            var xRatio = 1.0;
-            var yRatio = 1.0;
-            var result = {
-                moveAnimation: {
-                    x: config_json_1.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_1.default.Layer.unit.moveAnimation, i * xRatio); }),
-                    y: config_json_1.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_1.default.Layer.unit.moveAnimation, i * yRatio); }),
-                },
-                sizeAnimation: config_json_1.default.Layer.unit.sizeAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_1.default.Layer.unit.sizeAnimation, i); }),
-            };
-            return result;
-        };
-        Model.makeUnit = function (point) {
-            var body = Model.makeCircle(point, (Math.pow(random_js_1.Random.pseudoGaussian(4), 2) * 0.19) + 0.01);
-            var result = {
-                body: body,
-                scale: body.radius,
-                animation: Model.makeUnitAnimation(),
-            };
-            //updateUnit(result, Math.random() *10000);
-            result.animation.appearAnimation =
-                {
-                    period: config_json_1.default.Layer.unit.appearAnimation.period,
-                    phase: 0,
-                    scale: result.scale,
-                };
-            return result;
-        };
-        Model.makeEye = function () {
-            var point = { x: 0, y: 0, };
-            var xRatio = 1.0;
-            var yRatio = 1.0;
-            var white = Model.makeCircle(point, config_json_1.default.eye.whiteRate);
-            var iris = Model.makeCircle(point, config_json_1.default.eye.irisRate);
-            var result = {
-                white: white,
-                iris: iris,
-                animation: {
-                    moveAnimation: {
-                        x: config_json_1.default.Layer.eye.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_1.default.Layer.eye.moveAnimation, i * xRatio); }),
-                        y: config_json_1.default.Layer.eye.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_1.default.Layer.eye.moveAnimation, i * yRatio); }),
-                    }
-                },
-            };
-            result.animation.appearAnimation =
-                {
-                    period: config_json_1.default.Layer.eye.appearAnimation.period,
-                    phase: 0,
-                    scale: config_json_1.default.eye.whiteRate,
-                };
-            return result;
-        };
-        var updateIris = function (eye) {
-            eye.iris.x = eye.white.x + eye.white.x * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate) / (1 - config_json_1.default.eye.whiteRate);
-            eye.iris.y = eye.white.y + eye.white.y * (config_json_1.default.eye.whiteRate - config_json_1.default.eye.irisRate) / (1 - config_json_1.default.eye.whiteRate);
-            eye.iris.radius = eye.white.radius * (config_json_1.default.eye.irisRate / config_json_1.default.eye.whiteRate);
-        };
-        var updateEye = function (unit, step) {
-            var _a;
-            if (unit.eye) {
-                var eye = unit.eye;
-                var rate = 0.005;
-                eye.white.x += Model.accumulateAnimationSineIntegral(eye.animation.moveAnimation.x, step) * rate;
-                eye.white.y += Model.accumulateAnimationSineIntegral(eye.animation.moveAnimation.y, step) * rate;
-                var distance = Math.hypot(eye.white.x, eye.white.y);
-                var maxDistance = 0.95;
-                if (maxDistance < distance + config_json_1.default.eye.whiteRate) {
-                    eye.white.x *= (maxDistance - config_json_1.default.eye.whiteRate) / distance;
-                    eye.white.y *= (maxDistance - config_json_1.default.eye.whiteRate) / distance;
-                }
-                Model.updateAnimations(eye.animation.moveAnimation.x, step);
-                Model.updateAnimations(eye.animation.moveAnimation.y, step);
-                var transion = (_a = eye.animation.appearAnimation) !== null && _a !== void 0 ? _a : eye.animation.vanishAnimation;
-                if (transion) {
-                    transion.phase += step;
-                    if (eye.animation.vanishAnimation) {
-                        eye.white.radius = config_json_1.default.eye.whiteRate * (1.0 - (transion.phase / transion.period));
-                        if (transion.period <= transion.phase) {
-                            // eye.animation.vanishAnimation = undefined;
-                            unit.eye = undefined;
-                        }
-                    }
-                    else {
-                        eye.white.radius = config_json_1.default.eye.whiteRate * (transion.phase / transion.period);
-                        if (transion.period <= transion.phase) {
-                            eye.animation.appearAnimation = undefined;
-                        }
-                    }
-                }
-                if (undefined !== unit.eye) {
-                    updateIris(eye);
-                }
-            }
-        };
-        Model.updateUnit = function (layer, unit, step) {
-            var _a;
-            var rate = 0.0005;
-            unit.body.x += Model.accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step) * rate;
-            unit.body.y += Model.accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step) * rate;
-            var transion = (_a = unit.animation.appearAnimation) !== null && _a !== void 0 ? _a : unit.animation.vanishAnimation;
-            if (transion) {
-                transion.phase += step;
-                if (unit.animation.vanishAnimation) {
-                    unit.body.radius = transion.scale * (1.0 - (transion.phase / transion.period));
-                    if (transion.period <= transion.phase) {
-                        unit.animation.vanishAnimation = undefined;
-                    }
-                }
-                else {
-                    unit.body.radius = transion.scale * (transion.phase / transion.period);
-                    if (transion.period <= transion.phase) {
-                        unit.animation.appearAnimation = undefined;
-                    }
-                }
-            }
-            var scale = transion ? unit.body.radius : unit.scale;
-            unit.body.radius = scale * (1 + (Model.accumulateAnimationSize(unit.animation.sizeAnimation, step) * 2.0));
-            Model.updateFloatAnimation(unit.animation.moveAnimation, step);
-            Model.updateAnimations(unit.animation.sizeAnimation, step);
-            if (layer === Model.Data.main && !Model.isOutOfCanvas(unit.body)) {
-                if (undefined === unit.eye && config_json_1.default.eye.appearRate <= unit.body.radius) {
-                    unit.eye = Model.makeEye();
-                }
-            }
-            if (undefined !== unit.eye && undefined === unit.eye.animation.vanishAnimation && unit.body.radius < config_json_1.default.eye.vanishRate) {
-                unit.eye.animation.vanishAnimation =
-                    {
-                        period: config_json_1.default.Layer.eye.vanishAnimation.period,
-                        phase: 0,
-                        scale: unit.eye.white.radius,
-                    };
-            }
-            updateEye(unit, step);
-        };
-        Model.updateLayer = function (layer, timestamp, step) {
-            var shortSide = Math.min(window.innerWidth, window.innerHeight);
-            var longSide = Math.max(window.innerWidth, window.innerHeight);
-            var validVolume = Model.sumValidAreas(layer);
-            var allVolume = Model.sumAllAreas(layer);
-            var longSideRatio = 0 < shortSide ? longSide / shortSide : 0;
-            var validAreaRatio = validVolume / (longSideRatio * 2.0);
-            var allAreaRatio = allVolume / Math.min(longSideRatio * 2.0, validVolume);
-            if (validAreaRatio < 0.5) {
-                var makeUnitCooldown = 1000 * validAreaRatio;
-                if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
-                    layer.units.push(Model.makeUnit({ x: (random_js_1.Random.pseudoGaussian(1) - 0.5) * window.innerWidth / shortSide, y: (random_js_1.Random.pseudoGaussian(1) - 0.5) * window.innerHeight / shortSide, }));
-                    layer.lastMadeAt = timestamp;
-                }
-            }
-            else if (1.0 < allAreaRatio || (0.5 < allAreaRatio && layer.lastRemovedAt + 3000 < timestamp)) {
-                var removeUnitCooldown = 1000 / allAreaRatio;
-                if (removeUnitCooldown <= timestamp - layer.lastRemovedAt) {
-                    var target = layer.units.filter(function (unit) { return undefined === unit.animation.vanishAnimation; })[0];
-                    if (target) {
-                        target.animation.vanishAnimation =
-                            {
-                                period: config_json_1.default.Layer.unit.vanishAnimation.period,
-                                phase: 0,
-                                scale: target.scale,
-                            };
-                        layer.lastRemovedAt = timestamp;
-                    }
-                }
-            }
-            layer.units.forEach(function (unit) { return Model.updateUnit(layer, unit, step); });
-            var gabages = layer.units.filter(function (unit) { return unit.body.radius <= 0; });
-            gabages.forEach(function (garbage) {
-                var index = layer.units.indexOf(garbage);
-                if (0 <= index) {
-                    layer.units.splice(index, 1);
-                }
-            });
-        };
-        Model.PixelRatioModeKeys = ["thirty-second", "sixteenth", "eighth", "quarter", "half", "regular", "full",];
-        var pixelRatioMode = "regular";
-        Model.togglePixelRatioMode = function (value) {
-            if (typeof value === "boolean" || undefined === value) {
-                var currentIndex = Model.PixelRatioModeKeys.indexOf(pixelRatioMode);
-                var nextIndex = (Model.PixelRatioModeKeys.length + currentIndex + (false !== value ? 1 : -1)) % Model.PixelRatioModeKeys.length;
-                pixelRatioMode = Model.PixelRatioModeKeys[nextIndex];
-            }
-            else {
-                if (Model.PixelRatioModeKeys.includes(value)) {
-                    pixelRatioMode = value;
-                }
-            }
-            console.log("\uD83D\uDDA5\uFE0F Quality changed: ".concat(pixelRatioMode));
-            Model.updateStretch();
-        };
-        Model.getPixcelRatioLevel = function () {
-            switch (pixelRatioMode) {
-                case "thirty-second":
-                    return 1;
-                case "sixteenth":
-                    return 2;
-                case "eighth":
-                    return 3;
-                case "quarter":
-                    return 4;
-                case "half":
-                    return 5;
-                case "regular":
-                    return 6;
-                case "full":
-                    return 7;
-            }
-        };
-        Model.getPixcelRatio = function () {
-            var _a;
-            switch (pixelRatioMode) {
-                case "thirty-second":
-                    return 0.03125;
-                case "sixteenth":
-                    return 0.0625;
-                case "eighth":
-                    return 0.125;
-                case "quarter":
-                    return 0.25;
-                case "half":
-                    return 0.5;
-                case "regular":
-                    return 1;
-                case "full":
-                    return (_a = window.devicePixelRatio) !== null && _a !== void 0 ? _a : 1;
-            }
-        };
-        Model.updateStretch = function () {
-            var devicePixelRatio = Model.getPixcelRatio();
-            canvas.width = Model.Data.width = window.innerWidth * devicePixelRatio;
-            canvas.height = Model.Data.height = window.innerHeight * devicePixelRatio;
-        };
-        Model.updateData = function (rawTimestamp) {
-            var result = false;
-            var devicePixelRatio = Model.getPixcelRatio();
-            if (window.innerWidth * devicePixelRatio !== Model.Data.width || window.innerHeight * devicePixelRatio !== Model.Data.height) {
-                Model.updateStretch();
-                result = true;
-            }
-            var rawStep = 0 < Model.Data.previousTimestamp ? Math.min(rawTimestamp - Model.Data.previousTimestamp, 500) : 0;
-            var step = rawStep * Model.Data.pitch;
-            if (0 < step) {
-                Model.Data.previousPitchedTimestamp += step;
-                Model.updateLayer(Model.Data.accent, Model.Data.previousPitchedTimestamp, step);
-                Model.updateLayer(Model.Data.main, Model.Data.previousPitchedTimestamp, step);
-                result = true;
-            }
-            Model.Data.previousTimestamp = rawTimestamp;
-            return result;
-        };
-    })(Model || (exports.Model = Model = {}));
-});
-define("script/ui", ["require", "exports", "script/model", "resource/config"], function (require, exports, model_1, config_json_2) {
+define("script/ui", ["require", "exports", "script/url", "resource/config"], function (require, exports, url_1, config_json_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.UI = void 0;
-    config_json_2 = __importDefault(config_json_2);
+    config_json_1 = __importDefault(config_json_1);
     var UI;
     (function (UI) {
         var getElementById = function (tag, id) {
@@ -661,7 +328,7 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         UI.pattern = getElementById("div", "pattern");
         UI.fpsDiv = getElementById("div", "fps");
         UI.coloringButton = getElementById("button", "coloring-button");
-        UI.hdButton = getElementById("button", "hd-button");
+        UI.qualityButton = getElementById("button", "quality-button");
         UI.pitchButton = getElementById("button", "pitch-button");
         UI.watchButton = getElementById("button", "watch-button");
         UI.fpsButton = getElementById("button", "fps-button");
@@ -709,7 +376,7 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         var coloringRoundBarIndex = 0;
         var mod = function (n, m) { return ((n % m) + m) % m; };
         UI.updateColoringRoundBar = function () {
-            var keys = Object.keys(config_json_2.default.coloring).concat("random");
+            var keys = Object.keys(config_json_1.default.coloring).concat("random");
             var max = keys.length - 1;
             UI.updateRoundBar(UI.coloringButton, max <= mod(coloringRoundBarIndex, keys.length) ?
                 {
@@ -725,7 +392,7 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         };
         UI.coloring = "regular";
         UI.toggleColoring = function (style) {
-            var keys = Object.keys(config_json_2.default.coloring).concat("random");
+            var keys = Object.keys(config_json_1.default.coloring).concat("random");
             if (typeof style === "boolean" || undefined === style) {
                 var currentIndex = keys.indexOf(UI.coloring);
                 var nextIndex = (keys.length + currentIndex + (false !== style ? 1 : -1)) % keys.length;
@@ -740,32 +407,70 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
                 }
             }
             UI.updateColoringRoundBar();
+            url_1.Url.addParameter("coloring", UI.coloring);
             console.log("\uD83C\uDFA8 Coloring changed: ".concat(UI.coloring));
         };
-        UI.updateHdRoundBar = function () { return UI.updateRoundBar(UI.hdButton, {
-            low: 0 / model_1.Model.PixelRatioModeKeys.length,
-            high: model_1.Model.getPixcelRatioLevel() / model_1.Model.PixelRatioModeKeys.length,
+        UI.PixelRatioModeKeys = Object.keys(config_json_1.default.quality.presets);
+        var pixelRatioMode = config_json_1.default.quality.default;
+        UI.updateQualityRoundBar = function () { return UI.updateRoundBar(UI.qualityButton, {
+            low: 0 / UI.PixelRatioModeKeys.length,
+            high: (UI.getPixcelRatioLevel() + 1) / UI.PixelRatioModeKeys.length,
             rotate: 0,
         }); };
+        UI.toggleQuality = function (value) {
+            if (typeof value === "boolean" || undefined === value) {
+                var currentIndex = UI.PixelRatioModeKeys.indexOf(pixelRatioMode);
+                var nextIndex = (UI.PixelRatioModeKeys.length + currentIndex + (false !== value ? 1 : -1)) % UI.PixelRatioModeKeys.length;
+                pixelRatioMode = UI.PixelRatioModeKeys[nextIndex];
+            }
+            else {
+                if (UI.PixelRatioModeKeys.includes(value)) {
+                    pixelRatioMode = value;
+                }
+            }
+            UI.updateQualityRoundBar();
+            url_1.Url.addParameter("quality", pixelRatioMode);
+            console.log("\uD83D\uDDA5\uFE0F Quality changed: ".concat(pixelRatioMode));
+        };
+        UI.getPixcelRatioLevel = function () {
+            return UI.PixelRatioModeKeys.indexOf(pixelRatioMode);
+        };
+        UI.getPixcelRatio = function () {
+            var _a;
+            var value = config_json_1.default.quality.presets[pixelRatioMode];
+            if ("devicePixelRatio" === value) {
+                return (_a = window.devicePixelRatio) !== null && _a !== void 0 ? _a : 1;
+            }
+            else {
+                return value;
+            }
+        };
+        var pitch = config_json_1.default.pitch.default;
+        UI.getPitch = function () {
+            return pitch;
+        };
         UI.updatePitchRoundBar = function () { return UI.updateRoundBar(UI.pitchButton, {
-            low: 0 / config_json_2.default.pitch.presets.length,
-            high: config_json_2.default.pitch.presets.indexOf(model_1.Model.Data.pitch) / (config_json_2.default.pitch.presets.length - 1),
+            low: 0 / config_json_1.default.pitch.presets.length,
+            high: config_json_1.default.pitch.presets.indexOf(pitch) / (config_json_1.default.pitch.presets.length - 1),
             rotate: 0,
         }); };
         UI.togglePitch = function (value) {
-            var presets = config_json_2.default.pitch.presets;
+            var presets = config_json_1.default.pitch.presets;
             if (typeof value === "boolean" || undefined === value) {
-                var currentIndex = presets.indexOf(model_1.Model.Data.pitch);
+                var currentIndex = presets.indexOf(pitch);
                 var nextIndex = (presets.length + currentIndex + (false !== value ? 1 : -1)) % presets.length;
-                model_1.Model.setPitch(presets[nextIndex]);
+                pitch = presets[nextIndex];
+                // Model.setPitch(presets[nextIndex]);
             }
             else {
-                if (presets.includes(value)) {
-                    model_1.Model.setPitch(value);
-                }
+                // if (presets.includes(value))
+                // {
+                pitch = value;
+                // }
             }
             UI.updatePitchRoundBar();
-            console.log("\uD83C\uDFB5 Pitch changed: ".concat(model_1.Model.Data.pitch));
+            url_1.Url.addParameter("pitch", pitch.toString());
+            console.log("\uD83C\uDFB5 Pitch changed: ".concat(pitch));
         };
         var watchRoundBarIndex = 0;
         UI.updateWatchRoundBar = function () { return UI.updateRoundBar(UI.watchButton, {
@@ -788,10 +493,11 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
             }
             UI.updateWatchVisibility();
             UI.updateWatchRoundBar();
+            url_1.Url.addParameter("watch", UI.watchColor);
             console.log("\uD83D\uDD70\uFE0F Watch changed: ".concat(UI.watchColor));
         };
-        UI.toggleFpsDisplay = function () {
-            if ("none" === UI.fpsDiv.style.display) {
+        UI.toggleFpsDisplay = function (value) {
+            if ("none" === UI.fpsDiv.style.display || true === value) {
                 UI.fpsDiv.style.display = "block";
                 UI.fpsButton.classList.add("on");
             }
@@ -799,6 +505,9 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
                 UI.fpsDiv.style.display = "none";
                 UI.fpsButton.classList.remove("on");
             }
+            var showFps = "none" !== UI.fpsDiv.style.display ? "true" : "false";
+            url_1.Url.addParameter("fps", showFps);
+            console.log("\uD83D\uDCCA FPS display toggled: ".concat(showFps));
         };
         UI.toggleFullScreen = function () {
             var elem = document.documentElement;
@@ -858,7 +567,7 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         UI.resize = function () {
             // Fallback for older environments
             UI.setStyle(document.documentElement, "--short-side", "".concat(Math.min(window.innerWidth, window.innerHeight) / 100, "px"));
-            console.log("\uD83D\uDD04 Resize: ".concat(window.innerWidth, "x").concat(window.innerHeight));
+            //console.log(`🔄 Resize: ${window.innerWidth}x${window.innerHeight}`);
         };
         UI.setTextContent = function (element, text) {
             if (element.textContent !== text) {
@@ -894,6 +603,297 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
             return false;
         };
     })(UI || (exports.UI = UI = {}));
+});
+define("script/model", ["require", "exports", "script/random", "script/ui", "resource/config"], function (require, exports, random_js_1, ui_js_1, config_json_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Model = void 0;
+    config_json_2 = __importDefault(config_json_2);
+    var Model;
+    (function (Model) {
+        var canvas = document.getElementById("canvas");
+        ;
+        ;
+        ;
+        ;
+        Model.makeCircle = function (point, radius) {
+            return ({
+                x: point.x,
+                y: point.y,
+                radius: radius,
+            });
+        };
+        ;
+        ;
+        ;
+        Model.Data = {
+            previousTimestamp: 0,
+            previousPitchedTimestamp: 0,
+            pitch: config_json_2.default.pitch.default,
+            width: 0,
+            height: 0,
+            accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
+            main: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
+        };
+        Model.setPitch = function (value) {
+            Model.Data.pitch = value;
+        };
+        Model.isOutOfCanvas = function (circle) {
+            var marginRate = config_json_2.default.rendering.marginRate;
+            var halfDiagonalLength = Math.hypot(canvas.width, canvas.height) / 2;
+            var centerX = canvas.width / 2;
+            var centerY = canvas.height / 2;
+            var x = (circle.x * marginRate * halfDiagonalLength) + centerX;
+            var y = (circle.y * marginRate * halfDiagonalLength) + centerY;
+            return (x + circle.radius * halfDiagonalLength < 0 ||
+                y + circle.radius * halfDiagonalLength < 0 ||
+                canvas.width < x - circle.radius * halfDiagonalLength ||
+                canvas.height < y - circle.radius * halfDiagonalLength);
+        };
+        Model.sumValidAreas = function (layer) {
+            return layer.units
+                .filter(function (unit) { return !Model.isOutOfCanvas(unit.body); })
+                .reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
+        };
+        Model.sumAllAreas = function (layer) {
+            return layer.units
+                .reduce(function (sum, unit) { return sum + Math.PI * unit.body.radius * unit.body.radius; }, 0);
+        };
+        Model.calculateAnimationSineIntegral = function (animation, step) {
+            // return stepで積分した(Math.sin((animation.phase / animation.period) * Math.PI * 2));
+            if (animation.period <= 0 || 0 === step) {
+                return 0;
+            }
+            else {
+                var omega = (2 * Math.PI) / animation.period;
+                // ∫0^step sin(omega*(phase + τ)) dτ = (cos(omega*phase) - cos(omega*(phase + step))) / omega
+                var integral = (Math.cos(omega * animation.phase) - Math.cos(omega * (animation.phase + step))) / omega;
+                return integral * animation.scale;
+            }
+        };
+        Model.accumulateAnimationSineIntegral = function (animations, step) {
+            return animations.reduce(function (sum, animation) { return sum + Model.calculateAnimationSineIntegral(animation, step); }, 0);
+        };
+        Model.accumulateAnimationSize = function (animations, step) {
+            return animations.reduce(function (product, animation) {
+                var phase = animation.phase + step;
+                return product + Math.pow(Math.sin((phase / animation.period) * Math.PI), 2) * 0.5 * animation.scale;
+            }, 0.0);
+        };
+        Model.updateAnimation = function (animation, step) {
+            animation.phase += step;
+            while (animation.period <= animation.phase) {
+                animation.phase -= animation.period;
+            }
+        };
+        Model.updateAnimations = function (animations, step) {
+            return animations.forEach(function (animation) { return Model.updateAnimation(animation, step); });
+        };
+        Model.updateFloatAnimation = function (floatAnimation, step) {
+            Model.updateAnimations(floatAnimation.x, step);
+            Model.updateAnimations(floatAnimation.y, step);
+        };
+        Model.makeAnimation = function (specific, scaleRate) {
+            var period = specific.period.base + (random_js_1.Random.pseudoGaussian(specific.period.pseudoGaussian) * specific.period.range);
+            var phase = period * Math.random();
+            var scale = (specific.scale.base + (random_js_1.Random.pseudoGaussian(specific.scale.pseudoGaussian) * specific.scale.range)) * scaleRate;
+            return { phase: phase, period: period, scale: scale, };
+        };
+        Model.makeUnitAnimation = function () {
+            var result = {
+                moveAnimation: {
+                    x: config_json_2.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.unit.moveAnimation, i); }),
+                    y: config_json_2.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.unit.moveAnimation, i); }),
+                },
+                sizeAnimation: config_json_2.default.Layer.unit.sizeAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.unit.sizeAnimation, i); }),
+            };
+            return result;
+        };
+        Model.makeUnit = function (point) {
+            var body = Model.makeCircle(point, (Math.pow(random_js_1.Random.pseudoGaussian(4), 2) * 0.19) + 0.01);
+            var result = {
+                body: body,
+                scale: body.radius,
+                animation: Model.makeUnitAnimation(),
+            };
+            //updateUnit(result, Math.random() *10000);
+            result.animation.appearAnimation =
+                {
+                    period: config_json_2.default.Layer.unit.appearAnimation.period,
+                    phase: 0,
+                    scale: result.scale,
+                };
+            return result;
+        };
+        Model.makeEye = function () {
+            var point = { x: 0, y: 0, };
+            var xRatio = 1.0;
+            var yRatio = 1.0;
+            var white = Model.makeCircle(point, config_json_2.default.eye.whiteRate);
+            var iris = Model.makeCircle(point, config_json_2.default.eye.irisRate);
+            var result = {
+                white: white,
+                iris: iris,
+                animation: {
+                    moveAnimation: {
+                        x: config_json_2.default.Layer.eye.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.eye.moveAnimation, i * xRatio); }),
+                        y: config_json_2.default.Layer.eye.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.eye.moveAnimation, i * yRatio); }),
+                    }
+                },
+            };
+            result.animation.appearAnimation =
+                {
+                    period: config_json_2.default.Layer.eye.appearAnimation.period,
+                    phase: 0,
+                    scale: config_json_2.default.eye.whiteRate,
+                };
+            return result;
+        };
+        var updateIris = function (eye) {
+            eye.iris.x = eye.white.x + eye.white.x * (config_json_2.default.eye.whiteRate - config_json_2.default.eye.irisRate) / (1 - config_json_2.default.eye.whiteRate);
+            eye.iris.y = eye.white.y + eye.white.y * (config_json_2.default.eye.whiteRate - config_json_2.default.eye.irisRate) / (1 - config_json_2.default.eye.whiteRate);
+            eye.iris.radius = eye.white.radius * (config_json_2.default.eye.irisRate / config_json_2.default.eye.whiteRate);
+        };
+        var updateEye = function (unit, step) {
+            var _a;
+            if (unit.eye) {
+                var eye = unit.eye;
+                var rate = 0.005;
+                eye.white.x += Model.accumulateAnimationSineIntegral(eye.animation.moveAnimation.x, step) * rate;
+                eye.white.y += Model.accumulateAnimationSineIntegral(eye.animation.moveAnimation.y, step) * rate;
+                var distance = Math.hypot(eye.white.x, eye.white.y);
+                var maxDistance = 0.95;
+                if (maxDistance < distance + config_json_2.default.eye.whiteRate) {
+                    eye.white.x *= (maxDistance - config_json_2.default.eye.whiteRate) / distance;
+                    eye.white.y *= (maxDistance - config_json_2.default.eye.whiteRate) / distance;
+                }
+                Model.updateAnimations(eye.animation.moveAnimation.x, step);
+                Model.updateAnimations(eye.animation.moveAnimation.y, step);
+                var transion = (_a = eye.animation.appearAnimation) !== null && _a !== void 0 ? _a : eye.animation.vanishAnimation;
+                if (transion) {
+                    transion.phase += step;
+                    if (eye.animation.vanishAnimation) {
+                        eye.white.radius = config_json_2.default.eye.whiteRate * (1.0 - (transion.phase / transion.period));
+                        if (transion.period <= transion.phase) {
+                            // eye.animation.vanishAnimation = undefined;
+                            unit.eye = undefined;
+                        }
+                    }
+                    else {
+                        eye.white.radius = config_json_2.default.eye.whiteRate * (transion.phase / transion.period);
+                        if (transion.period <= transion.phase) {
+                            eye.animation.appearAnimation = undefined;
+                        }
+                    }
+                }
+                if (undefined !== unit.eye) {
+                    updateIris(eye);
+                }
+            }
+        };
+        Model.updateUnit = function (layer, unit, step) {
+            var _a;
+            var rate = 0.0005;
+            unit.body.x += Model.accumulateAnimationSineIntegral(unit.animation.moveAnimation.x, step) * rate;
+            unit.body.y += Model.accumulateAnimationSineIntegral(unit.animation.moveAnimation.y, step) * rate;
+            var transion = (_a = unit.animation.appearAnimation) !== null && _a !== void 0 ? _a : unit.animation.vanishAnimation;
+            if (transion) {
+                transion.phase += step;
+                if (unit.animation.vanishAnimation) {
+                    unit.body.radius = transion.scale * (1.0 - (transion.phase / transion.period));
+                    if (transion.period <= transion.phase) {
+                        unit.animation.vanishAnimation = undefined;
+                    }
+                }
+                else {
+                    unit.body.radius = transion.scale * (transion.phase / transion.period);
+                    if (transion.period <= transion.phase) {
+                        unit.animation.appearAnimation = undefined;
+                    }
+                }
+            }
+            var scale = transion ? unit.body.radius : unit.scale;
+            unit.body.radius = scale * (1 + (Model.accumulateAnimationSize(unit.animation.sizeAnimation, step) * 2.0));
+            Model.updateFloatAnimation(unit.animation.moveAnimation, step);
+            Model.updateAnimations(unit.animation.sizeAnimation, step);
+            if (layer === Model.Data.main && !Model.isOutOfCanvas(unit.body)) {
+                if (undefined === unit.eye && config_json_2.default.eye.appearRate <= unit.body.radius) {
+                    unit.eye = Model.makeEye();
+                }
+            }
+            if (undefined !== unit.eye && undefined === unit.eye.animation.vanishAnimation && unit.body.radius < config_json_2.default.eye.vanishRate) {
+                unit.eye.animation.vanishAnimation =
+                    {
+                        period: config_json_2.default.Layer.eye.vanishAnimation.period,
+                        phase: 0,
+                        scale: unit.eye.white.radius,
+                    };
+            }
+            updateEye(unit, step);
+        };
+        Model.updateLayer = function (layer, timestamp, step) {
+            var shortSide = Math.min(window.innerWidth, window.innerHeight);
+            var longSide = Math.max(window.innerWidth, window.innerHeight);
+            var validVolume = Model.sumValidAreas(layer);
+            var allVolume = Model.sumAllAreas(layer);
+            var longSideRatio = 0 < shortSide ? longSide / shortSide : 0;
+            var validAreaRatio = validVolume / (longSideRatio * 2.0);
+            var allAreaRatio = allVolume / Math.min(longSideRatio * 2.0, validVolume);
+            if (validAreaRatio < 0.5) {
+                var makeUnitCooldown = 1000 * validAreaRatio;
+                if (makeUnitCooldown <= timestamp - layer.lastMadeAt) {
+                    layer.units.push(Model.makeUnit({ x: (random_js_1.Random.pseudoGaussian(1) - 0.5) * window.innerWidth / shortSide, y: (random_js_1.Random.pseudoGaussian(1) - 0.5) * window.innerHeight / shortSide, }));
+                    layer.lastMadeAt = timestamp;
+                }
+            }
+            else if (1.0 < allAreaRatio || (0.5 < allAreaRatio && layer.lastRemovedAt + 3000 < timestamp)) {
+                var removeUnitCooldown = 1000 / allAreaRatio;
+                if (removeUnitCooldown <= timestamp - layer.lastRemovedAt) {
+                    var target = layer.units.filter(function (unit) { return undefined === unit.animation.vanishAnimation; })[0];
+                    if (target) {
+                        target.animation.vanishAnimation =
+                            {
+                                period: config_json_2.default.Layer.unit.vanishAnimation.period,
+                                phase: 0,
+                                scale: target.scale,
+                            };
+                        layer.lastRemovedAt = timestamp;
+                    }
+                }
+            }
+            layer.units.forEach(function (unit) { return Model.updateUnit(layer, unit, step); });
+            var gabages = layer.units.filter(function (unit) { return unit.body.radius <= 0; });
+            gabages.forEach(function (garbage) {
+                var index = layer.units.indexOf(garbage);
+                if (0 <= index) {
+                    layer.units.splice(index, 1);
+                }
+            });
+        };
+        Model.updateStretch = function () {
+            var devicePixelRatio = ui_js_1.UI.getPixcelRatio();
+            canvas.width = Model.Data.width = window.innerWidth * devicePixelRatio;
+            canvas.height = Model.Data.height = window.innerHeight * devicePixelRatio;
+        };
+        Model.updateData = function (rawTimestamp) {
+            var result = false;
+            var devicePixelRatio = ui_js_1.UI.getPixcelRatio();
+            if (window.innerWidth * devicePixelRatio !== Model.Data.width || window.innerHeight * devicePixelRatio !== Model.Data.height) {
+                Model.updateStretch();
+                result = true;
+            }
+            var rawStep = 0 < Model.Data.previousTimestamp ? Math.min(rawTimestamp - Model.Data.previousTimestamp, 500) : 0;
+            var step = rawStep * Model.Data.pitch;
+            if (0 < step) {
+                Model.Data.previousPitchedTimestamp += step;
+                Model.updateLayer(Model.Data.accent, Model.Data.previousPitchedTimestamp, step);
+                Model.updateLayer(Model.Data.main, Model.Data.previousPitchedTimestamp, step);
+                result = true;
+            }
+            Model.Data.previousTimestamp = rawTimestamp;
+            return result;
+        };
+    })(Model || (exports.Model = Model = {}));
 });
 define("script/color", ["require", "exports", "script/ui", "resource/config"], function (require, exports, ui_1, config_json_3) {
     "use strict";
@@ -982,7 +982,7 @@ define("script/color", ["require", "exports", "script/ui", "resource/config"], f
         };
     })(Color || (exports.Color = Color = {}));
 });
-define("script/render", ["require", "exports", "script/geometry", "script/color", "script/model", "script/ui"], function (require, exports, geometry_1, color_1, model_2, ui_2) {
+define("script/render", ["require", "exports", "script/geometry", "script/color", "script/model", "script/ui"], function (require, exports, geometry_1, color_1, model_1, ui_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Render = void 0;
@@ -996,17 +996,6 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                 radius: circle.radius * parent.radius,
             });
         };
-        // const remappingCircle = (parent: Model.Circle, circle: Model.Circle): Model.Circle =>
-        // ({
-        //     x: (circle.x -parent.x) /parent.radius,
-        //     y: (circle.y -parent.y) /parent.radius,
-        //     radius: circle.radius /parent.radius,
-        // });
-        // export const remappingPoint = (parent: Model.Circle, point: Geometry.Point): Geometry.Point =>
-        // ({
-        //     x: (point.x -parent.x) /parent.radius,
-        //     y: (point.y -parent.y) /parent.radius,
-        // });
         Render.getCanvasCircle = function () {
             return ({
                 x: ui_2.UI.canvas.width / 2,
@@ -1045,7 +1034,6 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                     var b = circles[j];
                     var sumRadius = a.radius + b.radius;
                     var minRadius = Math.min(a.radius, b.radius);
-                    //const maxRadius = Math.max(a.radius, b.radius);
                     var fusionLimit = sumRadius + (minRadius * fusionLimitRate);
                     var wireLimit = sumRadius + (fusionLimit - sumRadius) * wireLimitRate;
                     var dx = b.x - a.x;
@@ -1062,7 +1050,6 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                         var minCurveAngle2 = curveAngleRate * minRadius / b.radius;
                         var theta1 = Math.min((contactAngle !== null && contactAngle !== void 0 ? contactAngle : 0) + minCurveAngle1, Math.PI - minCurveAngle1);
                         var theta2 = Math.min((contactAngle !== null && contactAngle !== void 0 ? contactAngle : 0) + minCurveAngle2, Math.PI - minCurveAngle2);
-                        // 左タンジェント (tp1 on c1, tp3 on c2)
                         var tp1 = {
                             x: a.x + a.radius * Math.cos(angle + theta1),
                             y: a.y + a.radius * Math.sin(angle + theta1)
@@ -1071,7 +1058,6 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                             x: b.x + b.radius * Math.cos(angle + (Math.PI + theta2)),
                             y: b.y + b.radius * Math.sin(angle + (Math.PI + theta2))
                         };
-                        // 右タンジェント (tp2 on c1, tp4 on c2)
                         var tp2 = {
                             x: a.x + a.radius * Math.cos(angle - theta1),
                             y: a.y + a.radius * Math.sin(angle - theta1)
@@ -1086,8 +1072,6 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                         };
                         var cpRate = 0;
                         ;
-                        //const surfaceDist = distance -sumRadius;
-                        //const fusionSurfaceLimit = fusionLimit -sumRadius;
                         switch (fusionStatus) {
                             case "near":
                                 cpRate = sumRadius + minRadius <= distance ?
@@ -1115,7 +1099,6 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                                 cp0.y * (1 + cpRate) + ((tp1.y + tp4.y) / 2) * -cpRate,
                         };
                         context.beginPath();
-                        // 上側ベジェ: tp1 -> cp -> tp3 (cpは中点+オフセットで曲げ)
                         context.moveTo(tp1.x, tp1.y);
                         var wireLength = distance - wireLimit;
                         if (0 < wireLength) // == "wired" === fusionStatus
@@ -1137,7 +1120,6 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                             context.lineTo(mp2.x, mp2.y);
                             context.quadraticCurveTo(cxp2.x, cxp2.y, tp4.x, tp4.y);
                             context.lineTo(tp3.x, tp3.y);
-                            //const wireRate = wireLength / Math.hypot(tp3.x -tp2.x, tp3.y -tp2.y);
                             var mp0b = geometry_1.Geometry.averagePoints([geometry_1.Geometry.mulPoint(geometry_1.Geometry.averagePoints([tp3, tp2]), wireWidthRate * wireWidthAdjustRate), geometry_1.Geometry.mulPoint(cp2, 2 - (wireWidthRate * wireWidthAdjustRate))]);
                             var mp3 = geometry_1.Geometry.addPoints(mp0b, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp3, tp2), wireLengthRate * 0.5));
                             var cxp3 = geometry_1.Geometry.addPoints(mp0b, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp3, tp2), (2 - wireWidthRate) / 4));
@@ -1155,7 +1137,6 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                         }
                         context.lineTo(tp1.x, tp1.y);
                         context.fillStyle = color;
-                        // connection.fillStyle = "#00000088";
                         context.fill();
                         context.closePath();
                     }
@@ -1174,18 +1155,18 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
         var drawLayer = function (layer, color, coloring) {
             var canvasCircle = Render.getCanvasCircle();
             var bodies = layer.units.map(function (u) { return u.body; })
-                .filter(function (c) { return !model_2.Model.isOutOfCanvas(c); })
+                .filter(function (c) { return !model_1.Model.isOutOfCanvas(c); })
                 .map(function (c) { return mappingCircle(canvasCircle, c); });
             drawFusionPath(bodies, color);
             bodies.forEach(function (body) { return drawCircle(body, color); });
-            if (layer === model_2.Model.Data.main) {
+            if (layer === model_1.Model.Data.main) {
                 var whites = layer.units
-                    .filter(function (u) { return undefined !== u.eye && !model_2.Model.isOutOfCanvas(u.body); })
+                    .filter(function (u) { return undefined !== u.eye && !model_1.Model.isOutOfCanvas(u.body); })
                     .map(function (u) { return mappingCircle(mappingCircle(canvasCircle, u.body), u.eye.white); });
                 drawFusionPath(whites, coloring.base);
                 whites.forEach(function (white) { return drawCircle(white, coloring.base); });
                 var irises = layer.units
-                    .filter(function (u) { return undefined !== u.eye && !model_2.Model.isOutOfCanvas(u.body); })
+                    .filter(function (u) { return undefined !== u.eye && !model_1.Model.isOutOfCanvas(u.body); })
                     .map(function (u) { return mappingCircle(mappingCircle(canvasCircle, u.body), u.eye.iris); });
                 drawFusionPath(irises, coloring.accent);
                 irises.forEach(function (iris) { return drawCircle(iris, coloring.accent); });
@@ -1201,8 +1182,8 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
                 color_1.Color.previousColors = coloring;
                 context.fillStyle = coloring.base;
                 context.fillRect(0, 0, ui_2.UI.canvas.width, ui_2.UI.canvas.height);
-                drawLayer(model_2.Model.Data.accent, coloring.accent, coloring);
-                drawLayer(model_2.Model.Data.main, coloring.main, coloring);
+                drawLayer(model_1.Model.Data.accent, coloring.accent, coloring);
+                drawLayer(model_1.Model.Data.main, coloring.main, coloring);
             }
         };
     })(Render || (exports.Render = Render = {}));
@@ -1321,7 +1302,7 @@ define("script/fps", ["require", "exports"], function (require, exports) {
         Fps.isUnderFuseFps = function () { return Fps.isValid && Fps.currentMaxFps.fps < Fps.fuseFps; };
     })(Fps || (exports.Fps = Fps = {}));
 });
-define("script/event", ["require", "exports", "script/model", "script/color", "script/ui"], function (require, exports, model_3, color_2, ui_3) {
+define("script/event", ["require", "exports", "script/model", "script/color", "script/ui"], function (require, exports, model_2, color_2, ui_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Event = void 0;
@@ -1344,16 +1325,19 @@ define("script/event", ["require", "exports", "script/model", "script/color", "s
                 },
                 {
                     key: "Q",
-                    button: ui_3.UI.hdButton,
+                    button: ui_3.UI.qualityButton,
                     command: function (event) {
-                        model_3.Model.togglePixelRatioMode(!event.shiftKey);
-                        ui_3.UI.updateHdRoundBar();
+                        ui_3.UI.toggleQuality(!event.shiftKey);
+                        model_2.Model.updateStretch();
                     }
                 },
                 {
                     key: "P",
                     button: ui_3.UI.pitchButton,
-                    command: function (event) { return ui_3.UI.togglePitch(!event.shiftKey); },
+                    command: function (event) {
+                        ui_3.UI.togglePitch(!event.shiftKey);
+                        model_2.Model.setPitch(ui_3.UI.getPitch());
+                    },
                 },
                 {
                     key: "W",
@@ -2575,14 +2559,14 @@ define("flounder.style.js/index", ["require", "exports", "flounder.style.js/gene
         };
     })(FlounderStyle || (exports.FlounderStyle = FlounderStyle = {}));
 });
-define("script/watch", ["require", "exports", "script/url", "script/ui", "script/random", "flounder.style.js/index", "resource/config"], function (require, exports, url_1, ui_4, random_1, flounder_style_js_1, config_json_5) {
+define("script/watch", ["require", "exports", "script/url", "script/ui", "script/random", "flounder.style.js/index", "resource/config"], function (require, exports, url_2, ui_4, random_1, flounder_style_js_1, config_json_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Watch = void 0;
     config_json_5 = __importDefault(config_json_5);
     var Watch;
     (function (Watch) {
-        Watch.locale = url_1.Url.params["locale"] || navigator.language;
+        Watch.locale = url_2.Url.params["locale"] || navigator.language;
         var phi = (1 + Math.sqrt(5)) / 2;
         Watch.makeDate = function (date, locale) {
             return date.toLocaleDateString(locale, config_json_5.default.watch.dateFormat);
@@ -2665,16 +2649,56 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
         };
     })(Watch || (exports.Watch = Watch = {}));
 });
-define("script/index", ["require", "exports", "script/url", "script/model", "script/render", "script/fps", "script/ui", "script/event", "script/watch"], function (require, exports, url_2, model_4, render_1, fps_1, ui_5, event_1, watch_1) {
+define("script/index", ["require", "exports", "script/url", "script/model", "script/color", "script/render", "script/fps", "script/ui", "script/event", "script/watch", "resource/config"], function (require, exports, url_3, model_3, color_3, render_1, fps_1, ui_5, event_1, watch_1, config_json_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    url_2.Url.initialize();
+    config_json_6 = __importDefault(config_json_6);
+    url_3.Url.initialize();
     event_1.Event.initialize();
-    ui_5.UI.fpsDiv.style.display = "none";
-    ui_5.UI.updateColoringRoundBar();
-    ui_5.UI.updateHdRoundBar();
-    ui_5.UI.updatePitchRoundBar();
-    ui_5.UI.updateWatchVisibility();
+    //console.log("URL Parameters:", Url.params);
+    if ("random" === url_3.Url.params["coloring"] || url_3.Url.params["coloring"] in config_json_6.default.coloring) {
+        //console.log(`🎨 Coloring from URL parameter: ${Url.params["coloring"]}`);
+        ui_5.UI.toggleColoring(url_3.Url.params["coloring"]);
+        color_3.Color.updateColoring();
+    }
+    else {
+        //console.log("🎨 Default coloring");
+        ui_5.UI.updateColoringRoundBar();
+    }
+    if (ui_5.UI.PixelRatioModeKeys.includes(url_3.Url.params["quality"])) {
+        //console.log(`🖼️ Quality from URL parameter: ${Url.params["quality"]}`);
+        ui_5.UI.toggleQuality(url_3.Url.params["quality"]);
+        model_3.Model.updateStretch();
+    }
+    else {
+        //console.log("🖼️ Default quality");
+        ui_5.UI.updateQualityRoundBar();
+    }
+    if (url_3.Url.params["pitch"] && !isNaN(Number(url_3.Url.params["pitch"]))) {
+        //console.log(`🎵 Pitch from URL parameter: ${Url.params["pitch"]}`);
+        ui_5.UI.togglePitch(Number(url_3.Url.params["pitch"]));
+        model_3.Model.setPitch(ui_5.UI.getPitch());
+    }
+    else {
+        //console.log("🎵 Default pitch");
+        ui_5.UI.updatePitchRoundBar();
+    }
+    if (ui_5.UI.WatchColorList.includes(url_3.Url.params["watch"])) {
+        //console.log(`⌚ Watch display from URL parameter: ${Url.params["watch"]}`);
+        ui_5.UI.toggleWatchDisplay(url_3.Url.params["watch"]);
+    }
+    else {
+        //console.log("⌚ Default watch display");
+        ui_5.UI.updateWatchVisibility();
+    }
+    if ("true" === url_3.Url.params["fps"]) {
+        //console.log("⚡ FPS display from URL parameter: true");
+        ui_5.UI.toggleFpsDisplay(true);
+    }
+    else {
+        //console.log("⚡ Default FPS display");
+        ui_5.UI.fpsDiv.style.display = "none";
+    }
     ui_5.UI.fullscreenButton.style.display = ui_5.UI.fullscreenEnabled ? "block" : "none";
     ui_5.UI.setAriaHidden(ui_5.UI.fullscreenButton, !ui_5.UI.fullscreenEnabled);
     ui_5.UI.updateFullscreenState();
@@ -2682,7 +2706,7 @@ define("script/index", ["require", "exports", "script/url", "script/model", "scr
     ui_5.UI.setAriaHidden(ui_5.UI.jumpOutButton, ui_5.UI.isInIframe);
     ui_5.UI.resize();
     var step = function (timestamp) {
-        render_1.Render.draw(model_4.Model.updateData(timestamp));
+        render_1.Render.draw(model_3.Model.updateData(timestamp));
         watch_1.Watch.update();
         if (ui_5.UI.fpsDiv.style.display !== "none") {
             fps_1.Fps.step(timestamp);

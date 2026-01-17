@@ -23,17 +23,21 @@ export namespace Event
             },
             {
                 key: "Q",
-                button: UI.hdButton,
+                button: UI.qualityButton,
                 command: event =>
                 {
-                    Model.togglePixelRatioMode( ! event.shiftKey);
-                    UI.updateHdRoundBar();
+                    UI.toggleQuality( ! event.shiftKey);
+                    Model.updateStretch();
                 }
             },
             {
                 key: "P",
                 button: UI.pitchButton,
-                command: event => UI.togglePitch( ! event.shiftKey),
+                command: event =>
+                {
+                    UI.togglePitch( ! event.shiftKey);
+                    Model.setPitch(UI.getPitch());
+                },
             },
             {
                 key: "W",

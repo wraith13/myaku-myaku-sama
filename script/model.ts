@@ -1,5 +1,6 @@
 import { Geometry } from "./geometry.js";
 import { Random } from "./random.js";
+import { UI } from "./ui.js";
 import config from "@resource/config.json";
 export namespace Model
 {
@@ -95,7 +96,7 @@ export namespace Model
             .reduce((sum, unit) => sum + Math.PI * unit.body.radius * unit.body.radius, 0);
     export const calculateAnimationSineIntegral = (animation: Animation, step: number): number =>
     {
-        // return stepで積分(Math.sin((animation.phase / animation.period) * Math.PI * 2));
+        // return stepで積分した(Math.sin((animation.phase / animation.period) * Math.PI * 2));
         if (animation.period <= 0 || 0 === step)
         {
             return 0;
@@ -144,17 +145,12 @@ export namespace Model
     };
     export const makeUnitAnimation = (): UnitAnimation =>
     {
-        // const shortSide = Math.min(window.innerWidth, window.innerHeight) *3.0;
-        // const xRatio = window.innerWidth / shortSide;
-        // const yRatio = window.innerHeight / shortSide;
-        const xRatio = 1.0;
-        const yRatio = 1.0;
         const result: UnitAnimation =
         {
             moveAnimation:
             {
-                x: config.Layer.unit.moveAnimation.elements.map(i => makeAnimation(config.Layer.unit.moveAnimation, i *xRatio)),
-                y: config.Layer.unit.moveAnimation.elements.map(i => makeAnimation(config.Layer.unit.moveAnimation, i *yRatio)),
+                x: config.Layer.unit.moveAnimation.elements.map(i => makeAnimation(config.Layer.unit.moveAnimation, i)),
+                y: config.Layer.unit.moveAnimation.elements.map(i => makeAnimation(config.Layer.unit.moveAnimation, i)),
             },
             sizeAnimation:
                 config.Layer.unit.sizeAnimation.elements.map(i => makeAnimation(config.Layer.unit.sizeAnimation, i)),
@@ -357,77 +353,16 @@ export namespace Model
             }
         );
     };
-    export const PixelRatioModeKeys = [ "thirty-second", "sixteenth", "eighth", "quarter", "half", "regular", "full", ] as const;
-    export type PixelRatioMode = typeof PixelRatioModeKeys[number];
-    let pixelRatioMode: PixelRatioMode = "regular";
-    export const togglePixelRatioMode = (value?: boolean | PixelRatioMode) =>
-    {
-        if (typeof value === "boolean" || undefined === value)
-        {
-            const currentIndex = PixelRatioModeKeys.indexOf(pixelRatioMode);
-            const nextIndex = (PixelRatioModeKeys.length +currentIndex +(false !== value ? 1: -1)) %PixelRatioModeKeys.length;
-            pixelRatioMode = PixelRatioModeKeys[nextIndex];
-        }
-        else
-        {
-            if (PixelRatioModeKeys.includes(value))
-            {
-                pixelRatioMode = value;
-            }
-        }
-        console.log(`🖥️ Quality changed: ${pixelRatioMode}`);
-        updateStretch();
-    };
-    export const getPixcelRatioLevel = (): number =>
-    {
-        switch (pixelRatioMode)
-        {
-        case "thirty-second":
-            return 1;
-        case "sixteenth":
-            return 2;
-        case "eighth":
-            return 3;
-        case "quarter":
-            return 4;
-        case "half":
-            return 5;
-        case "regular":
-            return 6;
-        case "full":
-            return 7;
-        }
-    };
-    export const getPixcelRatio = (): number =>
-    {
-        switch (pixelRatioMode)
-        {
-        case "thirty-second":
-            return 0.03125;
-        case "sixteenth":
-            return 0.0625;
-        case "eighth":
-            return 0.125;
-        case "quarter":
-            return 0.25;
-        case "half":
-            return 0.5;
-        case "regular":
-            return 1;
-        case "full":
-            return window.devicePixelRatio ?? 1;
-        }
-    };
     export const updateStretch = () =>
     {
-        const devicePixelRatio = getPixcelRatio();
+        const devicePixelRatio = UI.getPixcelRatio();
         canvas.width = Data.width = window.innerWidth *devicePixelRatio;
         canvas.height = Data.height = window.innerHeight *devicePixelRatio;
     };
     export const updateData = (rawTimestamp: number) =>
     {
         let result = false;
-        const devicePixelRatio = getPixcelRatio();
+        const devicePixelRatio = UI.getPixcelRatio();
         if (window.innerWidth *devicePixelRatio !== Data.width || window.innerHeight *devicePixelRatio !== Data.height)
         {
             updateStretch();

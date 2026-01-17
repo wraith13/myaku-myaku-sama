@@ -1,6 +1,6 @@
 {
     "name": "@wraith13/myaku-myaku-sama",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "description": "Myaku-Myaku Sama",
     "scripts": {
         "build all": "node ./build.js ../build.json all",
