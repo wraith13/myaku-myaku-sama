@@ -1,5 +1,5 @@
 import { Model } from "./model";
-import { Render } from "./render";
+import { Color } from "./color";
 import { UI } from "./ui";
 export namespace Event
 {
@@ -18,7 +18,7 @@ export namespace Event
                 command: event =>
                 {
                     UI.toggleColoring( ! event.shiftKey);
-                    Render.updateColoring();
+                    Color.updateColoring();
                 }
             },
             {

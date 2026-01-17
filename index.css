@@ -64,11 +64,7 @@ body:not(.mousemove)
     left: 50%;
     transform: translate(-50%, -50%);
     border-radius: calc(2 * var(--short-side));
-    /*backdrop-filter: blur(calc(1 * var(--short-side)));*/
-}
-#overlay-panel.zebra
-{
-    backdrop-filter: blur(0);
+    backdrop-filter: blur(calc(0.125 * var(--short-side)));
 }
 #overlay-panel.zebra #pattern
 {

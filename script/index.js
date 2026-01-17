@@ -895,22 +895,22 @@ define("script/ui", ["require", "exports", "script/model", "resource/config"], f
         };
     })(UI || (exports.UI = UI = {}));
 });
-define("script/render", ["require", "exports", "script/geometry", "script/model", "script/ui", "resource/config"], function (require, exports, geometry_js_1, model_2, ui_1, config_json_3) {
+define("script/color", ["require", "exports", "script/ui", "resource/config"], function (require, exports, ui_1, config_json_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Render = void 0;
+    exports.Color = void 0;
     config_json_3 = __importDefault(config_json_3);
-    var Render;
-    (function (Render) {
-        var isRandomColoring = function () {
+    var Color;
+    (function (Color) {
+        Color.isRandomColoring = function () {
             return undefined === config_json_3.default.coloring[ui_1.UI.coloring];
         };
-        var getColoring = function () {
-            if (isRandomColoring()) {
+        Color.getColoring = function () {
+            if (Color.isRandomColoring()) {
                 var index = Math.floor(Math.random() * Object.keys(config_json_3.default.coloring).length);
                 var key = Object.keys(config_json_3.default.coloring)[index];
                 var result = config_json_3.default.coloring[key];
-                if (isSameColoring(newColors, result)) {
+                if (Color.isSameColoring(newColors, result)) {
                     index = (index + 1) % Object.keys(config_json_3.default.coloring).length;
                     key = Object.keys(config_json_3.default.coloring)[index];
                     result = config_json_3.default.coloring[key];
@@ -922,20 +922,24 @@ define("script/render", ["require", "exports", "script/geometry", "script/model"
             }
         };
         var getColors = function () {
-            var coloring = getColoring();
+            var coloring = Color.getColoring();
             return { base: coloring.base, main: coloring.main, accent: coloring.accent, };
         };
         var changedColoringAt = 0;
         var oldColors = getColors();
         var newColors = getColors();
-        var previousColors = getColors();
-        var isSameColoring = function (a, b) {
+        Color.isExpiredRandomColoring = function () {
+            return Color.isRandomColoring() &&
+                config_json_3.default.rendering.randomColoringUnitDuration <= (performance.now() - changedColoringAt);
+        };
+        Color.previousColors = getColors();
+        Color.isSameColoring = function (a, b) {
             return a.base === b.base && a.main === b.main && a.accent === b.accent;
         };
-        Render.updateColoring = function () {
+        Color.updateColoring = function () {
             var colors = getColors();
-            if (!isSameColoring(newColors, colors)) {
-                oldColors = getCurrentColors();
+            if (!Color.isSameColoring(newColors, colors)) {
+                oldColors = Color.getCurrentColors();
                 newColors = colors;
                 changedColoringAt = performance.now();
             }
@@ -960,9 +964,9 @@ define("script/render", ["require", "exports", "script/geometry", "script/model"
                 accent: mixColor(oldColors.accent, newColors.accent, rate),
             });
         };
-        var getCurrentColors = function () {
+        Color.getCurrentColors = function () {
             var now = performance.now();
-            var span = isRandomColoring() ?
+            var span = Color.isRandomColoring() ?
                 config_json_3.default.rendering.coloringRandomFadeDuration :
                 config_json_3.default.rendering.coloringRegularFadeDuration;
             var rate = (now - changedColoringAt) / span;
@@ -976,7 +980,15 @@ define("script/render", ["require", "exports", "script/geometry", "script/model"
                 return mixColors(oldColors, newColors, rate);
             }
         };
-        var context = ui_1.UI.canvas.getContext("2d");
+    })(Color || (exports.Color = Color = {}));
+});
+define("script/render", ["require", "exports", "script/geometry", "script/color", "script/model", "script/ui"], function (require, exports, geometry_1, color_1, model_2, ui_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Render = void 0;
+    var Render;
+    (function (Render) {
+        var context = ui_2.UI.canvas.getContext("2d");
         var mappingCircle = function (parent, circle) {
             return ({
                 x: (circle.x * parent.radius) + parent.x,
@@ -997,9 +1009,9 @@ define("script/render", ["require", "exports", "script/geometry", "script/model"
         // });
         Render.getCanvasCircle = function () {
             return ({
-                x: ui_1.UI.canvas.width / 2,
-                y: ui_1.UI.canvas.height / 2,
-                radius: Math.hypot(ui_1.UI.canvas.width, ui_1.UI.canvas.height) / 2,
+                x: ui_2.UI.canvas.width / 2,
+                y: ui_2.UI.canvas.height / 2,
+                radius: Math.hypot(ui_2.UI.canvas.width, ui_2.UI.canvas.height) / 2,
             });
         };
         var hasFusionPath = function (fusionStatus) {
@@ -1116,21 +1128,21 @@ define("script/render", ["require", "exports", "script/geometry", "script/model"
                             var spikeMinHight = (Math.hypot(tp1.x - tp2.x, tp1.y - tp2.y) + Math.hypot(tp3.x - tp4.x, tp3.y - tp4.y)) / 8;
                             var fusionLength = Math.hypot(tp1.x - tp4.x, tp1.y - tp4.y);
                             var wireLengthRate = ((fusionLength - spikeMinHight * 2) * (1 - wireWidthRate)) / fusionLength;
-                            var mp0a = geometry_js_1.Geometry.averagePoints([geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.averagePoints([tp1, tp4]), wireWidthRate * wireWidthAdjustRate), geometry_js_1.Geometry.mulPoint(cp1, 2 - (wireWidthRate * wireWidthAdjustRate))]);
-                            var mp1 = geometry_js_1.Geometry.addPoints(mp0a, geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.subPoints(tp1, tp4), wireLengthRate * 0.5));
-                            var cxp1 = geometry_js_1.Geometry.addPoints(mp0a, geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.subPoints(tp1, tp4), (2 - wireWidthRate) / 4));
-                            var cxp2 = geometry_js_1.Geometry.addPoints(mp0a, geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.subPoints(tp4, tp1), (2 - wireWidthRate) / 4));
-                            var mp2 = geometry_js_1.Geometry.addPoints(mp0a, geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.subPoints(tp4, tp1), wireLengthRate * 0.5));
+                            var mp0a = geometry_1.Geometry.averagePoints([geometry_1.Geometry.mulPoint(geometry_1.Geometry.averagePoints([tp1, tp4]), wireWidthRate * wireWidthAdjustRate), geometry_1.Geometry.mulPoint(cp1, 2 - (wireWidthRate * wireWidthAdjustRate))]);
+                            var mp1 = geometry_1.Geometry.addPoints(mp0a, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp1, tp4), wireLengthRate * 0.5));
+                            var cxp1 = geometry_1.Geometry.addPoints(mp0a, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp1, tp4), (2 - wireWidthRate) / 4));
+                            var cxp2 = geometry_1.Geometry.addPoints(mp0a, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp4, tp1), (2 - wireWidthRate) / 4));
+                            var mp2 = geometry_1.Geometry.addPoints(mp0a, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp4, tp1), wireLengthRate * 0.5));
                             context.quadraticCurveTo(cxp1.x, cxp1.y, mp1.x, mp1.y);
                             context.lineTo(mp2.x, mp2.y);
                             context.quadraticCurveTo(cxp2.x, cxp2.y, tp4.x, tp4.y);
                             context.lineTo(tp3.x, tp3.y);
                             //const wireRate = wireLength / Math.hypot(tp3.x -tp2.x, tp3.y -tp2.y);
-                            var mp0b = geometry_js_1.Geometry.averagePoints([geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.averagePoints([tp3, tp2]), wireWidthRate * wireWidthAdjustRate), geometry_js_1.Geometry.mulPoint(cp2, 2 - (wireWidthRate * wireWidthAdjustRate))]);
-                            var mp3 = geometry_js_1.Geometry.addPoints(mp0b, geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.subPoints(tp3, tp2), wireLengthRate * 0.5));
-                            var cxp3 = geometry_js_1.Geometry.addPoints(mp0b, geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.subPoints(tp3, tp2), (2 - wireWidthRate) / 4));
-                            var cxp4 = geometry_js_1.Geometry.addPoints(mp0b, geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.subPoints(tp2, tp3), (2 - wireWidthRate) / 4));
-                            var mp4 = geometry_js_1.Geometry.addPoints(mp0b, geometry_js_1.Geometry.mulPoint(geometry_js_1.Geometry.subPoints(tp2, tp3), wireLengthRate * 0.5));
+                            var mp0b = geometry_1.Geometry.averagePoints([geometry_1.Geometry.mulPoint(geometry_1.Geometry.averagePoints([tp3, tp2]), wireWidthRate * wireWidthAdjustRate), geometry_1.Geometry.mulPoint(cp2, 2 - (wireWidthRate * wireWidthAdjustRate))]);
+                            var mp3 = geometry_1.Geometry.addPoints(mp0b, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp3, tp2), wireLengthRate * 0.5));
+                            var cxp3 = geometry_1.Geometry.addPoints(mp0b, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp3, tp2), (2 - wireWidthRate) / 4));
+                            var cxp4 = geometry_1.Geometry.addPoints(mp0b, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp2, tp3), (2 - wireWidthRate) / 4));
+                            var mp4 = geometry_1.Geometry.addPoints(mp0b, geometry_1.Geometry.mulPoint(geometry_1.Geometry.subPoints(tp2, tp3), wireLengthRate * 0.5));
                             context.quadraticCurveTo(cxp3.x, cxp3.y, mp3.x, mp3.y);
                             context.lineTo(mp4.x, mp4.y);
                             context.quadraticCurveTo(cxp4.x, cxp4.y, tp2.x, tp2.y);
@@ -1180,15 +1192,15 @@ define("script/render", ["require", "exports", "script/geometry", "script/model"
             }
         };
         Render.draw = function (isUpdatedModel) {
-            if (isRandomColoring() && config_json_3.default.rendering.randomColoringUnitDuration < (performance.now() - changedColoringAt)) {
-                Render.updateColoring();
+            if (color_1.Color.isExpiredRandomColoring()) {
+                color_1.Color.updateColoring();
             }
-            var coloring = getCurrentColors();
-            var isColoringChanged = !isSameColoring(previousColors, coloring);
+            var coloring = color_1.Color.getCurrentColors();
+            var isColoringChanged = !color_1.Color.isSameColoring(color_1.Color.previousColors, coloring);
             if (isUpdatedModel || isColoringChanged) {
-                previousColors = coloring;
+                color_1.Color.previousColors = coloring;
                 context.fillStyle = coloring.base;
-                context.fillRect(0, 0, ui_1.UI.canvas.width, ui_1.UI.canvas.height);
+                context.fillRect(0, 0, ui_2.UI.canvas.width, ui_2.UI.canvas.height);
                 drawLayer(model_2.Model.Data.accent, coloring.accent, coloring);
                 drawLayer(model_2.Model.Data.main, coloring.main, coloring);
             }
@@ -1309,57 +1321,57 @@ define("script/fps", ["require", "exports"], function (require, exports) {
         Fps.isUnderFuseFps = function () { return Fps.isValid && Fps.currentMaxFps.fps < Fps.fuseFps; };
     })(Fps || (exports.Fps = Fps = {}));
 });
-define("script/event", ["require", "exports", "script/model", "script/render", "script/ui"], function (require, exports, model_3, render_1, ui_2) {
+define("script/event", ["require", "exports", "script/model", "script/color", "script/ui"], function (require, exports, model_3, color_2, ui_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Event = void 0;
     var Event;
     (function (Event) {
         Event.initialize = function () {
-            window.addEventListener("resize", ui_2.UI.resize);
-            window.addEventListener("orientationchange", ui_2.UI.resize);
-            document.addEventListener("fullscreenchange", ui_2.UI.updateFullscreenState);
-            document.addEventListener("webkitfullscreenchange", ui_2.UI.updateFullscreenState);
-            document.addEventListener("mousemove", ui_2.UI.mousemove);
+            window.addEventListener("resize", ui_3.UI.resize);
+            window.addEventListener("orientationchange", ui_3.UI.resize);
+            document.addEventListener("fullscreenchange", ui_3.UI.updateFullscreenState);
+            document.addEventListener("webkitfullscreenchange", ui_3.UI.updateFullscreenState);
+            document.addEventListener("mousemove", ui_3.UI.mousemove);
             var commandList = [
                 {
                     key: "C",
-                    button: ui_2.UI.coloringButton,
+                    button: ui_3.UI.coloringButton,
                     command: function (event) {
-                        ui_2.UI.toggleColoring(!event.shiftKey);
-                        render_1.Render.updateColoring();
+                        ui_3.UI.toggleColoring(!event.shiftKey);
+                        color_2.Color.updateColoring();
                     }
                 },
                 {
                     key: "Q",
-                    button: ui_2.UI.hdButton,
+                    button: ui_3.UI.hdButton,
                     command: function (event) {
                         model_3.Model.togglePixelRatioMode(!event.shiftKey);
-                        ui_2.UI.updateHdRoundBar();
+                        ui_3.UI.updateHdRoundBar();
                     }
                 },
                 {
                     key: "P",
-                    button: ui_2.UI.pitchButton,
-                    command: function (event) { return ui_2.UI.togglePitch(!event.shiftKey); },
+                    button: ui_3.UI.pitchButton,
+                    command: function (event) { return ui_3.UI.togglePitch(!event.shiftKey); },
                 },
                 {
                     key: "W",
-                    button: ui_2.UI.watchButton,
-                    command: function (event) { return ui_2.UI.toggleWatchDisplay(!event.shiftKey); }
+                    button: ui_3.UI.watchButton,
+                    command: function (event) { return ui_3.UI.toggleWatchDisplay(!event.shiftKey); }
                 },
                 {
                     key: "S",
-                    button: ui_2.UI.fpsButton,
-                    command: function () { return ui_2.UI.toggleFpsDisplay(); }
+                    button: ui_3.UI.fpsButton,
+                    command: function () { return ui_3.UI.toggleFpsDisplay(); }
                 },
                 {
                     key: "F",
-                    button: ui_2.UI.fullscreenButton,
-                    command: function () { return ui_2.UI.toggleFullScreen(); }
+                    button: ui_3.UI.fullscreenButton,
+                    command: function () { return ui_3.UI.toggleFullScreen(); }
                 },
                 {
-                    button: ui_2.UI.jumpOutButton,
+                    button: ui_3.UI.jumpOutButton,
                     command: function () { return window.open(window.location.href, "_blank"); }
                 }
             ];
@@ -1371,14 +1383,14 @@ define("script/event", ["require", "exports", "script/model", "script/render", "
                         command.command(event);
                     }
                 }
-                ui_2.UI.mousemove();
+                ui_3.UI.mousemove();
             });
             commandList.forEach(function (command) {
                 command.button.addEventListener("click", function (event) {
                     event.stopPropagation();
                     event.preventDefault();
                     command.command(event);
-                    ui_2.UI.mousemove();
+                    ui_3.UI.mousemove();
                 });
             });
         };
@@ -2563,7 +2575,7 @@ define("flounder.style.js/index", ["require", "exports", "flounder.style.js/gene
         };
     })(FlounderStyle || (exports.FlounderStyle = FlounderStyle = {}));
 });
-define("script/watch", ["require", "exports", "script/url", "script/ui", "script/random", "flounder.style.js/index", "resource/config"], function (require, exports, url_1, ui_3, random_1, flounder_style_js_1, config_json_5) {
+define("script/watch", ["require", "exports", "script/url", "script/ui", "script/random", "flounder.style.js/index", "resource/config"], function (require, exports, url_1, ui_4, random_1, flounder_style_js_1, config_json_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Watch = void 0;
@@ -2617,17 +2629,17 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
             return maskStyle;
         };
         Watch.setColor = function (color) {
-            ui_3.UI.setStyle(ui_3.UI.date, "color", color);
-            ui_3.UI.setStyle(ui_3.UI.time, "color", color);
+            ui_4.UI.setStyle(ui_4.UI.date, "color", color);
+            ui_4.UI.setStyle(ui_4.UI.time, "color", color);
         };
         Watch.update = function () {
-            if ("none" !== ui_3.UI.watchColor) {
+            if ("none" !== ui_4.UI.watchColor) {
                 var date = new Date();
-                ui_3.UI.setTextContent(ui_3.UI.time, Watch.makeTime(date, Watch.locale));
-                ui_3.UI.setAttribute(ui_3.UI.time, "datatime", Watch.makeTime(date, "ja-JP"));
-                ui_3.UI.setTextContent(ui_3.UI.date, Watch.makeDate(date, Watch.locale));
-                ui_3.UI.setAttribute(ui_3.UI.date, "datatime", date.toISOString().slice(0, 10));
-                switch (ui_3.UI.watchColor) {
+                ui_4.UI.setTextContent(ui_4.UI.time, Watch.makeTime(date, Watch.locale));
+                ui_4.UI.setAttribute(ui_4.UI.time, "datatime", Watch.makeTime(date, "ja-JP"));
+                ui_4.UI.setTextContent(ui_4.UI.date, Watch.makeDate(date, Watch.locale));
+                ui_4.UI.setAttribute(ui_4.UI.date, "datatime", date.toISOString().slice(0, 10));
+                switch (ui_4.UI.watchColor) {
                     case "white":
                         Watch.setColor("white");
                         break;
@@ -2636,7 +2648,7 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
                         break;
                     case "zebra":
                         Watch.setColor("white");
-                        flounder_style_js_1.FlounderStyle.setStyle(ui_3.UI.pattern, Watch.backgroundToMask(flounder_style_js_1.FlounderStyle.makeStyle(Watch.makePattern(date))));
+                        flounder_style_js_1.FlounderStyle.setStyle(ui_4.UI.pattern, Watch.backgroundToMask(flounder_style_js_1.FlounderStyle.makeStyle(Watch.makePattern(date))));
                         break;
                     case "rainbow":
                         Watch.setColor("hsl(".concat(((date.getTime() * 360) / (24000 * phi)).toFixed(2), "deg, 100%, 61%)"));
@@ -2645,36 +2657,36 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
                 }
             }
             else {
-                ui_3.UI.setTextContent(ui_3.UI.time, "");
-                ui_3.UI.setAttribute(ui_3.UI.time, "datatime", undefined);
-                ui_3.UI.setTextContent(ui_3.UI.date, "");
-                ui_3.UI.setAttribute(ui_3.UI.date, "datatime", undefined);
+                ui_4.UI.setTextContent(ui_4.UI.time, "");
+                ui_4.UI.setAttribute(ui_4.UI.time, "datatime", undefined);
+                ui_4.UI.setTextContent(ui_4.UI.date, "");
+                ui_4.UI.setAttribute(ui_4.UI.date, "datatime", undefined);
             }
         };
     })(Watch || (exports.Watch = Watch = {}));
 });
-define("script/index", ["require", "exports", "script/url", "script/model", "script/render", "script/fps", "script/ui", "script/event", "script/watch"], function (require, exports, url_2, model_4, render_2, fps_1, ui_4, event_1, watch_1) {
+define("script/index", ["require", "exports", "script/url", "script/model", "script/render", "script/fps", "script/ui", "script/event", "script/watch"], function (require, exports, url_2, model_4, render_1, fps_1, ui_5, event_1, watch_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     url_2.Url.initialize();
     event_1.Event.initialize();
-    ui_4.UI.fpsDiv.style.display = "none";
-    ui_4.UI.updateColoringRoundBar();
-    ui_4.UI.updateHdRoundBar();
-    ui_4.UI.updatePitchRoundBar();
-    ui_4.UI.updateWatchVisibility();
-    ui_4.UI.fullscreenButton.style.display = ui_4.UI.fullscreenEnabled ? "block" : "none";
-    ui_4.UI.setAriaHidden(ui_4.UI.fullscreenButton, !ui_4.UI.fullscreenEnabled);
-    ui_4.UI.updateFullscreenState();
-    ui_4.UI.jumpOutButton.style.display = ui_4.UI.isInIframe ? "block" : "none";
-    ui_4.UI.setAriaHidden(ui_4.UI.jumpOutButton, ui_4.UI.isInIframe);
-    ui_4.UI.resize();
+    ui_5.UI.fpsDiv.style.display = "none";
+    ui_5.UI.updateColoringRoundBar();
+    ui_5.UI.updateHdRoundBar();
+    ui_5.UI.updatePitchRoundBar();
+    ui_5.UI.updateWatchVisibility();
+    ui_5.UI.fullscreenButton.style.display = ui_5.UI.fullscreenEnabled ? "block" : "none";
+    ui_5.UI.setAriaHidden(ui_5.UI.fullscreenButton, !ui_5.UI.fullscreenEnabled);
+    ui_5.UI.updateFullscreenState();
+    ui_5.UI.jumpOutButton.style.display = ui_5.UI.isInIframe ? "block" : "none";
+    ui_5.UI.setAriaHidden(ui_5.UI.jumpOutButton, ui_5.UI.isInIframe);
+    ui_5.UI.resize();
     var step = function (timestamp) {
-        render_2.Render.draw(model_4.Model.updateData(timestamp));
+        render_1.Render.draw(model_4.Model.updateData(timestamp));
         watch_1.Watch.update();
-        if (ui_4.UI.fpsDiv.style.display !== "none") {
+        if (ui_5.UI.fpsDiv.style.display !== "none") {
             fps_1.Fps.step(timestamp);
-            ui_4.UI.fpsDiv.innerText = fps_1.Fps.getText();
+            ui_5.UI.fpsDiv.innerText = fps_1.Fps.getText();
         }
         window.requestAnimationFrame(step);
     };

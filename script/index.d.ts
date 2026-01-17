@@ -168,10 +168,22 @@ declare module "script/ui" {
         const setStyle: (element: HTMLElement, name: string, value: string | undefined) => boolean;
     }
 }
+declare module "script/color" {
+    import config from "resource/config";
+    export namespace Color {
+        type Coloring = (typeof config.coloring)[keyof typeof config.coloring];
+        const isRandomColoring: () => boolean;
+        const getColoring: () => Coloring;
+        const isExpiredRandomColoring: () => boolean;
+        let previousColors: Coloring;
+        const isSameColoring: (a: Coloring, b: Coloring) => boolean;
+        const updateColoring: () => void;
+        const getCurrentColors: () => Coloring;
+    }
+}
 declare module "script/render" {
     import { Model } from "script/model";
     export namespace Render {
-        const updateColoring: () => void;
         const getCanvasCircle: () => Model.Circle;
         const draw: (isUpdatedModel: boolean) => void;
     }
