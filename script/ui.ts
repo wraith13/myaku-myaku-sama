@@ -18,6 +18,9 @@ export namespace UI
     };
     export const canvas = getElementById("canvas", "canvas");
     export const overlayPanel = getElementById("div", "overlay-panel");
+    export const date2 = getElementById("time", "date2");
+    export const yyyymmw = getElementById("span", "yyyymmw");
+    export const dd = getElementById("span", "dd");
     export const time = getElementById("time", "time");
     export const date = getElementById("time", "date");
     export const pattern = getElementById("div", "pattern");
@@ -48,21 +51,33 @@ export namespace UI
             }
         }
     };
-    export const WatchColorList = [ "none", "white", "black", "zebra", "rainbow" ] as const;
-    export type WatchColor = typeof WatchColorList[number];
-    export let watchColor: WatchColor = "none";
+    export type WatchColor = typeof config["watch"]["presets"][number];
+    export type PrimaryWatchColor = Exclude<WatchColor, `${string}2`>;
+    export const WatchColorList = config.watch.presets as WatchColor[];
+    export let watchColor: WatchColor = config.watch.default;
+    export const getPrimaryWatchColor = (color: WatchColor = watchColor): PrimaryWatchColor =>
+        isWatchStyle2(color) ? color.slice(0, -1) : color;
+    export const isWatchStyle2 = (color: WatchColor = watchColor): boolean =>
+        "2" === color.slice(-1);
     export const updateWatchVisibility = () =>
     {
-        if ("none" !== UI.watchColor)
+        if ("none" !== watchColor)
         {
-            WatchColorList.forEach
+            const primaryWatchColor = getPrimaryWatchColor();
+            WatchColorList.filter(i => ! isWatchStyle2(i)).forEach
             (
-                color => overlayPanel.classList.toggle(color, watchColor === color)
+                color => overlayPanel.classList.toggle(color, primaryWatchColor === color)
             );
+            const isStyle2 = isWatchStyle2();
+            overlayPanel.classList.toggle("watch-style-2", isStyle2);
+            yyyymmw.style.display = isStyle2 ? "block" : "none";
+            dd.style.display = isStyle2 ? "block" : "none";
             time.style.display = "block";
-            date.style.display = "block";
+            date.style.display = isStyle2 ? "none" : "block";
+            setAriaHidden(yyyymmw, ! isStyle2);
+            setAriaHidden(dd, ! isStyle2);
             setAriaHidden(time, false);
-            setAriaHidden(date, false);
+            setAriaHidden(date, isStyle2);
         }
         else
         {

@@ -83,12 +83,44 @@ time
     display: block;
     text-align: center;
 }
+#overlay-panel:not(.watch-style-2) #date2
+{
+    display: none;
+}
+#overlay-panel.watch-style-2 #date2
+{
+    margin-bottom: calc(1.05 * var(--short-side));
+}
+#overlay-panel.watch-style-2 #date2 span
+{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    line-height: 100%;
+    white-space: nowrap;
+    display: block;
+    text-align: center;
+}
+#overlay-panel.watch-style-2 #date2 #yyyymmw
+{
+    font-size: calc(5.25 * var(--short-side));
+}
+#overlay-panel.watch-style-2 #date2 #dd
+{
+    font-size: calc(30 * var(--short-side));
+    line-height: 100%;
+}
 #time
 {
     font-family: "Consolas", "Liberation Mono", "Courier New", monospace;
-    font-size: calc(14.8 * var(--short-side));
     line-height: 100%;
     white-space: nowrap;
+}
+#overlay-panel:not(.watch-style-2) #time
+{
+    font-size: calc(14.8 * var(--short-side));
+}
+#overlay-panel.watch-style-2 #time
+{
+    font-size: calc(6.3 * var(--short-side));
 }
 #date
 {
@@ -96,6 +128,10 @@ time
     font-size: calc(4.2 * var(--short-side));
     line-height: 100%;
     white-space: nowrap;
+}
+#overlay-panel.watch-style-2 #date
+{
+    display: none;
 }
 .white time,
 .rainbow time,

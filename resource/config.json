@@ -107,6 +107,46 @@
         ],
         "default": 1.0
     },
+    "watch": {
+        "alternate": {
+            "span": 47000
+        },
+        "dateFormat": {
+            "weekday": "long",
+            "year": "numeric",
+            "month": "long",
+            "day": "numeric"
+        },
+        "dateYyyymmwFormat": {
+            "year": "numeric",
+            "month": "long",
+            "weekday": "long"
+        },
+        "dateDdFormat": {
+            "comment": "NOT USED",
+            "day": "numeric"
+        },
+        "timeFormat": {
+            "hour": "2-digit",
+            "minute": "2-digit",
+            "second": "2-digit"
+        },
+        "firstDayOfWeek": 0,
+        "patternSpan": 43000,
+        "minPatternDepth": 0.000000001,
+        "presets": [
+            "none",
+            "white",
+            "black",
+            "zebra",
+            "rainbow",
+            "white2",
+            "black2",
+            "zebra2",
+            "rainbow2"
+        ],
+        "default": "none"
+    },
     "eye":
     {
         "appearRate": 0.12,
@@ -196,24 +236,5 @@
                 "period": 500
             }
         }
-    },
-    "watch": {
-        "alternate": {
-            "span": 47000
-        },
-        "dateFormat": {
-            "weekday": "long",
-            "year": "numeric",
-            "month": "long",
-            "day": "numeric"
-        },
-        "timeFormat": {
-            "hour": "2-digit",
-            "minute": "2-digit",
-            "second": "2-digit"
-        },
-        "firstDayOfWeek": 0,
-        "patternSpan": 43000,
-        "minPatternDepth": 0.000000001
     }
 }

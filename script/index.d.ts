@@ -32,6 +32,9 @@ declare module "script/ui" {
     export namespace UI {
         const canvas: HTMLCanvasElement;
         const overlayPanel: HTMLDivElement;
+        const date2: HTMLTimeElement;
+        const yyyymmw: HTMLSpanElement;
+        const dd: HTMLSpanElement;
         const time: HTMLTimeElement;
         const date: HTMLTimeElement;
         const pattern: HTMLDivElement;
@@ -46,9 +49,12 @@ declare module "script/ui" {
         const fullscreenEnabled: any;
         const isInIframe: boolean;
         const setAriaHidden: (element: HTMLElement, hidden: boolean) => void;
-        const WatchColorList: readonly ["none", "white", "black", "zebra", "rainbow"];
-        type WatchColor = typeof WatchColorList[number];
+        type WatchColor = typeof config["watch"]["presets"][number];
+        type PrimaryWatchColor = Exclude<WatchColor, `${string}2`>;
+        const WatchColorList: WatchColor[];
         let watchColor: WatchColor;
+        const getPrimaryWatchColor: (color?: WatchColor) => PrimaryWatchColor;
+        const isWatchStyle2: (color?: WatchColor) => boolean;
         const updateWatchVisibility: () => void;
         const updateRoundBar: (button: HTMLButtonElement, properties: {
             low: number;
@@ -504,6 +510,8 @@ declare module "script/watch" {
     export namespace Watch {
         const locale: string;
         const makeDate: (date: Date, locale: string) => string;
+        const makeDateYyyymmw: (date: Date, locale: string) => string;
+        const makeDateDd: (date: Date, locale: string) => string;
         const makeTime: (date: Date, locale: string) => string;
         const makePattern: (date: Date) => FlounderStyle.Type.Arguments;
         const backgroundToMask: (backgroundStyle: FlounderStyle.Style) => FlounderStyle.Style;

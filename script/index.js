@@ -205,6 +205,46 @@ define("resource/config", [], {
         ],
         "default": 1.0
     },
+    "watch": {
+        "alternate": {
+            "span": 47000
+        },
+        "dateFormat": {
+            "weekday": "long",
+            "year": "numeric",
+            "month": "long",
+            "day": "numeric"
+        },
+        "dateYyyymmwFormat": {
+            "year": "numeric",
+            "month": "long",
+            "weekday": "long"
+        },
+        "dateDdFormat": {
+            "comment": "NOT USED",
+            "day": "numeric"
+        },
+        "timeFormat": {
+            "hour": "2-digit",
+            "minute": "2-digit",
+            "second": "2-digit"
+        },
+        "firstDayOfWeek": 0,
+        "patternSpan": 43000,
+        "minPatternDepth": 0.000000001,
+        "presets": [
+            "none",
+            "white",
+            "black",
+            "zebra",
+            "rainbow",
+            "white2",
+            "black2",
+            "zebra2",
+            "rainbow2"
+        ],
+        "default": "none"
+    },
     "eye": {
         "appearRate": 0.12,
         "vanishRate": 0.1,
@@ -283,25 +323,6 @@ define("resource/config", [], {
                 "period": 500
             }
         }
-    },
-    "watch": {
-        "alternate": {
-            "span": 47000
-        },
-        "dateFormat": {
-            "weekday": "long",
-            "year": "numeric",
-            "month": "long",
-            "day": "numeric"
-        },
-        "timeFormat": {
-            "hour": "2-digit",
-            "minute": "2-digit",
-            "second": "2-digit"
-        },
-        "firstDayOfWeek": 0,
-        "patternSpan": 43000,
-        "minPatternDepth": 0.000000001
     }
 });
 define("script/ui", ["require", "exports", "script/url", "resource/config"], function (require, exports, url_1, config_json_1) {
@@ -323,6 +344,9 @@ define("script/ui", ["require", "exports", "script/url", "resource/config"], fun
         };
         UI.canvas = getElementById("canvas", "canvas");
         UI.overlayPanel = getElementById("div", "overlay-panel");
+        UI.date2 = getElementById("time", "date2");
+        UI.yyyymmw = getElementById("span", "yyyymmw");
+        UI.dd = getElementById("span", "dd");
         UI.time = getElementById("time", "time");
         UI.date = getElementById("time", "date");
         UI.pattern = getElementById("div", "pattern");
@@ -349,15 +373,30 @@ define("script/ui", ["require", "exports", "script/url", "resource/config"], fun
                 }
             }
         };
-        UI.WatchColorList = ["none", "white", "black", "zebra", "rainbow"];
-        UI.watchColor = "none";
+        UI.WatchColorList = config_json_1.default.watch.presets;
+        UI.watchColor = config_json_1.default.watch.default;
+        UI.getPrimaryWatchColor = function (color) {
+            if (color === void 0) { color = UI.watchColor; }
+            return UI.isWatchStyle2(color) ? color.slice(0, -1) : color;
+        };
+        UI.isWatchStyle2 = function (color) {
+            if (color === void 0) { color = UI.watchColor; }
+            return "2" === color.slice(-1);
+        };
         UI.updateWatchVisibility = function () {
             if ("none" !== UI.watchColor) {
-                UI.WatchColorList.forEach(function (color) { return UI.overlayPanel.classList.toggle(color, UI.watchColor === color); });
+                var primaryWatchColor_1 = UI.getPrimaryWatchColor();
+                UI.WatchColorList.filter(function (i) { return !UI.isWatchStyle2(i); }).forEach(function (color) { return UI.overlayPanel.classList.toggle(color, primaryWatchColor_1 === color); });
+                var isStyle2 = UI.isWatchStyle2();
+                UI.overlayPanel.classList.toggle("watch-style-2", isStyle2);
+                UI.yyyymmw.style.display = isStyle2 ? "block" : "none";
+                UI.dd.style.display = isStyle2 ? "block" : "none";
                 UI.time.style.display = "block";
-                UI.date.style.display = "block";
+                UI.date.style.display = isStyle2 ? "none" : "block";
+                UI.setAriaHidden(UI.yyyymmw, !isStyle2);
+                UI.setAriaHidden(UI.dd, !isStyle2);
                 UI.setAriaHidden(UI.time, false);
-                UI.setAriaHidden(UI.date, false);
+                UI.setAriaHidden(UI.date, isStyle2);
             }
             else {
                 UI.time.style.display = "none";
@@ -2571,6 +2610,13 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
         Watch.makeDate = function (date, locale) {
             return date.toLocaleDateString(locale, config_json_5.default.watch.dateFormat);
         };
+        Watch.makeDateYyyymmw = function (date, locale) {
+            return date.toLocaleDateString(locale, config_json_5.default.watch.dateYyyymmwFormat);
+        };
+        Watch.makeDateDd = function (date, locale) {
+            return new Intl.DateTimeFormat(locale, { "day": "numeric" }).formatToParts(date).filter(function (part) { return "day" === part.type; }).map(function (part) { return part.value; }).join("");
+        };
+        ;
         Watch.makeTime = function (date, locale) {
             return date.toLocaleTimeString(locale, config_json_5.default.watch.timeFormat);
         };
@@ -2613,17 +2659,26 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
             return maskStyle;
         };
         Watch.setColor = function (color) {
-            ui_4.UI.setStyle(ui_4.UI.date, "color", color);
+            ui_4.UI.setStyle(ui_4.UI.date2, "color", color);
             ui_4.UI.setStyle(ui_4.UI.time, "color", color);
+            ui_4.UI.setStyle(ui_4.UI.date, "color", color);
         };
         Watch.update = function () {
             if ("none" !== ui_4.UI.watchColor) {
                 var date = new Date();
                 ui_4.UI.setTextContent(ui_4.UI.time, Watch.makeTime(date, Watch.locale));
                 ui_4.UI.setAttribute(ui_4.UI.time, "datatime", Watch.makeTime(date, "ja-JP"));
-                ui_4.UI.setTextContent(ui_4.UI.date, Watch.makeDate(date, Watch.locale));
-                ui_4.UI.setAttribute(ui_4.UI.date, "datatime", date.toISOString().slice(0, 10));
-                switch (ui_4.UI.watchColor) {
+                var datetime = date.toISOString().slice(0, 10);
+                if (ui_4.UI.isWatchStyle2()) {
+                    ui_4.UI.setTextContent(ui_4.UI.yyyymmw, Watch.makeDateYyyymmw(date, Watch.locale));
+                    ui_4.UI.setTextContent(ui_4.UI.dd, Watch.makeDateDd(date, Watch.locale));
+                    ui_4.UI.setAttribute(ui_4.UI.date2, "datatime", datetime);
+                }
+                else {
+                    ui_4.UI.setTextContent(ui_4.UI.date, Watch.makeDate(date, Watch.locale));
+                    ui_4.UI.setAttribute(ui_4.UI.date, "datatime", datetime);
+                }
+                switch (ui_4.UI.getPrimaryWatchColor()) {
                     case "white":
                         Watch.setColor("white");
                         break;
@@ -2641,6 +2696,9 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
                 }
             }
             else {
+                ui_4.UI.setTextContent(ui_4.UI.yyyymmw, "");
+                ui_4.UI.setTextContent(ui_4.UI.dd, "");
+                ui_4.UI.setAttribute(ui_4.UI.date2, "datatime", undefined);
                 ui_4.UI.setTextContent(ui_4.UI.time, "");
                 ui_4.UI.setAttribute(ui_4.UI.time, "datatime", undefined);
                 ui_4.UI.setTextContent(ui_4.UI.date, "");

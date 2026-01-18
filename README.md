@@ -36,6 +36,12 @@ Against that cultural background, Japanese internet users commonly refer to Myak
 - <kbd>S</kbd>: Show FPS
 - <kbd>F</kbd>: Toggle Fullscreen
 
+## 🔗 Options Available via URL Parameters
+
+The following option cannot be set via the UI.
+
+- `locale`: Specifies the locale. (Example: [`#locale=en-us`](https://wraith13.github.io/myaku-myaku-sama/#locale=en-us))
+
 ## 🛠️ How to build
 
 ### Prerequisites

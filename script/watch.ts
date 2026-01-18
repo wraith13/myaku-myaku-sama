@@ -13,6 +13,14 @@ export namespace Watch
             locale,
             config.watch.dateFormat as Intl.DateTimeFormatOptions
         );
+    export const makeDateYyyymmw = (date: Date, locale: string): string =>
+        date.toLocaleDateString
+        (
+            locale,
+            config.watch.dateYyyymmwFormat as Intl.DateTimeFormatOptions
+        );
+    export const makeDateDd = (date: Date, locale: string): string =>
+        new Intl.DateTimeFormat(locale, { "day": "numeric" }).formatToParts(date).filter(part => "day" === part.type).map(part => part.value).join("");;
     export const makeTime = (date: Date, locale: string): string =>
         date.toLocaleTimeString
         (
@@ -71,8 +79,9 @@ export namespace Watch
     };
     export const setColor = (color: string | undefined): void =>
     {
-        UI.setStyle(UI.date, "color", color);
+        UI.setStyle(UI.date2, "color", color);
         UI.setStyle(UI.time, "color", color);
+        UI.setStyle(UI.date, "color", color);
     };
     export const update = (): void =>
     {
@@ -81,9 +90,19 @@ export namespace Watch
             const date = new Date();
             UI.setTextContent(UI.time, makeTime(date, locale));
             UI.setAttribute(UI.time, "datatime", makeTime(date, "ja-JP"));
-            UI.setTextContent(UI.date, makeDate(date, locale));
-            UI.setAttribute(UI.date, "datatime", date.toISOString().slice(0, 10));
-            switch (UI.watchColor)
+            const datetime = date.toISOString().slice(0, 10);
+            if (UI.isWatchStyle2())
+            {
+                UI.setTextContent(UI.yyyymmw, makeDateYyyymmw(date, locale));
+                UI.setTextContent(UI.dd, makeDateDd(date, locale));
+                UI.setAttribute(UI.date2, "datatime", datetime);
+            }
+            else
+            {
+                UI.setTextContent(UI.date, makeDate(date, locale));
+                UI.setAttribute(UI.date, "datatime", datetime);
+            }
+            switch (UI.getPrimaryWatchColor())
             {
                 case "white":
                     setColor("white");
@@ -107,6 +126,9 @@ export namespace Watch
         }
         else
         {
+            UI.setTextContent(UI.yyyymmw, "");
+            UI.setTextContent(UI.dd, "");
+            UI.setAttribute(UI.date2, "datatime", undefined);
             UI.setTextContent(UI.time, "");
             UI.setAttribute(UI.time, "datatime", undefined);
             UI.setTextContent(UI.date, "");

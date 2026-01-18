@@ -60,6 +60,10 @@ __STYLE__
 </noscript>
 <canvas id="canvas" role="presentation"></canvas>
 <div id="overlay-panel" role="presentation" class="black">
+    <time id="date2" aria-live="polite" aria-atomic="true">
+        <span id="yyyymmw" aria-live="polite" aria-atomic="true"></span>
+        <span id="dd" aria-live="polite" aria-atomic="true"></span>
+    </time>
     <time id="time" role="timer" aria-live="polite" aria-atomic="true"></time>
     <time id="date" aria-live="polite" aria-atomic="true"></time>
     <div id="pattern" role="presentation"></div>
