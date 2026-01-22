@@ -27,6 +27,23 @@ declare module "script/random" {
         const pseudoGaussian: (samples?: number, random?: Function, index?: number, prime?: number) => number;
     }
 }
+declare module "script/color" {
+    import config from "resource/config";
+    export namespace Color {
+        type Coloring = (typeof config.coloring)[keyof typeof config.coloring];
+        type ColoringType = keyof typeof config["coloring"] | "random" | "custom";
+        let coloring: ColoringType;
+        const isCustomColoring: () => boolean;
+        const setCustomColoring: (coloring: Coloring | null) => void;
+        const isRandomColoring: () => boolean;
+        const getColoring: () => Coloring;
+        const isExpiredRandomColoring: () => boolean;
+        let previousColors: Coloring;
+        const isSameColoring: (a: Coloring, b: Coloring) => boolean;
+        const updateColoring: () => void;
+        const getCurrentColors: () => Coloring;
+    }
+}
 declare module "script/ui" {
     import config from "resource/config";
     export namespace UI {
@@ -62,8 +79,6 @@ declare module "script/ui" {
             rotate: number;
         }) => void;
         const updateColoringRoundBar: () => void;
-        type ColoringType = keyof typeof config["coloring"] | "random";
-        let coloring: ColoringType;
         const toggleColoring: (style?: boolean | keyof (typeof config)["coloring"]) => void;
         type PixelRatioMode = keyof typeof config.quality.presets;
         const PixelRatioModeKeys: PixelRatioMode[];
@@ -173,19 +188,6 @@ declare module "script/model" {
         const updateLayer: (layer: Layer, timestamp: number, step: number) => void;
         const updateStretch: () => void;
         const updateData: (rawTimestamp: number) => boolean;
-    }
-}
-declare module "script/color" {
-    import config from "resource/config";
-    export namespace Color {
-        type Coloring = (typeof config.coloring)[keyof typeof config.coloring];
-        const isRandomColoring: () => boolean;
-        const getColoring: () => Coloring;
-        const isExpiredRandomColoring: () => boolean;
-        let previousColors: Coloring;
-        const isSameColoring: (a: Coloring, b: Coloring) => boolean;
-        const updateColoring: () => void;
-        const getCurrentColors: () => Coloring;
     }
 }
 declare module "script/render" {

@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Sun Jan 18 2026 21:57:49 GMT+0900 (日本標準時)
+    build at: Thu Jan 22 2026 20:09:02 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -395,8 +395,8 @@ button:focus
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Sun Jan 18 2026 21:57:49 GMT+0900 (日本標準時)",
-    tick: 1768741069221
+    at: "Thu Jan 22 2026 20:09:02 GMT+0900 (日本標準時)",
+    tick: 1769080142662
 };
 const evilCommonjsConfig = {
     "log": {
@@ -3475,11 +3475,115 @@ define("resource/config", [], {
         }
     }
 });
-define("script/ui", ["require", "exports", "script/url", "resource/config"], function (require, exports, url_1, config_json_1) {
+define("script/color", ["require", "exports", "resource/config"], function (require, exports, config_json_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Color = void 0;
+    config_json_1 = __importDefault(config_json_1);
+    var Color;
+    (function (Color) {
+        Color.coloring = "regular";
+        var customColoring = null;
+        Color.isCustomColoring = function () {
+            return null !== customColoring;
+        };
+        Color.setCustomColoring = function (coloring) {
+            customColoring = coloring;
+        };
+        Color.isRandomColoring = function () {
+            return Color.isCustomColoring() &&
+                undefined === config_json_1.default.coloring[Color.coloring];
+        };
+        Color.getColoring = function () {
+            if (Color.isCustomColoring()) {
+                return customColoring;
+            }
+            if (Color.isRandomColoring()) {
+                var index = Math.floor(Math.random() * Object.keys(config_json_1.default.coloring).length);
+                var key = Object.keys(config_json_1.default.coloring)[index];
+                var result = config_json_1.default.coloring[key];
+                if (Color.isSameColoring(newColors, result)) {
+                    index = (index + 1) % Object.keys(config_json_1.default.coloring).length;
+                    key = Object.keys(config_json_1.default.coloring)[index];
+                    result = config_json_1.default.coloring[key];
+                }
+                return result;
+            }
+            else {
+                return config_json_1.default.coloring[Color.coloring];
+            }
+        };
+        var getColors = function () {
+            var coloring = Color.getColoring();
+            return { base: coloring.base, main: coloring.main, accent: coloring.accent, };
+        };
+        var changedColoringAt = 0;
+        var oldColors = getColors();
+        var newColors = getColors();
+        Color.isExpiredRandomColoring = function () {
+            return Color.isRandomColoring() &&
+                config_json_1.default.rendering.randomColoringUnitDuration <= (performance.now() - changedColoringAt);
+        };
+        Color.previousColors = getColors();
+        Color.isSameColoring = function (a, b) {
+            return a.base === b.base && a.main === b.main && a.accent === b.accent;
+        };
+        Color.updateColoring = function () {
+            var colors = getColors();
+            if (!Color.isSameColoring(newColors, colors)) {
+                oldColors = Color.getCurrentColors();
+                newColors = colors;
+                changedColoringAt = performance.now();
+            }
+        };
+        var mixColor = function (oldColor, newColor, rate) {
+            var boost = 1.0 + (config_json_1.default.rendering.antiDullnessBoost * Math.sin(Math.PI * rate)); // Adjustment to reduce dullness of intermediate colors
+            var oldR = parseInt(oldColor.slice(1, 3), 16);
+            var oldG = parseInt(oldColor.slice(3, 5), 16);
+            var oldB = parseInt(oldColor.slice(5, 7), 16);
+            var newR = parseInt(newColor.slice(1, 3), 16);
+            var newG = parseInt(newColor.slice(3, 5), 16);
+            var newB = parseInt(newColor.slice(5, 7), 16);
+            var currR = Math.round(Math.min((oldR + (newR - oldR) * rate) * boost, 255));
+            var currG = Math.round(Math.min((oldG + (newG - oldG) * rate) * boost, 255));
+            var currB = Math.round(Math.min((oldB + (newB - oldB) * rate) * boost, 255));
+            return "#".concat(currR.toString(16).padStart(2, "0")).concat(currG.toString(16).padStart(2, "0")).concat(currB.toString(16).padStart(2, "0"));
+        };
+        var mixColors = function (oldColors, newColors, rate) {
+            return ({
+                base: mixColor(oldColors.base, newColors.base, rate),
+                main: mixColor(oldColors.main, newColors.main, rate),
+                accent: mixColor(oldColors.accent, newColors.accent, rate),
+            });
+        };
+        Color.getCurrentColors = function () {
+            if (Color.isCustomColoring()) {
+                return getColors();
+            }
+            else {
+                var now = performance.now();
+                var span = Color.isRandomColoring() ?
+                    config_json_1.default.rendering.coloringRandomFadeDuration :
+                    config_json_1.default.rendering.coloringRegularFadeDuration;
+                var rate = (now - changedColoringAt) / span;
+                if (1.0 <= rate) {
+                    return newColors;
+                }
+                else if (rate <= 0.0) {
+                    return oldColors;
+                }
+                else {
+                    return mixColors(oldColors, newColors, rate);
+                }
+            }
+        };
+    })(Color || (exports.Color = Color = {}));
+});
+define("script/ui", ["require", "exports", "script/url", "script/color", "resource/config"], function (require, exports, url_1, color_1, config_json_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.UI = void 0;
-    config_json_1 = __importDefault(config_json_1);
+    config_json_2 = __importDefault(config_json_2);
     var UI;
     (function (UI) {
         var getElementById = function (tag, id) {
@@ -3523,8 +3627,8 @@ define("script/ui", ["require", "exports", "script/url", "resource/config"], fun
                 }
             }
         };
-        UI.WatchColorList = config_json_1.default.watch.presets;
-        UI.watchColor = config_json_1.default.watch.default;
+        UI.WatchColorList = config_json_2.default.watch.presets;
+        UI.watchColor = config_json_2.default.watch.default;
         UI.getPrimaryWatchColor = function (color) {
             if (color === void 0) { color = UI.watchColor; }
             return UI.isWatchStyle2(color) ? color.slice(0, -1) : color;
@@ -3565,42 +3669,70 @@ define("script/ui", ["require", "exports", "script/url", "resource/config"], fun
         var coloringRoundBarIndex = 0;
         var mod = function (n, m) { return ((n % m) + m) % m; };
         UI.updateColoringRoundBar = function () {
-            var keys = Object.keys(config_json_1.default.coloring).concat("random");
-            var max = keys.length - 1;
-            UI.updateRoundBar(UI.coloringButton, max <= mod(coloringRoundBarIndex, keys.length) ?
-                {
-                    low: 0,
-                    high: 1,
-                    rotate: (coloringRoundBarIndex - Math.floor(coloringRoundBarIndex / keys.length)) / max,
-                } :
-                {
-                    low: 0 / max,
-                    high: 1 / max,
-                    rotate: (coloringRoundBarIndex - Math.floor(coloringRoundBarIndex / keys.length)) / max,
-                });
+            if ("custom" === coloringRoundBarIndex) {
+                UI.updateRoundBar(UI.coloringButton, { low: 0, high: 0, rotate: 0, });
+            }
+            else {
+                var keys = Object.keys(config_json_2.default.coloring).concat("random");
+                var max = keys.length - 1;
+                UI.updateRoundBar(UI.coloringButton, max <= mod(coloringRoundBarIndex, keys.length) ?
+                    {
+                        low: 0,
+                        high: 1,
+                        rotate: (coloringRoundBarIndex - Math.floor(coloringRoundBarIndex / keys.length)) / max,
+                    } :
+                    {
+                        low: 0 / max,
+                        high: 1 / max,
+                        rotate: (coloringRoundBarIndex - Math.floor(coloringRoundBarIndex / keys.length)) / max,
+                    });
+            }
         };
-        UI.coloring = "regular";
         UI.toggleColoring = function (style) {
-            var keys = Object.keys(config_json_1.default.coloring).concat("random");
+            var keys = Object.keys(config_json_2.default.coloring).concat("random");
             if (typeof style === "boolean" || undefined === style) {
-                var currentIndex = keys.indexOf(UI.coloring);
-                var nextIndex = (keys.length + currentIndex + (false !== style ? 1 : -1)) % keys.length;
-                console.log({ currentIndex: currentIndex, nextIndex: nextIndex, keysLength: keys.length, style: style });
-                UI.coloring = keys[nextIndex];
-                coloringRoundBarIndex += false !== style ? 1 : -1;
+                if ("custom" === coloringRoundBarIndex) {
+                    color_1.Color.coloring = "regular";
+                    coloringRoundBarIndex = keys.indexOf(color_1.Color.coloring);
+                    color_1.Color.setCustomColoring(null);
+                }
+                else {
+                    var currentIndex = keys.indexOf(color_1.Color.coloring);
+                    var nextIndex = (keys.length + currentIndex + (false !== style ? 1 : -1)) % keys.length;
+                    console.log({ currentIndex: currentIndex, nextIndex: nextIndex, keysLength: keys.length, style: style });
+                    color_1.Color.coloring = keys[nextIndex];
+                    coloringRoundBarIndex += false !== style ? 1 : -1;
+                    color_1.Color.setCustomColoring(null);
+                }
             }
             else {
                 if (keys.includes(style)) {
-                    UI.coloring = style;
+                    color_1.Color.coloring = style;
                     coloringRoundBarIndex = keys.indexOf(style);
+                    color_1.Color.setCustomColoring(null);
+                }
+                else {
+                    var coloring = style.split(" ");
+                    if (3 === coloring.length) {
+                        color_1.Color.coloring = "custom";
+                        coloringRoundBarIndex = "custom";
+                        color_1.Color.setCustomColoring({
+                            base: "#" + coloring[0],
+                            main: "#" + coloring[1],
+                            accent: "#" + coloring[2],
+                        });
+                    }
                 }
             }
             UI.updateColoringRoundBar();
-            url_1.Url.addParameter("coloring", UI.coloring);
-            console.log("\uD83C\uDFA8 Coloring changed: ".concat(UI.coloring));
+            var result = "custom" === color_1.Color.coloring ?
+                style :
+                color_1.Color.coloring;
+            url_1.Url.addParameter("coloring", result);
+            console.log("\uD83C\uDFA8 Coloring changed: ".concat(result));
         };
-        UI.PixelRatioModeKeys = Object.keys(config_json_1.default.quality.presets);
-        var pixelRatioMode = config_json_1.default.quality.default;
+        UI.PixelRatioModeKeys = Object.keys(config_json_2.default.quality.presets);
+        var pixelRatioMode = config_json_2.default.quality.default;
         UI.updateQualityRoundBar = function () { return UI.updateRoundBar(UI.qualityButton, {
             low: 0 / UI.PixelRatioModeKeys.length,
             high: (UI.getPixcelRatioLevel() + 1) / UI.PixelRatioModeKeys.length,
@@ -3626,7 +3758,7 @@ define("script/ui", ["require", "exports", "script/url", "resource/config"], fun
         };
         UI.getPixcelRatio = function () {
             var _a;
-            var value = config_json_1.default.quality.presets[pixelRatioMode];
+            var value = config_json_2.default.quality.presets[pixelRatioMode];
             if ("devicePixelRatio" === value) {
                 return (_a = window.devicePixelRatio) !== null && _a !== void 0 ? _a : 1;
             }
@@ -3634,17 +3766,17 @@ define("script/ui", ["require", "exports", "script/url", "resource/config"], fun
                 return value;
             }
         };
-        var pitch = config_json_1.default.pitch.default;
+        var pitch = config_json_2.default.pitch.default;
         UI.getPitch = function () {
             return pitch;
         };
         UI.updatePitchRoundBar = function () { return UI.updateRoundBar(UI.pitchButton, {
-            low: 0 / config_json_1.default.pitch.presets.length,
-            high: config_json_1.default.pitch.presets.indexOf(pitch) / (config_json_1.default.pitch.presets.length - 1),
+            low: 0 / config_json_2.default.pitch.presets.length,
+            high: config_json_2.default.pitch.presets.indexOf(pitch) / (config_json_2.default.pitch.presets.length - 1),
             rotate: 0,
         }); };
         UI.togglePitch = function (value) {
-            var presets = config_json_1.default.pitch.presets;
+            var presets = config_json_2.default.pitch.presets;
             if (typeof value === "boolean" || undefined === value) {
                 var currentIndex = presets.indexOf(pitch);
                 var nextIndex = (presets.length + currentIndex + (false !== value ? 1 : -1)) % presets.length;
@@ -3793,11 +3925,11 @@ define("script/ui", ["require", "exports", "script/url", "resource/config"], fun
         };
     })(UI || (exports.UI = UI = {}));
 });
-define("script/model", ["require", "exports", "script/random", "script/ui", "resource/config"], function (require, exports, random_js_1, ui_js_1, config_json_2) {
+define("script/model", ["require", "exports", "script/random", "script/ui", "resource/config"], function (require, exports, random_js_1, ui_js_1, config_json_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Model = void 0;
-    config_json_2 = __importDefault(config_json_2);
+    config_json_3 = __importDefault(config_json_3);
     var Model;
     (function (Model) {
         var canvas = document.getElementById("canvas");
@@ -3818,7 +3950,7 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
         Model.Data = {
             previousTimestamp: 0,
             previousPitchedTimestamp: 0,
-            pitch: config_json_2.default.pitch.default,
+            pitch: config_json_3.default.pitch.default,
             width: 0,
             height: 0,
             accent: { units: [], lastMadeAt: 0, lastRemovedAt: 0, },
@@ -3828,7 +3960,7 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
             Model.Data.pitch = value;
         };
         Model.isOutOfCanvas = function (circle) {
-            var marginRate = config_json_2.default.rendering.marginRate;
+            var marginRate = config_json_3.default.rendering.marginRate;
             var halfDiagonalLength = Math.hypot(canvas.width, canvas.height) / 2;
             var centerX = canvas.width / 2;
             var centerY = canvas.height / 2;
@@ -3891,10 +4023,10 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
         Model.makeUnitAnimation = function () {
             var result = {
                 moveAnimation: {
-                    x: config_json_2.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.unit.moveAnimation, i); }),
-                    y: config_json_2.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.unit.moveAnimation, i); }),
+                    x: config_json_3.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_3.default.Layer.unit.moveAnimation, i); }),
+                    y: config_json_3.default.Layer.unit.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_3.default.Layer.unit.moveAnimation, i); }),
                 },
-                sizeAnimation: config_json_2.default.Layer.unit.sizeAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.unit.sizeAnimation, i); }),
+                sizeAnimation: config_json_3.default.Layer.unit.sizeAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_3.default.Layer.unit.sizeAnimation, i); }),
             };
             return result;
         };
@@ -3908,7 +4040,7 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
             //updateUnit(result, Math.random() *10000);
             result.animation.appearAnimation =
                 {
-                    period: config_json_2.default.Layer.unit.appearAnimation.period,
+                    period: config_json_3.default.Layer.unit.appearAnimation.period,
                     phase: 0,
                     scale: result.scale,
                 };
@@ -3918,30 +4050,30 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
             var point = { x: 0, y: 0, };
             var xRatio = 1.0;
             var yRatio = 1.0;
-            var white = Model.makeCircle(point, config_json_2.default.eye.whiteRate);
-            var iris = Model.makeCircle(point, config_json_2.default.eye.irisRate);
+            var white = Model.makeCircle(point, config_json_3.default.eye.whiteRate);
+            var iris = Model.makeCircle(point, config_json_3.default.eye.irisRate);
             var result = {
                 white: white,
                 iris: iris,
                 animation: {
                     moveAnimation: {
-                        x: config_json_2.default.Layer.eye.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.eye.moveAnimation, i * xRatio); }),
-                        y: config_json_2.default.Layer.eye.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_2.default.Layer.eye.moveAnimation, i * yRatio); }),
+                        x: config_json_3.default.Layer.eye.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_3.default.Layer.eye.moveAnimation, i * xRatio); }),
+                        y: config_json_3.default.Layer.eye.moveAnimation.elements.map(function (i) { return Model.makeAnimation(config_json_3.default.Layer.eye.moveAnimation, i * yRatio); }),
                     }
                 },
             };
             result.animation.appearAnimation =
                 {
-                    period: config_json_2.default.Layer.eye.appearAnimation.period,
+                    period: config_json_3.default.Layer.eye.appearAnimation.period,
                     phase: 0,
-                    scale: config_json_2.default.eye.whiteRate,
+                    scale: config_json_3.default.eye.whiteRate,
                 };
             return result;
         };
         var updateIris = function (eye) {
-            eye.iris.x = eye.white.x + eye.white.x * (config_json_2.default.eye.whiteRate - config_json_2.default.eye.irisRate) / (1 - config_json_2.default.eye.whiteRate);
-            eye.iris.y = eye.white.y + eye.white.y * (config_json_2.default.eye.whiteRate - config_json_2.default.eye.irisRate) / (1 - config_json_2.default.eye.whiteRate);
-            eye.iris.radius = eye.white.radius * (config_json_2.default.eye.irisRate / config_json_2.default.eye.whiteRate);
+            eye.iris.x = eye.white.x + eye.white.x * (config_json_3.default.eye.whiteRate - config_json_3.default.eye.irisRate) / (1 - config_json_3.default.eye.whiteRate);
+            eye.iris.y = eye.white.y + eye.white.y * (config_json_3.default.eye.whiteRate - config_json_3.default.eye.irisRate) / (1 - config_json_3.default.eye.whiteRate);
+            eye.iris.radius = eye.white.radius * (config_json_3.default.eye.irisRate / config_json_3.default.eye.whiteRate);
         };
         var updateEye = function (unit, step) {
             var _a;
@@ -3952,9 +4084,9 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
                 eye.white.y += Model.accumulateAnimationSineIntegral(eye.animation.moveAnimation.y, step) * rate;
                 var distance = Math.hypot(eye.white.x, eye.white.y);
                 var maxDistance = 0.95;
-                if (maxDistance < distance + config_json_2.default.eye.whiteRate) {
-                    eye.white.x *= (maxDistance - config_json_2.default.eye.whiteRate) / distance;
-                    eye.white.y *= (maxDistance - config_json_2.default.eye.whiteRate) / distance;
+                if (maxDistance < distance + config_json_3.default.eye.whiteRate) {
+                    eye.white.x *= (maxDistance - config_json_3.default.eye.whiteRate) / distance;
+                    eye.white.y *= (maxDistance - config_json_3.default.eye.whiteRate) / distance;
                 }
                 Model.updateAnimations(eye.animation.moveAnimation.x, step);
                 Model.updateAnimations(eye.animation.moveAnimation.y, step);
@@ -3962,14 +4094,14 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
                 if (transion) {
                     transion.phase += step;
                     if (eye.animation.vanishAnimation) {
-                        eye.white.radius = config_json_2.default.eye.whiteRate * (1.0 - (transion.phase / transion.period));
+                        eye.white.radius = config_json_3.default.eye.whiteRate * (1.0 - (transion.phase / transion.period));
                         if (transion.period <= transion.phase) {
                             // eye.animation.vanishAnimation = undefined;
                             unit.eye = undefined;
                         }
                     }
                     else {
-                        eye.white.radius = config_json_2.default.eye.whiteRate * (transion.phase / transion.period);
+                        eye.white.radius = config_json_3.default.eye.whiteRate * (transion.phase / transion.period);
                         if (transion.period <= transion.phase) {
                             eye.animation.appearAnimation = undefined;
                         }
@@ -4006,14 +4138,14 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
             Model.updateFloatAnimation(unit.animation.moveAnimation, step);
             Model.updateAnimations(unit.animation.sizeAnimation, step);
             if (layer === Model.Data.main && !Model.isOutOfCanvas(unit.body)) {
-                if (undefined === unit.eye && config_json_2.default.eye.appearRate <= unit.body.radius) {
+                if (undefined === unit.eye && config_json_3.default.eye.appearRate <= unit.body.radius) {
                     unit.eye = Model.makeEye();
                 }
             }
-            if (undefined !== unit.eye && undefined === unit.eye.animation.vanishAnimation && unit.body.radius < config_json_2.default.eye.vanishRate) {
+            if (undefined !== unit.eye && undefined === unit.eye.animation.vanishAnimation && unit.body.radius < config_json_3.default.eye.vanishRate) {
                 unit.eye.animation.vanishAnimation =
                     {
-                        period: config_json_2.default.Layer.eye.vanishAnimation.period,
+                        period: config_json_3.default.Layer.eye.vanishAnimation.period,
                         phase: 0,
                         scale: unit.eye.white.radius,
                     };
@@ -4042,7 +4174,7 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
                     if (target) {
                         target.animation.vanishAnimation =
                             {
-                                period: config_json_2.default.Layer.unit.vanishAnimation.period,
+                                period: config_json_3.default.Layer.unit.vanishAnimation.period,
                                 phase: 0,
                                 scale: target.scale,
                             };
@@ -4084,100 +4216,13 @@ define("script/model", ["require", "exports", "script/random", "script/ui", "res
         };
     })(Model || (exports.Model = Model = {}));
 });
-define("script/color", ["require", "exports", "script/ui", "resource/config"], function (require, exports, ui_1, config_json_3) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Color = void 0;
-    config_json_3 = __importDefault(config_json_3);
-    var Color;
-    (function (Color) {
-        Color.isRandomColoring = function () {
-            return undefined === config_json_3.default.coloring[ui_1.UI.coloring];
-        };
-        Color.getColoring = function () {
-            if (Color.isRandomColoring()) {
-                var index = Math.floor(Math.random() * Object.keys(config_json_3.default.coloring).length);
-                var key = Object.keys(config_json_3.default.coloring)[index];
-                var result = config_json_3.default.coloring[key];
-                if (Color.isSameColoring(newColors, result)) {
-                    index = (index + 1) % Object.keys(config_json_3.default.coloring).length;
-                    key = Object.keys(config_json_3.default.coloring)[index];
-                    result = config_json_3.default.coloring[key];
-                }
-                return result;
-            }
-            else {
-                return config_json_3.default.coloring[ui_1.UI.coloring];
-            }
-        };
-        var getColors = function () {
-            var coloring = Color.getColoring();
-            return { base: coloring.base, main: coloring.main, accent: coloring.accent, };
-        };
-        var changedColoringAt = 0;
-        var oldColors = getColors();
-        var newColors = getColors();
-        Color.isExpiredRandomColoring = function () {
-            return Color.isRandomColoring() &&
-                config_json_3.default.rendering.randomColoringUnitDuration <= (performance.now() - changedColoringAt);
-        };
-        Color.previousColors = getColors();
-        Color.isSameColoring = function (a, b) {
-            return a.base === b.base && a.main === b.main && a.accent === b.accent;
-        };
-        Color.updateColoring = function () {
-            var colors = getColors();
-            if (!Color.isSameColoring(newColors, colors)) {
-                oldColors = Color.getCurrentColors();
-                newColors = colors;
-                changedColoringAt = performance.now();
-            }
-        };
-        var mixColor = function (oldColor, newColor, rate) {
-            var boost = 1.0 + (config_json_3.default.rendering.antiDullnessBoost * Math.sin(Math.PI * rate)); // Adjustment to reduce dullness of intermediate colors
-            var oldR = parseInt(oldColor.slice(1, 3), 16);
-            var oldG = parseInt(oldColor.slice(3, 5), 16);
-            var oldB = parseInt(oldColor.slice(5, 7), 16);
-            var newR = parseInt(newColor.slice(1, 3), 16);
-            var newG = parseInt(newColor.slice(3, 5), 16);
-            var newB = parseInt(newColor.slice(5, 7), 16);
-            var currR = Math.round(Math.min((oldR + (newR - oldR) * rate) * boost, 255));
-            var currG = Math.round(Math.min((oldG + (newG - oldG) * rate) * boost, 255));
-            var currB = Math.round(Math.min((oldB + (newB - oldB) * rate) * boost, 255));
-            return "#".concat(currR.toString(16).padStart(2, "0")).concat(currG.toString(16).padStart(2, "0")).concat(currB.toString(16).padStart(2, "0"));
-        };
-        var mixColors = function (oldColors, newColors, rate) {
-            return ({
-                base: mixColor(oldColors.base, newColors.base, rate),
-                main: mixColor(oldColors.main, newColors.main, rate),
-                accent: mixColor(oldColors.accent, newColors.accent, rate),
-            });
-        };
-        Color.getCurrentColors = function () {
-            var now = performance.now();
-            var span = Color.isRandomColoring() ?
-                config_json_3.default.rendering.coloringRandomFadeDuration :
-                config_json_3.default.rendering.coloringRegularFadeDuration;
-            var rate = (now - changedColoringAt) / span;
-            if (1.0 <= rate) {
-                return newColors;
-            }
-            else if (rate <= 0.0) {
-                return oldColors;
-            }
-            else {
-                return mixColors(oldColors, newColors, rate);
-            }
-        };
-    })(Color || (exports.Color = Color = {}));
-});
-define("script/render", ["require", "exports", "script/geometry", "script/color", "script/model", "script/ui"], function (require, exports, geometry_1, color_1, model_1, ui_2) {
+define("script/render", ["require", "exports", "script/geometry", "script/color", "script/model", "script/ui"], function (require, exports, geometry_1, color_2, model_1, ui_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Render = void 0;
     var Render;
     (function (Render) {
-        var context = ui_2.UI.canvas.getContext("2d");
+        var context = ui_1.UI.canvas.getContext("2d");
         var mappingCircle = function (parent, circle) {
             return ({
                 x: (circle.x * parent.radius) + parent.x,
@@ -4187,9 +4232,9 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
         };
         Render.getCanvasCircle = function () {
             return ({
-                x: ui_2.UI.canvas.width / 2,
-                y: ui_2.UI.canvas.height / 2,
-                radius: Math.hypot(ui_2.UI.canvas.width, ui_2.UI.canvas.height) / 2,
+                x: ui_1.UI.canvas.width / 2,
+                y: ui_1.UI.canvas.height / 2,
+                radius: Math.hypot(ui_1.UI.canvas.width, ui_1.UI.canvas.height) / 2,
             });
         };
         var hasFusionPath = function (fusionStatus) {
@@ -4362,15 +4407,15 @@ define("script/render", ["require", "exports", "script/geometry", "script/color"
             }
         };
         Render.draw = function (isUpdatedModel) {
-            if (color_1.Color.isExpiredRandomColoring()) {
-                color_1.Color.updateColoring();
+            if (color_2.Color.isExpiredRandomColoring()) {
+                color_2.Color.updateColoring();
             }
-            var coloring = color_1.Color.getCurrentColors();
-            var isColoringChanged = !color_1.Color.isSameColoring(color_1.Color.previousColors, coloring);
+            var coloring = color_2.Color.getCurrentColors();
+            var isColoringChanged = !color_2.Color.isSameColoring(color_2.Color.previousColors, coloring);
             if (isUpdatedModel || isColoringChanged) {
-                color_1.Color.previousColors = coloring;
+                color_2.Color.previousColors = coloring;
                 context.fillStyle = coloring.base;
-                context.fillRect(0, 0, ui_2.UI.canvas.width, ui_2.UI.canvas.height);
+                context.fillRect(0, 0, ui_1.UI.canvas.width, ui_1.UI.canvas.height);
                 drawLayer(model_1.Model.Data.accent, coloring.accent, coloring);
                 drawLayer(model_1.Model.Data.main, coloring.main, coloring);
             }
@@ -4491,60 +4536,60 @@ define("script/fps", ["require", "exports"], function (require, exports) {
         Fps.isUnderFuseFps = function () { return Fps.isValid && Fps.currentMaxFps.fps < Fps.fuseFps; };
     })(Fps || (exports.Fps = Fps = {}));
 });
-define("script/event", ["require", "exports", "script/model", "script/color", "script/ui"], function (require, exports, model_2, color_2, ui_3) {
+define("script/event", ["require", "exports", "script/model", "script/color", "script/ui"], function (require, exports, model_2, color_3, ui_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Event = void 0;
     var Event;
     (function (Event) {
         Event.initialize = function () {
-            window.addEventListener("resize", ui_3.UI.resize);
-            window.addEventListener("orientationchange", ui_3.UI.resize);
-            document.addEventListener("fullscreenchange", ui_3.UI.updateFullscreenState);
-            document.addEventListener("webkitfullscreenchange", ui_3.UI.updateFullscreenState);
-            document.addEventListener("mousemove", ui_3.UI.mousemove);
+            window.addEventListener("resize", ui_2.UI.resize);
+            window.addEventListener("orientationchange", ui_2.UI.resize);
+            document.addEventListener("fullscreenchange", ui_2.UI.updateFullscreenState);
+            document.addEventListener("webkitfullscreenchange", ui_2.UI.updateFullscreenState);
+            document.addEventListener("mousemove", ui_2.UI.mousemove);
             var commandList = [
                 {
                     key: "C",
-                    button: ui_3.UI.coloringButton,
+                    button: ui_2.UI.coloringButton,
                     command: function (event) {
-                        ui_3.UI.toggleColoring(!event.shiftKey);
-                        color_2.Color.updateColoring();
+                        ui_2.UI.toggleColoring(!event.shiftKey);
+                        color_3.Color.updateColoring();
                     }
                 },
                 {
                     key: "Q",
-                    button: ui_3.UI.qualityButton,
+                    button: ui_2.UI.qualityButton,
                     command: function (event) {
-                        ui_3.UI.toggleQuality(!event.shiftKey);
+                        ui_2.UI.toggleQuality(!event.shiftKey);
                         model_2.Model.updateStretch();
                     }
                 },
                 {
                     key: "P",
-                    button: ui_3.UI.pitchButton,
+                    button: ui_2.UI.pitchButton,
                     command: function (event) {
-                        ui_3.UI.togglePitch(!event.shiftKey);
-                        model_2.Model.setPitch(ui_3.UI.getPitch());
+                        ui_2.UI.togglePitch(!event.shiftKey);
+                        model_2.Model.setPitch(ui_2.UI.getPitch());
                     },
                 },
                 {
                     key: "W",
-                    button: ui_3.UI.watchButton,
-                    command: function (event) { return ui_3.UI.toggleWatchDisplay(!event.shiftKey); }
+                    button: ui_2.UI.watchButton,
+                    command: function (event) { return ui_2.UI.toggleWatchDisplay(!event.shiftKey); }
                 },
                 {
                     key: "S",
-                    button: ui_3.UI.fpsButton,
-                    command: function () { return ui_3.UI.toggleFpsDisplay(); }
+                    button: ui_2.UI.fpsButton,
+                    command: function () { return ui_2.UI.toggleFpsDisplay(); }
                 },
                 {
                     key: "F",
-                    button: ui_3.UI.fullscreenButton,
-                    command: function () { return ui_3.UI.toggleFullScreen(); }
+                    button: ui_2.UI.fullscreenButton,
+                    command: function () { return ui_2.UI.toggleFullScreen(); }
                 },
                 {
-                    button: ui_3.UI.jumpOutButton,
+                    button: ui_2.UI.jumpOutButton,
                     command: function () { return window.open(window.location.href, "_blank"); }
                 }
             ];
@@ -4556,14 +4601,14 @@ define("script/event", ["require", "exports", "script/model", "script/color", "s
                         command.command(event);
                     }
                 }
-                ui_3.UI.mousemove();
+                ui_2.UI.mousemove();
             });
             commandList.forEach(function (command) {
                 command.button.addEventListener("click", function (event) {
                     event.stopPropagation();
                     event.preventDefault();
                     command.command(event);
-                    ui_3.UI.mousemove();
+                    ui_2.UI.mousemove();
                 });
             });
         };
@@ -5748,7 +5793,7 @@ define("flounder.style.js/index", ["require", "exports", "flounder.style.js/gene
         };
     })(FlounderStyle || (exports.FlounderStyle = FlounderStyle = {}));
 });
-define("script/watch", ["require", "exports", "script/url", "script/ui", "script/random", "flounder.style.js/index", "resource/config"], function (require, exports, url_2, ui_4, random_1, flounder_style_js_1, config_json_5) {
+define("script/watch", ["require", "exports", "script/url", "script/ui", "script/random", "flounder.style.js/index", "resource/config"], function (require, exports, url_2, ui_3, random_1, flounder_style_js_1, config_json_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Watch = void 0;
@@ -5809,26 +5854,26 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
             return maskStyle;
         };
         Watch.setColor = function (color) {
-            ui_4.UI.setStyle(ui_4.UI.date2, "color", color);
-            ui_4.UI.setStyle(ui_4.UI.time, "color", color);
-            ui_4.UI.setStyle(ui_4.UI.date, "color", color);
+            ui_3.UI.setStyle(ui_3.UI.date2, "color", color);
+            ui_3.UI.setStyle(ui_3.UI.time, "color", color);
+            ui_3.UI.setStyle(ui_3.UI.date, "color", color);
         };
         Watch.update = function () {
-            if ("none" !== ui_4.UI.watchColor) {
+            if ("none" !== ui_3.UI.watchColor) {
                 var date = new Date();
-                ui_4.UI.setTextContent(ui_4.UI.time, Watch.makeTime(date, Watch.locale));
-                ui_4.UI.setAttribute(ui_4.UI.time, "datatime", Watch.makeTime(date, "ja-JP"));
+                ui_3.UI.setTextContent(ui_3.UI.time, Watch.makeTime(date, Watch.locale));
+                ui_3.UI.setAttribute(ui_3.UI.time, "datatime", Watch.makeTime(date, "ja-JP"));
                 var datetime = date.toISOString().slice(0, 10);
-                if (ui_4.UI.isWatchStyle2()) {
-                    ui_4.UI.setTextContent(ui_4.UI.yyyymmw, Watch.makeDateYyyymmw(date, Watch.locale));
-                    ui_4.UI.setTextContent(ui_4.UI.dd, Watch.makeDateDd(date, Watch.locale));
-                    ui_4.UI.setAttribute(ui_4.UI.date2, "datatime", datetime);
+                if (ui_3.UI.isWatchStyle2()) {
+                    ui_3.UI.setTextContent(ui_3.UI.yyyymmw, Watch.makeDateYyyymmw(date, Watch.locale));
+                    ui_3.UI.setTextContent(ui_3.UI.dd, Watch.makeDateDd(date, Watch.locale));
+                    ui_3.UI.setAttribute(ui_3.UI.date2, "datatime", datetime);
                 }
                 else {
-                    ui_4.UI.setTextContent(ui_4.UI.date, Watch.makeDate(date, Watch.locale));
-                    ui_4.UI.setAttribute(ui_4.UI.date, "datatime", datetime);
+                    ui_3.UI.setTextContent(ui_3.UI.date, Watch.makeDate(date, Watch.locale));
+                    ui_3.UI.setAttribute(ui_3.UI.date, "datatime", datetime);
                 }
-                switch (ui_4.UI.getPrimaryWatchColor()) {
+                switch (ui_3.UI.getPrimaryWatchColor()) {
                     case "white":
                         Watch.setColor("white");
                         break;
@@ -5837,7 +5882,7 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
                         break;
                     case "zebra":
                         Watch.setColor("white");
-                        flounder_style_js_1.FlounderStyle.setStyle(ui_4.UI.pattern, Watch.backgroundToMask(flounder_style_js_1.FlounderStyle.makeStyle(Watch.makePattern(date))));
+                        flounder_style_js_1.FlounderStyle.setStyle(ui_3.UI.pattern, Watch.backgroundToMask(flounder_style_js_1.FlounderStyle.makeStyle(Watch.makePattern(date))));
                         break;
                     case "rainbow":
                         Watch.setColor("hsl(".concat(((date.getTime() * 360) / (24000 * phi)).toFixed(2), "deg, 100%, 61%)"));
@@ -5846,79 +5891,78 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
                 }
             }
             else {
-                ui_4.UI.setTextContent(ui_4.UI.yyyymmw, "");
-                ui_4.UI.setTextContent(ui_4.UI.dd, "");
-                ui_4.UI.setAttribute(ui_4.UI.date2, "datatime", undefined);
-                ui_4.UI.setTextContent(ui_4.UI.time, "");
-                ui_4.UI.setAttribute(ui_4.UI.time, "datatime", undefined);
-                ui_4.UI.setTextContent(ui_4.UI.date, "");
-                ui_4.UI.setAttribute(ui_4.UI.date, "datatime", undefined);
+                ui_3.UI.setTextContent(ui_3.UI.yyyymmw, "");
+                ui_3.UI.setTextContent(ui_3.UI.dd, "");
+                ui_3.UI.setAttribute(ui_3.UI.date2, "datatime", undefined);
+                ui_3.UI.setTextContent(ui_3.UI.time, "");
+                ui_3.UI.setAttribute(ui_3.UI.time, "datatime", undefined);
+                ui_3.UI.setTextContent(ui_3.UI.date, "");
+                ui_3.UI.setAttribute(ui_3.UI.date, "datatime", undefined);
             }
         };
     })(Watch || (exports.Watch = Watch = {}));
 });
-define("script/index", ["require", "exports", "script/url", "script/model", "script/color", "script/render", "script/fps", "script/ui", "script/event", "script/watch", "resource/config"], function (require, exports, url_3, model_3, color_3, render_1, fps_1, ui_5, event_1, watch_1, config_json_6) {
+define("script/index", ["require", "exports", "script/url", "script/model", "script/color", "script/render", "script/fps", "script/ui", "script/event", "script/watch"], function (require, exports, url_3, model_3, color_4, render_1, fps_1, ui_4, event_1, watch_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    config_json_6 = __importDefault(config_json_6);
     url_3.Url.initialize();
     event_1.Event.initialize();
     //console.log("URL Parameters:", Url.params);
-    if ("random" === url_3.Url.params["coloring"] || url_3.Url.params["coloring"] in config_json_6.default.coloring) {
+    if (url_3.Url.params["coloring"]) {
         //console.log(`🎨 Coloring from URL parameter: ${Url.params["coloring"]}`);
-        ui_5.UI.toggleColoring(url_3.Url.params["coloring"]);
-        color_3.Color.updateColoring();
+        ui_4.UI.toggleColoring(url_3.Url.params["coloring"]);
+        color_4.Color.updateColoring();
     }
     else {
         //console.log("🎨 Default coloring");
-        ui_5.UI.updateColoringRoundBar();
+        ui_4.UI.updateColoringRoundBar();
     }
-    if (ui_5.UI.PixelRatioModeKeys.includes(url_3.Url.params["quality"])) {
+    if (ui_4.UI.PixelRatioModeKeys.includes(url_3.Url.params["quality"])) {
         //console.log(`🖼️ Quality from URL parameter: ${Url.params["quality"]}`);
-        ui_5.UI.toggleQuality(url_3.Url.params["quality"]);
+        ui_4.UI.toggleQuality(url_3.Url.params["quality"]);
         model_3.Model.updateStretch();
     }
     else {
         //console.log("🖼️ Default quality");
-        ui_5.UI.updateQualityRoundBar();
+        ui_4.UI.updateQualityRoundBar();
     }
     if (url_3.Url.params["pitch"] && !isNaN(Number(url_3.Url.params["pitch"]))) {
         //console.log(`🎵 Pitch from URL parameter: ${Url.params["pitch"]}`);
-        ui_5.UI.togglePitch(Number(url_3.Url.params["pitch"]));
-        model_3.Model.setPitch(ui_5.UI.getPitch());
+        ui_4.UI.togglePitch(Number(url_3.Url.params["pitch"]));
+        model_3.Model.setPitch(ui_4.UI.getPitch());
     }
     else {
         //console.log("🎵 Default pitch");
-        ui_5.UI.updatePitchRoundBar();
+        ui_4.UI.updatePitchRoundBar();
     }
-    if (ui_5.UI.WatchColorList.includes(url_3.Url.params["watch"])) {
+    if (ui_4.UI.WatchColorList.includes(url_3.Url.params["watch"])) {
         //console.log(`⌚ Watch display from URL parameter: ${Url.params["watch"]}`);
-        ui_5.UI.toggleWatchDisplay(url_3.Url.params["watch"]);
+        ui_4.UI.toggleWatchDisplay(url_3.Url.params["watch"]);
     }
     else {
         //console.log("⌚ Default watch display");
-        ui_5.UI.updateWatchVisibility();
+        ui_4.UI.updateWatchVisibility();
     }
     if ("true" === url_3.Url.params["fps"]) {
         //console.log("⚡ FPS display from URL parameter: true");
-        ui_5.UI.toggleFpsDisplay(true);
+        ui_4.UI.toggleFpsDisplay(true);
     }
     else {
         //console.log("⚡ Default FPS display");
-        ui_5.UI.fpsDiv.style.display = "none";
+        ui_4.UI.fpsDiv.style.display = "none";
     }
-    ui_5.UI.fullscreenButton.style.display = ui_5.UI.fullscreenEnabled ? "block" : "none";
-    ui_5.UI.setAriaHidden(ui_5.UI.fullscreenButton, !ui_5.UI.fullscreenEnabled);
-    ui_5.UI.updateFullscreenState();
-    ui_5.UI.jumpOutButton.style.display = ui_5.UI.isInIframe ? "block" : "none";
-    ui_5.UI.setAriaHidden(ui_5.UI.jumpOutButton, ui_5.UI.isInIframe);
-    ui_5.UI.resize();
+    ui_4.UI.fullscreenButton.style.display = ui_4.UI.fullscreenEnabled ? "block" : "none";
+    ui_4.UI.setAriaHidden(ui_4.UI.fullscreenButton, !ui_4.UI.fullscreenEnabled);
+    ui_4.UI.updateFullscreenState();
+    ui_4.UI.jumpOutButton.style.display = ui_4.UI.isInIframe ? "block" : "none";
+    ui_4.UI.setAriaHidden(ui_4.UI.jumpOutButton, ui_4.UI.isInIframe);
+    ui_4.UI.resize();
     var step = function (timestamp) {
         render_1.Render.draw(model_3.Model.updateData(timestamp));
         watch_1.Watch.update();
-        if (ui_5.UI.fpsDiv.style.display !== "none") {
+        if (ui_4.UI.fpsDiv.style.display !== "none") {
             fps_1.Fps.step(timestamp);
-            ui_5.UI.fpsDiv.innerText = fps_1.Fps.getText();
+            ui_4.UI.fpsDiv.innerText = fps_1.Fps.getText();
         }
         window.requestAnimationFrame(step);
     };

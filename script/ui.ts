@@ -1,5 +1,6 @@
 import { Url } from "./url";
 // import { Model } from "./model";
+import { Color } from "./color";
 import config from "@resource/config.json";
 export namespace UI
 {
@@ -95,52 +96,86 @@ export namespace UI
         setStyle(button, "--high", properties.high.toFixed(3));
         setStyle(button, "--rotate", properties.rotate.toFixed(3));
     };
-    let coloringRoundBarIndex = 0;
+    let coloringRoundBarIndex: number | "custom" = 0;
     const mod = (n: number, m: number): number => ((n % m) + m) % m;
     export const updateColoringRoundBar = () =>
     {
-        const keys = Object.keys(config.coloring).concat("random") as ColoringType[];
-        const max = keys.length -1;
-        updateRoundBar
-        (
-            coloringButton,
-            max <= mod(coloringRoundBarIndex, keys.length) ?
-            {
-                low: 0,
-                high: 1,
-                rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
-            }:
-            {
-                low: 0 /max,
-                high: 1 /max,
-                rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
-            }
-        );
+        if ("custom" === coloringRoundBarIndex)
+        {
+            updateRoundBar(coloringButton, {low: 0, high: 0, rotate: 0, });
+        }
+        else
+        {
+            const keys = Object.keys(config.coloring).concat("random") as Color.ColoringType[];
+            const max = keys.length -1;
+            updateRoundBar
+            (
+                coloringButton,
+                max <= mod(coloringRoundBarIndex, keys.length) ?
+                {
+                    low: 0,
+                    high: 1,
+                    rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
+                }:
+                {
+                    low: 0 /max,
+                    high: 1 /max,
+                    rotate: (coloringRoundBarIndex -Math.floor(coloringRoundBarIndex /keys.length)) /max,
+                }
+            );
+        }
     };
-    export type ColoringType = keyof typeof config["coloring"] | "random";
-    export let coloring = "regular" as ColoringType;
     export const toggleColoring = (style?: boolean | keyof typeof config["coloring"]) =>
     {
-        const keys = Object.keys(config.coloring).concat("random") as ColoringType[];
+        const keys = Object.keys(config.coloring).concat("random") as Color.ColoringType[];
         if (typeof style === "boolean" || undefined === style)
         {
-            const currentIndex = keys.indexOf(UI.coloring);
-            const nextIndex = (keys.length +currentIndex + (false !== style ? 1: -1)) %keys.length;
-            console.log({currentIndex, nextIndex, keysLength: keys.length, style});
-            UI.coloring = keys[nextIndex];
-            coloringRoundBarIndex += false !== style ? 1: -1;
+            if ("custom" === coloringRoundBarIndex)
+            {
+                Color.coloring = "regular";
+                coloringRoundBarIndex = keys.indexOf(Color.coloring);
+                Color.setCustomColoring(null);
+            }
+            else
+            {
+                const currentIndex = keys.indexOf(Color.coloring);
+                const nextIndex = (keys.length +currentIndex + (false !== style ? 1: -1)) %keys.length;
+                console.log({currentIndex, nextIndex, keysLength: keys.length, style});
+                Color.coloring = keys[nextIndex];
+                coloringRoundBarIndex += false !== style ? 1: -1;
+                Color.setCustomColoring(null);
+            }
         }
         else
         {
             if (keys.includes(style))
             {
-                UI.coloring = style;
+                Color.coloring = style;
                 coloringRoundBarIndex = keys.indexOf(style);
+                Color.setCustomColoring(null);
+            }
+            else
+            {
+                const coloring = style.split(" ");
+                if (3 === coloring.length)
+                {
+                    Color.coloring = "custom";
+                    coloringRoundBarIndex = "custom";
+                    Color.setCustomColoring
+                    ({
+                        base: "#" +coloring[0],
+                        main: "#" +coloring[1],
+                        accent: "#" +coloring[2],
+                    });
+                }
             }
         }
         updateColoringRoundBar();
-        Url.addParameter("coloring", UI.coloring);
-        console.log(`🎨 Coloring changed: ${UI.coloring}`);
+        const result = "custom" === Color.coloring ?
+            style as string:
+            Color.coloring;
+        Url.addParameter("coloring", result);
+        console.log(`🎨 Coloring changed: ${result}`);
     };
     export type PixelRatioMode = keyof typeof config.quality.presets;
     export const PixelRatioModeKeys = Object.keys(config.quality.presets) as PixelRatioMode[];

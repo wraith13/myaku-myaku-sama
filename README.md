@@ -41,6 +41,7 @@ Against that cultural background, Japanese internet users commonly refer to Myak
 The following option cannot be set via the UI.
 
 - `locale`: Specifies the locale. (Example: [`#locale=en-us`](https://wraith13.github.io/myaku-myaku-sama/#locale=en-us))
+- `coloring`: Specifies the custom coloring. (Example: [`#coloring=FFFFFF+FF69B4+FFD700`](https://wraith13.github.io/myaku-myaku-sama/#coloring=FFFFFF+FF69B4+FFD700))
 
 ## 🛠️ How to build
 

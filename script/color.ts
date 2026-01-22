@@ -1,12 +1,26 @@
-import { UI } from "./ui";
+//import { UI } from "./ui";
 import config from "@resource/config.json";
 export namespace Color
 {
     export type Coloring = (typeof config.coloring)[keyof typeof config.coloring];
+    export type ColoringType = keyof typeof config["coloring"] | "random" | "custom";
+    export let coloring = "regular" as ColoringType;
+    let customColoring: Coloring | null = null;
+    export const isCustomColoring = (): boolean =>
+        null !== customColoring;
+    export const setCustomColoring = (coloring: Coloring | null) =>
+    {
+        customColoring = coloring;
+    };
     export const isRandomColoring = (): boolean =>
-        undefined === config.coloring[UI.coloring as keyof typeof config.coloring];
+        isCustomColoring() &&
+        undefined === config.coloring[coloring as keyof typeof config.coloring];
     export const getColoring = (): Coloring =>
     {
+        if (isCustomColoring())
+        {
+            return customColoring as Coloring;
+        }
         if (isRandomColoring())
         {
             let index = Math.floor(Math.random() * Object.keys(config.coloring).length);
@@ -22,7 +36,7 @@ export namespace Color
         }
         else
         {
-            return config.coloring[UI.coloring as keyof typeof config.coloring];
+            return config.coloring[coloring as keyof typeof config.coloring];
         }
     };
     const getColors = (): Coloring =>
@@ -71,23 +85,30 @@ export namespace Color
     });
     export const getCurrentColors = () =>
     {
-        const now = performance.now();
-        const span = isRandomColoring() ?
-            config.rendering.coloringRandomFadeDuration:
-            config.rendering.coloringRegularFadeDuration;
-        const rate = (now -changedColoringAt) /span;
-        if (1.0 <= rate)
+        if (isCustomColoring())
         {
-            return newColors;
-        }
-        else
-        if (rate <= 0.0)
-        {
-            return oldColors;
+            return getColors();
         }
         else
         {
-            return mixColors(oldColors, newColors, rate);
+            const now = performance.now();
+            const span = isRandomColoring() ?
+                config.rendering.coloringRandomFadeDuration:
+                config.rendering.coloringRegularFadeDuration;
+            const rate = (now -changedColoringAt) /span;
+            if (1.0 <= rate)
+            {
+                return newColors;
+            }
+            else
+            if (rate <= 0.0)
+            {
+                return oldColors;
+            }
+            else
+            {
+                return mixColors(oldColors, newColors, rate);
+            }
         }
     };
 }

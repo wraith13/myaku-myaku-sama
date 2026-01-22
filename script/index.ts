@@ -10,7 +10,7 @@ import config from "@resource/config.json";
 Url.initialize();
 Event.initialize();
 //console.log("URL Parameters:", Url.params);
-if ("random" === Url.params["coloring"] || Url.params["coloring"] in config.coloring)
+if (Url.params["coloring"])
 {
     //console.log(`🎨 Coloring from URL parameter: ${Url.params["coloring"]}`);
     UI.toggleColoring(Url.params["coloring"] as keyof typeof config.coloring);
