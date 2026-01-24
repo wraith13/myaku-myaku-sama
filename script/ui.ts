@@ -419,4 +419,13 @@ export namespace UI
         }
         return false;
     };
+    export const initialize = () =>
+    {
+        fullscreenButton.style.display = fullscreenEnabled ? "block" : "none";
+        setAriaHidden(fullscreenButton, ! fullscreenEnabled);
+        updateFullscreenState();
+        jumpOutButton.style.display = isInIframe ? "block" : "none";
+        setAriaHidden(jumpOutButton, isInIframe);
+        resize();
+    };
 }

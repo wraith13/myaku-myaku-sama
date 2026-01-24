@@ -27,10 +27,14 @@ export namespace Url
         pushUrl();
         return params;
     };
+    export const get = (key: string): string | undefined =>
+        params[key];
     const pushUrl = () =>
         window.history.replaceState({}, "", Url.make());
     export const initialize = () =>
     {
     };
-    export const params = parseParameter(window.location.href);
+    let params = parseParameter(window.location.href);
+    export const reloadParameters = () =>
+        params = parseParameter(window.location.href);
 }

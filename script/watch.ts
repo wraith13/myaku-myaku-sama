@@ -5,7 +5,7 @@ import { FlounderStyle } from "flounder.style.js";
 import config from "@resource/config.json";
 export namespace Watch
 {
-    export const locale = Url.params["locale"] || navigator.language;
+    export const locale = Url.get("locale") || navigator.language;
     const phi = (1 + Math.sqrt(5)) / 2;
     export const makeDate = (date: Date, locale: string): string =>
         date.toLocaleDateString

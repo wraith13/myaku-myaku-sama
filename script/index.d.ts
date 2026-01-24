@@ -3,8 +3,9 @@ declare module "script/url" {
         const parseParameter: (url: string) => Record<string, string>;
         const make: () => string;
         const addParameter: (key: string, value: string) => Record<string, string>;
+        const get: (key: string) => string | undefined;
         const initialize: () => void;
-        const params: Record<string, string>;
+        const reloadParameters: () => Record<string, string>;
     }
 }
 declare module "script/geometry" {
@@ -105,6 +106,7 @@ declare module "script/ui" {
         const setTextContent: (element: HTMLElement, text: string) => boolean;
         const setAttribute: (element: HTMLElement, name: string, value: string | undefined) => boolean;
         const setStyle: (element: HTMLElement, name: string, value: string | undefined) => boolean;
+        const initialize: () => void;
     }
 }
 declare module "script/model" {
@@ -230,6 +232,7 @@ declare module "script/fps" {
 }
 declare module "script/event" {
     export namespace Event {
+        const loadFromUrlParameters: () => void;
         const initialize: () => void;
     }
 }

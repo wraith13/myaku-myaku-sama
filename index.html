@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Thu Jan 22 2026 20:09:02 GMT+0900 (日本標準時)
+    build at: Fri Jan 23 2026 05:07:39 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -395,8 +395,8 @@ button:focus
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Thu Jan 22 2026 20:09:02 GMT+0900 (日本標準時)",
-    tick: 1769080142662
+    at: "Fri Jan 23 2026 05:07:39 GMT+0900 (日本標準時)",
+    tick: 1769112459489
 };
 const evilCommonjsConfig = {
     "log": {
@@ -3176,23 +3176,29 @@ define("script/url", ["require", "exports"], function (require, exports) {
         };
         Url.make = function () {
             var url = new URL(window.location.href.replace(/#/g, "?"));
-            for (var _i = 0, _a = Object.entries(Url.params); _i < _a.length; _i++) {
+            for (var _i = 0, _a = Object.entries(params); _i < _a.length; _i++) {
                 var _b = _a[_i], key = _b[0], value = _b[1];
                 url.searchParams.set(key, value);
             }
             return url.toString().replace(/\?/g, "#");
         };
         Url.addParameter = function (key, value) {
-            Url.params[key] = value;
+            params[key] = value;
             pushUrl();
-            return Url.params;
+            return params;
+        };
+        Url.get = function (key) {
+            return params[key];
         };
         var pushUrl = function () {
             return window.history.replaceState({}, "", Url.make());
         };
         Url.initialize = function () {
         };
-        Url.params = Url.parseParameter(window.location.href);
+        var params = Url.parseParameter(window.location.href);
+        Url.reloadParameters = function () {
+            return params = Url.parseParameter(window.location.href);
+        };
     })(Url || (exports.Url = Url = {}));
 });
 define("script/geometry", ["require", "exports"], function (require, exports) {
@@ -3923,6 +3929,14 @@ define("script/ui", ["require", "exports", "script/url", "script/color", "resour
             }
             return false;
         };
+        UI.initialize = function () {
+            UI.fullscreenButton.style.display = UI.fullscreenEnabled ? "block" : "none";
+            UI.setAriaHidden(UI.fullscreenButton, !UI.fullscreenEnabled);
+            UI.updateFullscreenState();
+            UI.jumpOutButton.style.display = UI.isInIframe ? "block" : "none";
+            UI.setAriaHidden(UI.jumpOutButton, UI.isInIframe);
+            UI.resize();
+        };
     })(UI || (exports.UI = UI = {}));
 });
 define("script/model", ["require", "exports", "script/random", "script/ui", "resource/config"], function (require, exports, random_js_1, ui_js_1, config_json_3) {
@@ -4536,13 +4550,63 @@ define("script/fps", ["require", "exports"], function (require, exports) {
         Fps.isUnderFuseFps = function () { return Fps.isValid && Fps.currentMaxFps.fps < Fps.fuseFps; };
     })(Fps || (exports.Fps = Fps = {}));
 });
-define("script/event", ["require", "exports", "script/model", "script/color", "script/ui"], function (require, exports, model_2, color_3, ui_2) {
+define("script/event", ["require", "exports", "script/url", "script/model", "script/color", "script/ui"], function (require, exports, url_2, model_2, color_3, ui_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Event = void 0;
     var Event;
     (function (Event) {
+        Event.loadFromUrlParameters = function () {
+            //console.log("URL Parameters:", Url.params);
+            if (url_2.Url.get("coloring")) {
+                //console.log(`🎨 Coloring from URL parameter: ${Url.params["coloring"]}`);
+                ui_2.UI.toggleColoring(url_2.Url.get("coloring"));
+                color_3.Color.updateColoring();
+            }
+            else {
+                //console.log("🎨 Default coloring");
+                ui_2.UI.updateColoringRoundBar();
+            }
+            if (ui_2.UI.PixelRatioModeKeys.includes(url_2.Url.get("quality"))) {
+                //console.log(`🖼️ Quality from URL parameter: ${Url.params["quality"]}`);
+                ui_2.UI.toggleQuality(url_2.Url.get("quality"));
+                model_2.Model.updateStretch();
+            }
+            else {
+                //console.log("🖼️ Default quality");
+                ui_2.UI.updateQualityRoundBar();
+            }
+            if (url_2.Url.get("pitch") && !isNaN(Number(url_2.Url.get("pitch")))) {
+                //console.log(`🎵 Pitch from URL parameter: ${Url.params["pitch"]}`);
+                ui_2.UI.togglePitch(Number(url_2.Url.get("pitch")));
+                model_2.Model.setPitch(ui_2.UI.getPitch());
+            }
+            else {
+                //console.log("🎵 Default pitch");
+                ui_2.UI.updatePitchRoundBar();
+            }
+            if (ui_2.UI.WatchColorList.includes(url_2.Url.get("watch"))) {
+                //console.log(`⌚ Watch display from URL parameter: ${Url.params["watch"]}`);
+                ui_2.UI.toggleWatchDisplay(url_2.Url.get("watch"));
+            }
+            else {
+                //console.log("⌚ Default watch display");
+                ui_2.UI.updateWatchVisibility();
+            }
+            if ("true" === url_2.Url.get("fps")) {
+                //console.log("⚡ FPS display from URL parameter: true");
+                ui_2.UI.toggleFpsDisplay(true);
+            }
+            else {
+                //console.log("⚡ Default FPS display");
+                ui_2.UI.fpsDiv.style.display = "none";
+            }
+        };
         Event.initialize = function () {
+            window.addEventListener("hashchange", function () {
+                url_2.Url.reloadParameters();
+                Event.loadFromUrlParameters();
+            });
             window.addEventListener("resize", ui_2.UI.resize);
             window.addEventListener("orientationchange", ui_2.UI.resize);
             document.addEventListener("fullscreenchange", ui_2.UI.updateFullscreenState);
@@ -4611,6 +4675,7 @@ define("script/event", ["require", "exports", "script/model", "script/color", "s
                     ui_2.UI.mousemove();
                 });
             });
+            Event.loadFromUrlParameters();
         };
     })(Event || (exports.Event = Event = {}));
 });
@@ -5793,14 +5858,14 @@ define("flounder.style.js/index", ["require", "exports", "flounder.style.js/gene
         };
     })(FlounderStyle || (exports.FlounderStyle = FlounderStyle = {}));
 });
-define("script/watch", ["require", "exports", "script/url", "script/ui", "script/random", "flounder.style.js/index", "resource/config"], function (require, exports, url_2, ui_3, random_1, flounder_style_js_1, config_json_5) {
+define("script/watch", ["require", "exports", "script/url", "script/ui", "script/random", "flounder.style.js/index", "resource/config"], function (require, exports, url_3, ui_3, random_1, flounder_style_js_1, config_json_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Watch = void 0;
     config_json_5 = __importDefault(config_json_5);
     var Watch;
     (function (Watch) {
-        Watch.locale = url_2.Url.params["locale"] || navigator.language;
+        Watch.locale = url_3.Url.get("locale") || navigator.language;
         var phi = (1 + Math.sqrt(5)) / 2;
         Watch.makeDate = function (date, locale) {
             return date.toLocaleDateString(locale, config_json_5.default.watch.dateFormat);
@@ -5902,61 +5967,13 @@ define("script/watch", ["require", "exports", "script/url", "script/ui", "script
         };
     })(Watch || (exports.Watch = Watch = {}));
 });
-define("script/index", ["require", "exports", "script/url", "script/model", "script/color", "script/render", "script/fps", "script/ui", "script/event", "script/watch"], function (require, exports, url_3, model_3, color_4, render_1, fps_1, ui_4, event_1, watch_1) {
+define("script/index", ["require", "exports", "script/url", "script/model", "script/render", "script/fps", "script/ui", "script/event", "script/watch"], function (require, exports, url_4, model_3, render_1, fps_1, ui_4, event_1, watch_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    url_3.Url.initialize();
+    //import config from "@resource/config.json";
+    url_4.Url.initialize();
     event_1.Event.initialize();
-    //console.log("URL Parameters:", Url.params);
-    if (url_3.Url.params["coloring"]) {
-        //console.log(`🎨 Coloring from URL parameter: ${Url.params["coloring"]}`);
-        ui_4.UI.toggleColoring(url_3.Url.params["coloring"]);
-        color_4.Color.updateColoring();
-    }
-    else {
-        //console.log("🎨 Default coloring");
-        ui_4.UI.updateColoringRoundBar();
-    }
-    if (ui_4.UI.PixelRatioModeKeys.includes(url_3.Url.params["quality"])) {
-        //console.log(`🖼️ Quality from URL parameter: ${Url.params["quality"]}`);
-        ui_4.UI.toggleQuality(url_3.Url.params["quality"]);
-        model_3.Model.updateStretch();
-    }
-    else {
-        //console.log("🖼️ Default quality");
-        ui_4.UI.updateQualityRoundBar();
-    }
-    if (url_3.Url.params["pitch"] && !isNaN(Number(url_3.Url.params["pitch"]))) {
-        //console.log(`🎵 Pitch from URL parameter: ${Url.params["pitch"]}`);
-        ui_4.UI.togglePitch(Number(url_3.Url.params["pitch"]));
-        model_3.Model.setPitch(ui_4.UI.getPitch());
-    }
-    else {
-        //console.log("🎵 Default pitch");
-        ui_4.UI.updatePitchRoundBar();
-    }
-    if (ui_4.UI.WatchColorList.includes(url_3.Url.params["watch"])) {
-        //console.log(`⌚ Watch display from URL parameter: ${Url.params["watch"]}`);
-        ui_4.UI.toggleWatchDisplay(url_3.Url.params["watch"]);
-    }
-    else {
-        //console.log("⌚ Default watch display");
-        ui_4.UI.updateWatchVisibility();
-    }
-    if ("true" === url_3.Url.params["fps"]) {
-        //console.log("⚡ FPS display from URL parameter: true");
-        ui_4.UI.toggleFpsDisplay(true);
-    }
-    else {
-        //console.log("⚡ Default FPS display");
-        ui_4.UI.fpsDiv.style.display = "none";
-    }
-    ui_4.UI.fullscreenButton.style.display = ui_4.UI.fullscreenEnabled ? "block" : "none";
-    ui_4.UI.setAriaHidden(ui_4.UI.fullscreenButton, !ui_4.UI.fullscreenEnabled);
-    ui_4.UI.updateFullscreenState();
-    ui_4.UI.jumpOutButton.style.display = ui_4.UI.isInIframe ? "block" : "none";
-    ui_4.UI.setAriaHidden(ui_4.UI.jumpOutButton, ui_4.UI.isInIframe);
-    ui_4.UI.resize();
+    ui_4.UI.initialize();
     var step = function (timestamp) {
         render_1.Render.draw(model_3.Model.updateData(timestamp));
         watch_1.Watch.update();
