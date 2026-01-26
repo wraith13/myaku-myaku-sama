@@ -2,7 +2,7 @@
 <!--
     This file is genereted by build.js. このファイルは build.js によって生成されました。
     build options: ../build.json all
-    build at: Sun Jan 25 2026 10:11:12 GMT+0900 (日本標準時)
+    build at: Mon Jan 26 2026 04:06:44 GMT+0900 (日本標準時)
     repository: https://github.com/wraith13/myaku-myaku-sama/
 -->
 <!-- license:
@@ -395,8 +395,8 @@ button:focus
 </div>
 <script type="text/javascript">
 const build = {
-    at: "Sun Jan 25 2026 10:11:12 GMT+0900 (日本標準時)",
-    tick: 1769303472460
+    at: "Mon Jan 26 2026 04:06:44 GMT+0900 (日本標準時)",
+    tick: 1769368004415
 };
 const evilCommonjsConfig = {
     "log": {
@@ -3497,7 +3497,7 @@ define("script/color", ["require", "exports", "resource/config"], function (requ
             customColoring = coloring;
         };
         Color.isRandomColoring = function () {
-            return Color.isCustomColoring() &&
+            return !Color.isCustomColoring() &&
                 undefined === config_json_1.default.coloring[Color.coloring];
         };
         Color.getColoring = function () {

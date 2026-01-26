@@ -13,7 +13,7 @@ export namespace Color
         customColoring = coloring;
     };
     export const isRandomColoring = (): boolean =>
-        isCustomColoring() &&
+        ! isCustomColoring() &&
         undefined === config.coloring[coloring as keyof typeof config.coloring];
     export const getColoring = (): Coloring =>
     {

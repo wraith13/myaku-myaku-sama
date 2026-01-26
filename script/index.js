@@ -347,7 +347,7 @@ define("script/color", ["require", "exports", "resource/config"], function (requ
             customColoring = coloring;
         };
         Color.isRandomColoring = function () {
-            return Color.isCustomColoring() &&
+            return !Color.isCustomColoring() &&
                 undefined === config_json_1.default.coloring[Color.coloring];
         };
         Color.getColoring = function () {
